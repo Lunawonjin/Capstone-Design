@@ -3,7 +3,6 @@ using UnityEngine;
 /// <summary>
 /// 캐릭터 주변 타원 공간을 만들고,
 /// NPC의 BoxCollider2D가 "조금이라도" 타원에 닿으면 감지하는 스크립트.
-/// (2D 타일맵용, Collider 필수)
 /// </summary>
 public class CharacterSpace : MonoBehaviour
 {
