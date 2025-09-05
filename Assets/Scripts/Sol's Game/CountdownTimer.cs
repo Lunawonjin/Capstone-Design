@@ -21,7 +21,7 @@ public class CountdownTimer : MonoBehaviour
 
     private float remainingTime;
     private bool isRunning;
-
+    public GameObject UIPanel;
     private void Start()
     {
         remainingTime = Mathf.Max(0f, startSeconds);
@@ -58,6 +58,7 @@ public class CountdownTimer : MonoBehaviour
     {
         if (!isRunning) return;
         isRunning = false;
+        UIPanel.SetActive(false);
         Debug.Log("[타이머] 외부 정지 호출");
     }
 
