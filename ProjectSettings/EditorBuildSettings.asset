@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Sol's Game.unity
     guid: 1ebe27c29cd055848b16269d2ecf35f3
+  - enabled: 1
+    path: Assets/Scenes/Salt's Game.unity
+    guid: 1ad8c1ed08f30a44a99cd2a5aed8eda2
   m_configObjects: {}
