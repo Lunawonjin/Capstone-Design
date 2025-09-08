@@ -307,7 +307,7 @@ TextureImporter:
         width: 14
         height: 24
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -315,6 +315,90 @@ TextureImporter:
       bones: []
       spriteID: 79eba259a80e64f4fbf77e9eac4710b2
       internalID: -1368879840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Abigail_Up_Walk1
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 352
+        width: 15
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e02fefad10702d247bbac13fc3fa395a
+      internalID: 1945384816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Abigail_Up_Walk2
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 352
+        width: 15
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f93dff9dd0646b04197457c7525cbcf1
+      internalID: 363099150
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Abigail_Up_Walk3
+      rect:
+        serializedVersion: 2
+        x: 33
+        y: 352
+        width: 15
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f57133b8a6a739c42b356a622c8e7101
+      internalID: 1073023145
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Abigail_Up_Walk4
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 352
+        width: 15
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9f7436d7d3ad0c04d83382833dca6f14
+      internalID: -183385246
       vertices: []
       indices: 
       edges: []
@@ -336,6 +420,10 @@ TextureImporter:
       Abigail_Happy_2: 1950498874
       Abigail_Happy_3: -1477392768
       Abigail_Happy_4: 349098675
+      Abigail_Up_Walk1: 1945384816
+      Abigail_Up_Walk2: 363099150
+      Abigail_Up_Walk3: 1073023145
+      Abigail_Up_Walk4: -183385246
       Abigail_Walk_1: 1186539713
       Abigail_Walk_2: -1280981788
       Abigail_Walk_3: 1249811955
