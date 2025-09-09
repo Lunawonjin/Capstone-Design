@@ -149,7 +149,7 @@ Transform:
   m_GameObject: {fileID: 150072167}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.7771711, y: 6.447737, z: 0.020978507}
+  m_LocalPosition: {x: -1.7771711, y: 11.440001, z: 0.020978507}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -310,24 +310,24 @@ MonoBehaviour:
   mudPoolSize: 5
   rockPoolSize: 4
   warnPoolSize: 3
-  scrollSpeed: 3
+  scrollSpeed: 5
   minVerticalGap: 1.6
   spawnerLockDuration: 0.15
   spawnClearDistanceX: 0.6
-  logSpawnInterval: 3
+  logSpawnInterval: 1.75
   mudIntervalIsRelative: 1
-  mudIntervalFactor: 1.5
-  mudSpawnIntervalOverride: 0.5
-  mudChance2: 0.4
+  mudIntervalFactor: 1
+  mudSpawnIntervalOverride: 1
+  mudChance2: 0.43
   mudChance3: 0.02
-  mudBanDistance: 3
-  mudBanPadding: 0.05
+  mudBanDistance: 12
+  mudBanPadding: 0.1
   useMudPhaseOffset: 1
   mudPhaseOffsetRatio: 0.5
   autoGapFromPrefabs: 1
   verticalGapPadding: 0.2
   rockFirstDelay: 12
-  rockInterval: 4
+  rockInterval: 4.5
   rockFallSpeed: 13
   rockWarnBlinks: 2
   rockWarnOn: 0.25
@@ -4636,7 +4636,7 @@ BoxCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1306012602}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Density: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -4661,7 +4661,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.34757918}
+  m_Offset: {x: 0, y: -0.36470953}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -4672,7 +4672,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.46875, y: 0.17984161}
+  m_Size: {x: 0.46875, y: 0.14558095}
   m_EdgeRadius: 0
 --- !u!50 &1306012607
 Rigidbody2D:
@@ -5380,7 +5380,7 @@ Transform:
   m_GameObject: {fileID: 1751021672}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.2228289, y: 6.447737, z: 0.020978507}
+  m_LocalPosition: {x: 0.2228289, y: 11.44, z: 0.020978507}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5509,7 +5509,7 @@ Transform:
   m_GameObject: {fileID: 2050759125}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.2228289, y: 6.447737, z: 0.020978507}
+  m_LocalPosition: {x: 2.2228289, y: 11.44, z: 0.020978507}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
