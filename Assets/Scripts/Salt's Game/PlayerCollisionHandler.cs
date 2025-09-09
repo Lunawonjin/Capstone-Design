@@ -50,6 +50,9 @@ public class PlayerCollisionHandler : MonoBehaviour
     public Color flashColor = new Color(1f, 0.2f, 0.2f, 1f);// 빨간 오버레이 색
     public float flashTime = 0.15f;                        // 빨갛게 유지되는 시간(초)
 
+    [Header("점프 컴포넌트(선택)")]
+    public PlayerSaltJumpPhysics saltJump;
+
     // 내부 상태
     private int hitCount = 0;
     private bool isDead = false;
@@ -191,6 +194,12 @@ public class PlayerCollisionHandler : MonoBehaviour
 
         // F) 플레이어를 '펑' 튀듯 위로 올리기
         StartCoroutine(PopRiseThenFinalize());
+        if (saltJump)
+        {
+            saltJump.LockJump();        // 입력 잠금
+            saltJump.ForceCancelJump(); // 점프 중이면 즉시 종료
+            saltJump.enabled = false;   // 스크립트 자체 비활성화(더 확실)
+        }
     }
 
     private IEnumerator PopRiseThenFinalize()
