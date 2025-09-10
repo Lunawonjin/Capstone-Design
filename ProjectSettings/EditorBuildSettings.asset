@@ -14,4 +14,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Salt's Game.unity
     guid: 1ad8c1ed08f30a44a99cd2a5aed8eda2
+  - enabled: 1
+    path: Assets/Scenes/Ryu's Game.unity
+    guid: bd5045b8aedf8b34b8f4159e00698394
+  - enabled: 1
+    path: Assets/Scenes/SideView.unity
+    guid: 8c07f0e3be4e1c640844053b5b9b696e
+  - enabled: 1
+    path: Assets/Scenes/White's Game.unity
+    guid: 2bb87616d535eb948986a140c641b7dc
+  - enabled: 1
+    path: Assets/Scenes/StartMenu.unity
+    guid: c88e45624c20b534f925cac552742266
   m_configObjects: {}
