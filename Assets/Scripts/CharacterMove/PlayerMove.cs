@@ -1,49 +1,55 @@
 using System.Collections;
 using System.Collections.Generic;
+//using System.Numerics;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
 public class PlayerMove : MonoBehaviour
 {
-    public float moveSpeed = 5f;     // ÁÂ¿ì ÀÌµ¿ ¼Óµµ
-    public float jumpForce = 10f;    // Á¡ÇÁ Èû (ÀÓÆŞ½º)
+    public float moveSpeed = 1f;
 
     private Rigidbody2D rb;
     private Animator animator;
     private Vector2 moveDirection;
-    private bool isGrounded = true;  // ¶¥¿¡ ´ê¾Æ ÀÖ´ÂÁö ¿©ºÎ
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
-
     }
 
     void Update()
     {
         float moveX = 0f;
+        float moveY = 0f;
 
-        // ÁÂ¿ì ÀÌµ¿ ÀÔ·Â
+        // ë™ì‹œì— ì—¬ëŸ¬ í‚¤ ì…ë ¥ ê°€ëŠ¥í•˜ë„ë¡ ìˆ˜ì •
+        if (Input.GetKey(KeyCode.W)) moveY += 1f;
+        if (Input.GetKey(KeyCode.S)) moveY -= 1f;
         if (Input.GetKey(KeyCode.A)) moveX -= 1f;
         if (Input.GetKey(KeyCode.D)) moveX += 1f;
 
-        moveDirection = new Vector2(moveX, 0f).normalized;
+        moveDirection = new Vector2(moveX, moveY).normalized;
 
-        // ½ºÆäÀÌ½º¹Ù Á¡ÇÁ
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-        {
-            // Á¡ÇÁ Àü¿¡ Y¼Óµµ¸¦ 0À¸·Î ÃÊ±âÈ­ (ÀÏ°ü¼º ÀÖ´Â Á¡ÇÁ¸¦ À§ÇØ)
-            rb.velocity = new Vector2(rb.velocity.x, 0f);
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            isGrounded = false;
-            //Debug.Log("Á¡ÇÁ ½ÇÇàµÊ!");
-        }
-
-        // ¾Ö´Ï¸ŞÀÌ¼Ç Ã³¸®
         string currentAnimation = "";
-        if (moveX < 0f) currentAnimation = "Left_Walk";
-        else if (moveX > 0f) currentAnimation = "Right_Walk";
+
+        // ìˆ˜í‰ì´ ìš°ì„ 
+        if (moveX < 0)
+        {
+            currentAnimation = "Left_Walk";
+        }
+        else if (moveX > 0)
+        {
+            currentAnimation = "Right_Walk";
+        }
+        else if (moveY > 0)
+        {
+            currentAnimation = "Back_Walk";
+        }
+        else if (moveY < 0)
+        {
+            currentAnimation = "Front_Walk";
+        }
 
         if (!string.IsNullOrEmpty(currentAnimation))
         {
@@ -52,7 +58,6 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-            // Idle Ã³¸® (ÇöÀç ÇÁ·¹ÀÓ¿¡¼­ Á¤Áö)
             animator.Play(animator.GetCurrentAnimatorStateInfo(0).shortNameHash, 0, 0f);
             animator.speed = 0f;
         }
@@ -60,17 +65,6 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Rigidbody2DÀÇ velocity¸¦ »ç¿ëÇÑ ÁÂ¿ì ÀÌµ¿
-        rb.velocity = new Vector2(moveDirection.x * moveSpeed, rb.velocity.y);
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        // Ground ÅÂ±×°¡ ÀÖ´Â ¿ÀºêÁ§Æ®¿¡ ´êÀ¸¸é ÂøÁö Ã³¸®
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = true;
-            //Debug.Log("ÂøÁö ¿Ï·á");
-        }
+        rb.MovePosition(rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime);
     }
 }
