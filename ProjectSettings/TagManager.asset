@@ -9,6 +9,7 @@ TagManager:
   - FlowerA
   - FlowerB
   - FlowerC
+  - Door
   layers:
   - Default
   - TransparentFX
