@@ -2,134 +2,140 @@ using UnityEngine;
 
 /// <summary>
 /// DoorTriggerSwitch
-/// 
-/// 목적:
-/// - 태그가 "Door"인 오브젝트(문)에 이 스크립트를 붙입니다.
-/// - "Player" 태그를 가진 캐릭터가 문과 "닿을 때" (Trigger 또는 Collision) 
-///   캐릭터 방(Character Room)을 비활성화하고, 맵(Map)을 활성화합니다.
-/// 
-/// 특징:
-/// - 2D/3D 모두 지원: OnTriggerEnter2D / OnCollisionEnter2D / OnTriggerEnter / OnCollisionEnter
-/// - Inspector에서 캐릭터방과 맵의 루트 GameObject를 연결하면 동작
-/// - 안전장치: 중복 스위칭 방지, 누락 참조시 경고 로그
-/// 
-/// 사용법(Setup):
-/// 1) 문 오브젝트에 Tag를 "Door"로 설정합니다.
-/// 2) 문 오브젝트에 Collider(2D 또는 3D)를 붙입니다. 
-///    - 권장: isTrigger 체크(Trigger) / Rigidbody는 선택(Trigger 안정성 위해 Kinematic 권장)
-/// 3) 이 스크립트를 문 오브젝트에 추가합니다.
-/// 4) Inspector에서 Character Room 루트, Map 루트에 각각 해당 오브젝트를 할당합니다.
-/// 5) 플레이어 오브젝트의 Tag가 "Player"인지 확인합니다.
-/// 
-/// 주의:
-/// - Character Room 및 Map은 "서로 다른 루트"여야 하며, SetActive로 전체 묶음을 켜고 끕니다.
-/// - 한 번 스위치된 후에는 기본적으로 다시 실행되지 않습니다(oneShot).
+///
+/// 목적
+/// - Player가 문(Door)에 "닿는 순간"에만 맵(Map)을 켭니다.
+/// - 맵을 닫아도 Player가 여전히 Door에 붙어 있으면 다시 켜지는 문제를 방지합니다.
+///   핵심은 "Player가 실제로 문에서 떨어질 때까지는 다시 트리거되지 않도록 잠금(latch) 처리"입니다.
+///
+/// 핵심 아이디어
+/// - _waitingForExit: 한 번 맵을 켠 뒤에는 Player가 문 콜라이더에서 "Exit" 이벤트를 보낼 때까지
+///   재트리거를 금지합니다.
+/// - 즉, 맵을 껐다 켜더라도 Player가 문 위에 계속 서 있으면 더 이상 발동하지 않습니다.
+/// - Player가 문에서 떨어져(OnTriggerExit/OnCollisionExit) _waitingForExit이 풀려야만
+///   다시 문에 닿을 때(Enter) 맵이 켜집니다.
+///
+/// 특징
+/// - 2D/3D, Trigger/Collision 모두 지원
+/// - Character Room 비활성화, Map 활성화는 그대로 유지
+/// - oneShot=false(기본): Player가 문에서 떨어졌다가 다시 닿으면 반복 사용 가능
+///
+/// 사용법
+/// 1) Door 오브젝트에 Collider(2D/3D) 추가(Trigger 권장).
+/// 2) Player 오브젝트 Tag="Player".
+/// 3) characterRoomRoot=현재 방, mapRoot=맵 UI 루트 할당.
 /// </summary>
 public class DoorTriggerSwitch : MonoBehaviour
 {
     [Header("Object References")]
-    [Tooltip("캐릭터방(현재 공간)의 루트 GameObject. 스위치 시 SetActive(false).")]
-    [SerializeField] private GameObject characterRoomRoot;
-
-    [Tooltip("Map(전환할 공간)의 루트 GameObject. 스위치 시 SetActive(true).")]
-    [SerializeField] private GameObject mapRoot;
+    [SerializeField] private GameObject characterRoomRoot; // SetActive(false) 대상(현재 방 루트)
+    [SerializeField] private GameObject mapRoot;           // SetActive(true) 대상(맵 루트)
 
     [Header("Tags")]
-    [Tooltip("플레이어에 사용할 태그명. 보통 기본값 'Player'.")]
     [SerializeField] private string playerTag = "Player";
-
-    [Tooltip("이 문 오브젝트가 가져야 할 태그명. 보통 기본값 'Door'.")]
-    [SerializeField] private string doorTag = "Door";
+    [SerializeField] private string doorTag = "Door"; // 선택 검증용
 
     [Header("Behavior")]
-    [Tooltip("true면 첫 실행 이후 재실행하지 않습니다. 중복 전환 방지용.")]
-    [SerializeField] private bool oneShot = true;
+    [Tooltip("true면 최초 1회만 동작(전역 1회). false면 '문에서 떨어진 뒤' 다시 닿으면 재실행.")]
+    [SerializeField] private bool oneShot = false;
 
-    [Tooltip("전환 전에 간단한 유효성 검사를 수행합니다. 누락시 경고 로그 출력.")]
+    [Tooltip("전환 전 참조 유효성 검사 수행")]
     [SerializeField] private bool validateBeforeSwitch = true;
 
-    // 내부 상태: 이미 스위치했는지
-    private bool _switched;
+    // 내부 상태
+    private bool _switchedOnce = false;   // oneShot 모드에서 최초 1회 실행 여부
+    private bool _playerInside = false;   // 현재 Player가 문과 접촉 중인지
+    private bool _waitingForExit = false; // 맵을 켠 뒤 Player가 실제로 문에서 떨어질 때까지 재트리거 금지
 
     private void Awake()
     {
-        // 문 오브젝트 Tag 확인(선택적). 태그 불일치 시 작동은 가능하지만, 설정 오류를 빠르게 찾기 위해 경고 출력.
+        // 태그 확인(선택)
         if (!string.IsNullOrEmpty(doorTag) && !CompareTag(doorTag))
         {
-            Debug.LogWarning($"[DoorTriggerSwitch] 이 오브젝트의 Tag가 '{doorTag}'가 아닙니다. 현재 Tag='{tag}'. " +
-                             "의도한 문 오브젝트에 붙었는지 확인하세요.", this);
+            Debug.LogWarning($"[DoorTriggerSwitch] 이 오브젝트의 Tag가 '{doorTag}'가 아닙니다. 현재 Tag='{tag}'.", this);
         }
-
-        // 참조 누락 경고
+        // 참조 확인
         if (characterRoomRoot == null)
-        {
-            Debug.LogWarning("[DoorTriggerSwitch] Character Room Root 참조가 비었습니다. Inspector에서 할당하세요.", this);
-        }
+            Debug.LogWarning("[DoorTriggerSwitch] characterRoomRoot 미할당.", this);
         if (mapRoot == null)
-        {
-            Debug.LogWarning("[DoorTriggerSwitch] Map Root 참조가 비었습니다. Inspector에서 할당하세요.", this);
-        }
+            Debug.LogWarning("[DoorTriggerSwitch] mapRoot 미할당.", this);
     }
 
-    #region 2D Physics
-    // 2D Trigger 진입
-    private void OnTriggerEnter2D(Collider2D other)
+    private void OnEnable()
     {
-        TryHandleEnter(other.gameObject);
+        // Door가 재활성화되어도 '기다리는 중' 상태는 유지해야 함
+        // 그래야 여전히 문 위에 서 있는 플레이어로 인해 즉시 재트리거되지 않음.
+        // _playerInside는 상황에 따라 남아있을 수 있으나, 재트리거는 _waitingForExit가 막음.
     }
 
-    // 2D Collision 진입
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        TryHandleEnter(collision.gameObject);
-    }
+    #region 2D Enter / Exit
+    private void OnTriggerEnter2D(Collider2D other) { TryHandleEnter(other.gameObject); }
+    private void OnCollisionEnter2D(Collision2D col) { TryHandleEnter(col.gameObject); }
+    private void OnTriggerExit2D(Collider2D other) { TryHandleExit(other.gameObject); }
+    private void OnCollisionExit2D(Collision2D col) { TryHandleExit(col.gameObject); }
     #endregion
 
-    #region 3D Physics
-    // 3D Trigger 진입
-    private void OnTriggerEnter(Collider other)
-    {
-        TryHandleEnter(other.gameObject);
-    }
-
-    // 3D Collision 진입
-    private void OnCollisionEnter(Collision collision)
-    {
-        TryHandleEnter(collision.gameObject);
-    }
+    #region 3D Enter / Exit
+    private void OnTriggerEnter(Collider other) { TryHandleEnter(other.gameObject); }
+    private void OnCollisionEnter(Collision col) { TryHandleEnter(col.gameObject); }
+    private void OnTriggerExit(Collider other) { TryHandleExit(other.gameObject); }
+    private void OnCollisionExit(Collision col) { TryHandleExit(col.gameObject); }
     #endregion
 
     /// <summary>
-    /// 공통 진입 처리: Player 태그인지 판별 후 전환 시도
+    /// Player가 "닿는 순간"에만 실행.
+    /// - _waitingForExit=true 이면(아직 문에서 떨어지지 않았다면) 재트리거 금지
+    /// - _playerInside=true 이면(이미 접촉 상태로 판정되면) 무시
     /// </summary>
-    /// <param name="other">문에 닿은 상대 오브젝트</param>
     private void TryHandleEnter(GameObject other)
     {
-        // 이미 전환했다면(oneShot) 재실행 막기
-        if (_switched && oneShot) return;
-
-        // Player 태그 판정
         if (!other || !other.CompareTag(playerTag)) return;
 
-        // 전환 전 유효성 검사(선택)
+        // 이미 접촉 중이면(Enter 이후 Exit 전) 재실행 금지
+        if (_playerInside) return;
+
+        // 이전에 한 번 켰고 아직 문에서 떨어진 적이 없으면 재트리거 금지
+        if (_waitingForExit) return;
+
+        // oneShot 모드에서 이미 실행했다면 더 이상 실행 금지
+        if (oneShot && _switchedOnce) return;
+
+        // 유효성 검사
         if (validateBeforeSwitch && !IsValidToSwitch())
         {
-            Debug.LogWarning("[DoorTriggerSwitch] 전환 불가: 참조가 누락되었거나 동일 오브젝트입니다.", this);
+            Debug.LogWarning("[DoorTriggerSwitch] 전환 불가: 참조 누락 또는 동일 오브젝트.", this);
             return;
         }
+
+        // 접촉 시작 마킹
+        _playerInside = true;
 
         // 실제 전환
         DoSwitch();
 
-        // 상태 갱신
-        if (oneShot) _switched = true;
+        // 여기서 중요한 점:
+        // 이전 버전과 달리 접촉 플래그를 즉시 해제하지 않습니다.
+        // 대신 _waitingForExit = true 로 잠금을 걸어
+        // Player가 실제로 문에서 떨어질 때까지(Exit 발생) 재트리거를 막습니다.
+        _waitingForExit = true;
+
+        if (oneShot) _switchedOnce = true;
     }
 
     /// <summary>
-    /// 전환 가능한지 간단 검증
-    /// - characterRoomRoot와 mapRoot가 유효한지
-    /// - 동일 오브젝트를 가리키지 않는지
+    /// Player가 문에서 "떨어진 순간".
+    /// - 이때 잠금 해제(_waitingForExit=false)하여 다음 Enter에서 다시 실행 가능.
     /// </summary>
+    private void TryHandleExit(GameObject other)
+    {
+        if (!other || !other.CompareTag(playerTag)) return;
+
+        _playerInside = false;
+
+        // 실제로 떨어졌으니 다음 닿을 때 다시 켤 수 있도록 잠금 해제
+        _waitingForExit = false;
+    }
+
     private bool IsValidToSwitch()
     {
         if (characterRoomRoot == null || mapRoot == null) return false;
@@ -138,30 +144,24 @@ public class DoorTriggerSwitch : MonoBehaviour
     }
 
     /// <summary>
-    /// 핵심 전환 로직:
-    /// - 캐릭터방 비활성화(SetActive(false))
-    /// - 맵 활성화(SetActive(true))
+    /// 전환 로직:
+    /// - characterRoomRoot.SetActive(false)
+    /// - mapRoot.SetActive(true)
     /// </summary>
     private void DoSwitch()
     {
-        // 캐릭터방 비활성화
         if (characterRoomRoot != null && characterRoomRoot.activeSelf)
-        {
             characterRoomRoot.SetActive(false);
-        }
 
-        // 맵 활성화
         if (mapRoot != null && !mapRoot.activeSelf)
-        {
             mapRoot.SetActive(true);
-        }
 
-        // 디버그 로그로 상태 확인
-        Debug.Log("[DoorTriggerSwitch] 스위치 완료: Character Room -> OFF, Map -> ON", this);
+        Debug.Log("[DoorTriggerSwitch] 스위치: Character Room -> OFF, Map -> ON", this);
     }
 
     /// <summary>
-    /// (선택적) 코드/버튼으로 수동 트리거하고 싶을 때 호출
+    /// (선택) 외부에서 강제 전환
+    /// - 강제 전환 후에도, Player가 문 위에 있다면 _waitingForExit=true를 유지해 재트리거를 막습니다.
     /// </summary>
     public void ForceSwitch()
     {
@@ -170,7 +170,9 @@ public class DoorTriggerSwitch : MonoBehaviour
             Debug.LogWarning("[DoorTriggerSwitch] 전환 불가(Force): 참조 누락 또는 동일 오브젝트.", this);
             return;
         }
+
         DoSwitch();
-        if (oneShot) _switched = true;
+        _waitingForExit = true; // 강제 전환 시에도 실제 Exit까지 잠금 유지
+        if (oneShot) _switchedOnce = true;
     }
 }
