@@ -29,4 +29,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Main/Shopping Center.unity
     guid: 77a51fca6f6e1554dbc854617461cadb
+  - enabled: 1
+    path: Assets/Scenes/Main/Player's Room.unity
+    guid: 47a633f5862f3674f9c22b9a0442dbdd
   m_configObjects: {}
