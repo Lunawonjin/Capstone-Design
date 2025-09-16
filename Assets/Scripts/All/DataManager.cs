@@ -1,29 +1,34 @@
-// DataManager.cs
 using UnityEngine;
 using System.IO;
+using System;
 
-// 직렬화 대상 데이터 컨테이너
+/// <summary>
+/// 플레이어 데이터 컨테이너(직렬화 대상)
+/// </summary>
 [System.Serializable]
 public class PlayerData
 {
-    public string Name;
-    public int Level;
-    public int Coin;
-    public int Item;
+    public string Name;  // 플레이어 이름
+    public int Level;    // 레벨
+    public int Coin;     // 보유 재화
+    public int Item;     // 아이템 코드(예: 시작 아이템)
 }
 
-// 세이브/로드/삭제를 담당하는 싱글톤
+/// <summary>
+/// 세이브/로드/삭제 및 현재 슬롯/플레이어 상태를 관리하는 싱글톤
+/// - 파일명은 path + 슬롯번호 (예: ".../save0")
+/// </summary>
 public class DataManager : MonoBehaviour
 {
-    public static DataManager instance;
+    public static DataManager instance;   // 싱글톤 인스턴스
 
-    public PlayerData nowPlayer = new PlayerData();
-    public string path;    // 예: ".../save"
-    public int nowSlot;    // 현재 선택 슬롯
+    public PlayerData nowPlayer = new PlayerData(); // 현재 플레이어 데이터
+    public string path;                   // 파일 경로 접두부 (예: ".../save")
+    public int nowSlot;                   // 현재 슬롯 인덱스
 
     private void Awake()
     {
-        // 싱글톤 보장
+        // 표준 싱글톤 패턴
         if (instance == null)
         {
             instance = this;
@@ -35,17 +40,20 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        // "save0", "save1", "save2" 형식과 호환
+        // 기존 파일 형식과 호환: "save0", "save1", "save2"
         path = Application.persistentDataPath + "/save";
         Debug.Log("[DataManager] 저장 경로: " + path);
     }
 
-    // 저장
+    /// <summary>
+    /// 현재 nowPlayer를 현재 nowSlot 파일로 저장한다.
+    /// nowSlot이 유효하지 않으면 저장하지 않는다.
+    /// </summary>
     public void SaveData()
     {
         if (nowSlot < 0)
         {
-            Debug.LogError("[DataManager] SaveData: nowSlot이 유효하지 않음: " + nowSlot);
+            Debug.LogError("[DataManager] SaveData 호출 시 nowSlot이 유효하지 않음: " + nowSlot);
             return;
         }
 
@@ -54,19 +62,22 @@ public class DataManager : MonoBehaviour
         File.WriteAllText(file, data);
     }
 
-    // 로드
+    /// <summary>
+    /// 현재 nowSlot 파일에서 nowPlayer를 로드한다.
+    /// 파일이 없거나 nowSlot이 유효하지 않으면 로드하지 않는다.
+    /// </summary>
     public void LoadData()
     {
         if (nowSlot < 0)
         {
-            Debug.LogError("[DataManager] LoadData: nowSlot이 유효하지 않음: " + nowSlot);
+            Debug.LogError("[DataManager] LoadData 호출 시 nowSlot이 유효하지 않음: " + nowSlot);
             return;
         }
 
         string file = path + nowSlot.ToString();
         if (!File.Exists(file))
         {
-            Debug.LogError("[DataManager] LoadData: 파일이 없음: " + file);
+            Debug.LogError("[DataManager] 저장 파일이 없음: " + file);
             return;
         }
 
@@ -75,16 +86,90 @@ public class DataManager : MonoBehaviour
         nowPlayer = loaded ?? new PlayerData();
     }
 
-    // 상태 초기화
+    /// <summary>
+    /// 현재 선택 슬롯과 플레이어 데이터를 초기화한다.
+    /// - nowSlot = -1
+    /// - nowPlayer = 새 인스턴스
+    /// </summary>
     public void DataClear()
     {
         nowSlot = -1;
         nowPlayer = new PlayerData();
     }
 
-    // ▼▼▼ 여기부터: 실제 파일 삭제 로직 ▼▼▼
+    /// <summary>
+    /// 지정 슬롯의 세이브 파일 존재 여부
+    /// </summary>
+    public bool ExistsSlot(int slot)
+    {
+        if (slot < 0) return false;
+        string file = path + slot.ToString();
+        return File.Exists(file);
+    }
 
-    // 지정 슬롯의 세이브 파일을 삭제한다. 삭제 성공 시 true, 삭제할 파일이 없으면 false.
+    /// <summary>
+    /// 0..(slotCount-1) 중 하나라도 세이브 파일이 있으면 true
+    /// </summary>
+    public bool HasAnySave(int slotCount = 3)
+    {
+        for (int i = 0; i < slotCount; i++)
+        {
+            if (ExistsSlot(i)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 가장 최근에 저장된 슬롯 인덱스를 반환. 없으면 -1
+    /// 파일의 LastWriteTime을 기준으로 판단.
+    /// </summary>
+    public int GetMostRecentSaveSlot(int slotCount = 3)
+    {
+        int bestSlot = -1;
+        DateTime bestTime = DateTime.MinValue;
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            string file = path + i.ToString();
+            if (!File.Exists(file)) continue;
+
+            DateTime t = File.GetLastWriteTime(file);
+            if (t > bestTime)
+            {
+                bestTime = t;
+                bestSlot = i;
+            }
+        }
+
+        return bestSlot;
+    }
+
+    /// <summary>
+    /// 가장 최근 세이브를 찾아 nowSlot을 설정하고 로드까지 시도한다.
+    /// 성공하면 true, 실패하면 false
+    /// </summary>
+    public bool TryLoadMostRecentSave(int slotCount = 3)
+    {
+        int slot = GetMostRecentSaveSlot(slotCount);
+        if (slot < 0) return false;
+
+        nowSlot = slot;
+        try
+        {
+            LoadData();
+            return true;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DataManager] TryLoadMostRecentSave 실패: " + e.Message);
+            DataClear();
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 지정 슬롯의 세이브 파일을 삭제한다. 삭제 성공 시 true, 없으면 false.
+    /// </summary>
     public bool DeleteData(int slot)
     {
         if (slot < 0)
@@ -95,7 +180,6 @@ public class DataManager : MonoBehaviour
 
         string file = path + slot.ToString();
 
-        // 파일이 존재하면 삭제
         if (File.Exists(file))
         {
             try
@@ -110,7 +194,6 @@ public class DataManager : MonoBehaviour
             }
         }
 
-        // 파일이 원래 없었던 경우
         return false;
     }
 }
