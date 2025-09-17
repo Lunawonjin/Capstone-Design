@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Main/Starest.unity
     guid: 8c07f0e3be4e1c640844053b5b9b696e
   - enabled: 1
+    path: Assets/Scenes/Main/Loding.unity
+    guid: 7d3e3aeb081d3c043a43af221467f18f
+  - enabled: 1
     path: Assets/Scenes/Game/White's Game.unity
     guid: 2bb87616d535eb948986a140c641b7dc
   - enabled: 1
@@ -29,4 +32,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Main/Shopping Center.unity
     guid: 77a51fca6f6e1554dbc854617461cadb
+  - enabled: 1
+    path: Assets/Scenes/Main/Player's Room.unity
+    guid: 47a633f5862f3674f9c22b9a0442dbdd
   m_configObjects: {}
