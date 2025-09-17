@@ -28,93 +28,100 @@ using UnityEngine.UI;
 /// 플레이어가 교주를 쓰러트리게 된다면 어두웠던 배경에 빛이 한줄기 내려오더니 갑자기 여러개의 빛의 기둥이 교주를 비춤
 /// 그렇게 교주는 사라지고 밝은 되찾고 자신의 삶을 찾는 연출
 /// </summary>
-
 public class Command_Input : MonoBehaviour
 {
     [Header("플레이어/교주")]
     public GameObject Player;
     public GameObject Leader;
-
-    [Tooltip("플레이어/교주 최대 HP")]
-    public float playerMaxHP = 100f;
-    public float leaderMaxHP = 100f;
-
-    [Tooltip("플레이어/교주 현재 HP(에디터 테스트용 초기값)")]
-    public float playerHP = 100f;
-    public float leaderHP = 100f;
-
-    [Tooltip("HP 30% 이하 임계치(0~1 비율)")]
+    public float playerMaxHP = 100f, leaderMaxHP = 100f;
+    public float playerHP = 100f, leaderHP = 100f;
     [Range(0.05f, 0.5f)] public float lowHPThreshold = 0.3f;
 
-    [Header("UI / 커맨드 생성")]
-    [Tooltip("커맨드 블록이 배치될 패널(RectTransform)")]
-    public RectTransform commandPanel;
+    [Header("UI / 커맨드 라인 패널 & 프리팹")]
+    public RectTransform commandPanel;     // 슬롯 부모
+    public Image commandBlockPrefab;       // 동그란 BG 프리팹(Image)
 
-    [Tooltip("커맨드 블록 프리팹(Image + CanvasGroup)")]
-    public Image commandBlockPrefab;
+    [Header("네온 테마(옵션)")]
+    public Sprite slotRingSprite;
+    public Material additiveUIMaterial;    // UI/Particles/Additive
+    public float ringScale = 1.12f;
+    [Range(0f, 1f)] public float ringAlpha = 0.8f;
 
-    [Tooltip("화살표 스프라이트(Up/Down/Left/Right 순서로 연결 권장)")]
-    public Sprite arrowUp;
-    public Sprite arrowDown;
-    public Sprite arrowLeft;
-    public Sprite arrowRight;
+    [Header("방향별 색(인스펙터 변경)")]
+    public Color colorUp = new Color(1.00f, 0.40f, 0.40f, 1f);
+    public Color colorDown = new Color(1.00f, 0.75f, 0.30f, 1f);
+    public Color colorLeft = new Color(0.60f, 1.00f, 0.50f, 1f);
+    public Color colorRight = new Color(0.40f, 0.85f, 1.00f, 1f);
 
-    [Tooltip("정답 스파클(ParticleSystem 프리팹)")]
-    public ParticleSystem sparklePrefab;
-
-    [Tooltip("오답 X 마크 프리팹(Image)")]
-    public Image wrongXPrefab;
-
-    [Header("카메라")]
-    public Camera MainCamera;
-    public Camera DirectingCamera;
-
-    [Header("화면가 연출 오버레이(Image)")]
-    public Image damageVignette; // 빨간색
-    public Image holyVignette;   // 노랑/흰
-
-    [Header("승리/패배 연출 기둥 오브젝트들")]
-    public GameObject[] columns;
-
-    [Header("게임 규칙")]
-    [Tooltip("초기 부여 시간(초)")]
-    public float baseTime = 5f;
-
-    [Tooltip("페이즈마다 시간 감소량(초)")]
-    public float timeDecreasePerPhase = 0.3f;
-
-    [Tooltip("최소 부여 시간 하한(초)")]
-    public float minTime = 2f;
-
-    [Tooltip("시작 커맨드 길이")]
-    public int startCommandCount = 5;
-
-    [Tooltip("페이즈마다 커맨드 증가 최소/최대")]
-    public Vector2Int commandIncreaseRange = new Vector2Int(1, 2);
-
-    [Tooltip("커맨드 최대 개수")]
-    public int maxCommands = 12;
-
-    [Tooltip("시간 내 실패 시 플레이어 HP 감소량")]
-    public float playerDamageOnTimeout = 15f;
-
-    [Tooltip("성공 시 교주 HP 감소량")]
-    public float leaderDamageOnSuccess = 20f;
-
-    [Tooltip("오입력 시 즉시 깎일 시간(초)")]
-    public float wrongPenaltyTime = 0.5f;
-
-    [Tooltip("블록 생성 시 0.2배 -> 1배로 커지는 연출 시간(초)")]
+    [Header("슬롯 배치/스타일")]
+    public Color emptySlotColor = new Color(0.55f, 0.93f, 1f, 0.95f); // 정답 후 비워질 색
+    [Range(0f, 1f)] public float slotColorAlpha = 1f; // 슬롯 배경 투명도(방향색과 동일)
+    public float slotPaddingX = 80f;
+    public float minSlotSpacing = 40f;
     public float spawnScaleTime = 0.2f;
 
-    [Tooltip("정답 처리 시 블록 비활성까지 대기(초)")]
-    public float correctDeactivateDelay = 0.05f;
+    [Header("화살표 스프라이트")]
+    public Sprite arrowUp, arrowDown, arrowLeft, arrowRight;
 
-    [Tooltip("카메라 흔들림 강도/시간")]
+    [Header("이펙트 프리팹")]
+    public ParticleSystem sparklePrefab; // 정답 스파클
+    public Image wrongXPrefab;           // 오답 X(Image 프리팹)
+
+    [Header("카메라/오버레이")]
+    public Camera MainCamera, DirectingCamera;
+    public Image damageVignette, holyVignette;
+
+    [Header("승리/패배 연출")]
+    public GameObject[] columns;
+
+    // ====== 스테이지 플랜 ======
+    [Header("스테이지 플랜(인스펙터에서 순서 지정)")]
+    public bool useStagePlan = true;     // 켜면 아래 플랜 그대로 진행
+    public bool loopStagePlan = false;   // 끝나면 다시 처음으로
+    [System.Serializable]
+    public class StageEntry
+    {
+        [Range(5, 12)] public int count = 5;    // 커맨드 개수
+        [Min(1)] public int repeats = 1;   // 몇 번 반복할지
+        public bool customTime = false;        // 시간 직접 지정?
+        [Min(0.1f)] public float time = 5f;    // customTime=true일 때 사용
+    }
+    public List<StageEntry> stagePlan = new List<StageEntry>()
+    {
+        new StageEntry{count=5, repeats=3},
+        new StageEntry{count=6, repeats=2},
+    };
+
+    // ====== 자동 진행 모드(플랜 끌 때 사용) ======
+    [Header("자동 진행 모드(플랜 OFF일 때만 사용)")]
+    [Range(5, 12)] public int startCommandCount = 5;
+    public Vector2Int commandIncreaseRange = new Vector2Int(1, 2);
+    [Range(5, 12)] public int maxCommands = 12;
+
+    [System.Serializable]
+    public struct CountTime { [Range(5, 12)] public int count; [Min(0.1f)] public float time; }
+    public List<CountTime> timeByCount = new List<CountTime>()
+    {
+        new CountTime{count=5,  time=5.0f},
+        new CountTime{count=6,  time=4.6f},
+        new CountTime{count=7,  time=4.2f},
+        new CountTime{count=8,  time=3.8f},
+        new CountTime{count=9,  time=3.5f},
+        new CountTime{count=10, time=3.2f},
+        new CountTime{count=11, time=3.0f},
+        new CountTime{count=12, time=2.8f},
+    };
+    [Tooltip("전역 난이도 배수(시간에 곱). 1=기본, 0.8=빡셈, 1.2=쉬움")]
+    public float difficultyTimeScale = 1f;
+
+    [Header("피해/패널티")]
+    public float playerDamageOnTimeout = 15f;
+    public float leaderDamageOnSuccess = 20f;
+    public float wrongPenaltyTime = 0.5f;
+
+    [Header("카메라/오버레이 옵션")]
     public float shakeIntensity = 8f;
     public float shakeTime = 0.08f;
-
-    [Tooltip("오버레이 페이드 시간(초)")]
     public float overlayFadeTime = 0.6f;
 
     // 내부 상태
@@ -122,31 +129,29 @@ public class Command_Input : MonoBehaviour
     private int phaseIndex = 0;
     private int currentCommandCount;
     private List<CommandDir> currentSequence = new List<CommandDir>();
-    private List<Image> spawnedBlocks = new List<Image>();
+    private readonly List<SlotUI> slots = new List<SlotUI>();
     private int inputCursor = 0;
     private bool inputLocked = false;
     private Vector3 mainCamOriginalPos;
 
-    // 방향 정의
+    // 스테이지 플랜 진행 포인터
+    private int planIndex = 0;        // stagePlan 인덱스
+    private int planRepeatProgress = 0; // 현재 항목에서 몇 번 소비했는지
+
     private enum CommandDir { Up, Down, Left, Right }
+    private class SlotUI { public Image bg, ring, arrow; }
 
-    // 색 매핑
-    private readonly Color colUp = new Color(1f, 0.2f, 0.2f, 1f);     // 빨강
-    private readonly Color colDown = new Color(1f, 0.9f, 0.2f, 1f);   // 노랑
-    private readonly Color colLeft = new Color(0.2f, 1f, 0.4f, 1f);   // 초록
-    private readonly Color colRight = new Color(0.2f, 0.6f, 1f, 1f);  // 파랑
-
+    // ====== Unity lifecycle ======
     private void Awake()
     {
         if (MainCamera != null) mainCamOriginalPos = MainCamera.transform.localPosition;
-        // 오버레이 초기 투명
         SetImageAlpha(damageVignette, 0f);
         SetImageAlpha(holyVignette, 0f);
     }
 
     private void Start()
     {
-        currentCommandCount = Mathf.Clamp(startCommandCount, 1, maxCommands);
+        currentCommandCount = Mathf.Clamp(startCommandCount, 5, 12);
         StartNewPhase();
     }
 
@@ -154,126 +159,152 @@ public class Command_Input : MonoBehaviour
     {
         if (playerHP <= 0f || leaderHP <= 0f) return;
 
-        // 시간 흐름
         phaseTimer -= Time.deltaTime;
-        if (phaseTimer <= 0f)
-        {
-            // 시간 내 실패
-            OnPhaseTimeout();
-            return;
-        }
+        if (phaseTimer <= 0f) { OnPhaseTimeout(); return; }
 
-        // 입력 처리
         if (!inputLocked)
         {
-            CommandDir? pressed = GetPressedArrow();
-            if (pressed.HasValue)
-            {
-                EvaluateInput(pressed.Value);
-            }
+            var p = GetPressedArrow();
+            if (p.HasValue) EvaluateInput(p.Value);
         }
 
-        // 오버레이 지속/우선 순위 갱신
         UpdateVignettesPersistent();
     }
 
-    // 페이즈 시작
+    // ====== Phase control ======
     private void StartNewPhase()
     {
         phaseIndex++;
         inputCursor = 0;
         inputLocked = true;
 
-        // 시간 계산
-        float phaseTime = Mathf.Max(minTime, baseTime - timeDecreasePerPhase * (phaseIndex - 1));
-        phaseTimer = phaseTime;
+        // 이번 페이즈용 count/time 선택(플랜 우선)
+        ChooseCountAndTimeForThisPhase(out int count, out float time);
+        currentCommandCount = count;
+        phaseTimer = Mathf.Max(0.1f, time * Mathf.Max(0.01f, difficultyTimeScale));
 
-        // 커맨드 길이 증가(1~2 랜덤), 상한 적용
-        if (phaseIndex > 1)
-        {
-            int inc = Random.Range(commandIncreaseRange.x, commandIncreaseRange.y + 1);
-            currentCommandCount = Mathf.Clamp(currentCommandCount + inc, 1, maxCommands);
-        }
-
-        // 기존 블록 제거
-        CleanupBlocks();
-
-        // 시퀀스 생성 + 블록 스폰
         GenerateSequence(currentCommandCount);
-        SpawnAndLayoutBlocks();
+        BuildSlotLineAndFill(currentCommandCount);
 
-        // 스폰 애니 끝나면 입력 허용
         StartCoroutine(UnlockInputAfterSpawn());
+    }
+
+    private void ChooseCountAndTimeForThisPhase(out int count, out float time)
+    {
+        if (useStagePlan && stagePlan != null && stagePlan.Count > 0)
+        {
+            // 현재 항목
+            var entry = stagePlan[Mathf.Clamp(planIndex, 0, stagePlan.Count - 1)];
+            count = Mathf.Clamp(entry.count, 5, 12);
+            time = entry.customTime ? entry.time : GetTimeForCount(count);
+
+            // 다음 페이즈를 위해 진행 포인터 갱신
+            planRepeatProgress++;
+            int need = Mathf.Max(1, entry.repeats);
+            if (planRepeatProgress >= need)
+            {
+                planRepeatProgress = 0;
+                planIndex++;
+                if (planIndex >= stagePlan.Count)
+                {
+                    planIndex = loopStagePlan ? 0 : stagePlan.Count - 1; // 루프 안 하면 마지막 상태 유지
+                }
+            }
+        }
+        else
+        {
+            // 자동 증가 모드
+            if (phaseIndex > 1)
+            {
+                int inc = Random.Range(commandIncreaseRange.x, commandIncreaseRange.y + 1);
+                currentCommandCount = Mathf.Clamp(currentCommandCount + inc, 5, maxCommands);
+            }
+            count = currentCommandCount;
+            time = GetTimeForCount(count);
+        }
     }
 
     private IEnumerator UnlockInputAfterSpawn()
     {
-        // 짧은 안전 대기(스폰 애니메이션 시간과 동일)
         yield return new WaitForSeconds(spawnScaleTime);
         inputLocked = false;
+    }
+
+    private float GetTimeForCount(int count)
+    {
+        float? exact = null; float nearest = -1f; int nd = 999;
+        foreach (var ct in timeByCount)
+        {
+            if (ct.count == count) exact = ct.time;
+            int d = Mathf.Abs(ct.count - count);
+            if (d < nd) { nd = d; nearest = ct.time; }
+        }
+        return exact.HasValue ? exact.Value : (nearest > 0f ? nearest : 3f);
     }
 
     private void GenerateSequence(int count)
     {
         currentSequence.Clear();
-        for (int i = 0; i < count; i++)
-        {
-            int r = Random.Range(0, 4);
-            currentSequence.Add((CommandDir)r);
-        }
+        for (int i = 0; i < count; i++) currentSequence.Add((CommandDir)Random.Range(0, 4));
     }
 
-    private void SpawnAndLayoutBlocks()
+    // ====== Slots ======
+    private void BuildSlotLineAndFill(int count)
     {
+        CleanupSlots();
         if (commandPanel == null || commandBlockPrefab == null) return;
 
-        Rect rect = commandPanel.rect;
-        Vector2 panelMin = new Vector2(rect.xMin, rect.yMin);
-        Vector2 panelMax = new Vector2(rect.xMax, rect.yMax);
+        float panelW = commandPanel.rect.width;
+        float usableW = Mathf.Max(0f, panelW - slotPaddingX * 2f);
+        float spacing = (count <= 1) ? 0f : Mathf.Max(minSlotSpacing, usableW / (count - 1));
+        float startX = -usableW * 0.5f;
+        float y = 0f;
 
-        // 패널 좌표계에서 겹침 최소화를 위해 simple jitter 배치
-        for (int i = 0; i < currentSequence.Count; i++)
+        for (int i = 0; i < count; i++)
         {
-            Image block = Instantiate(commandBlockPrefab, commandPanel);
-            block.name = $"CmdBlock_{i}_{currentSequence[i]}";
+            // BG
+            Image bg = Instantiate(commandBlockPrefab, commandPanel);
+            bg.name = $"SlotBG_{i}";
+            bg.rectTransform.anchoredPosition = new Vector2(startX + spacing * i, y);
+            bg.transform.localScale = Vector3.one * 0.2f;
+            bg.color = GetDirColor(currentSequence[i], slotColorAlpha); // 슬롯=화살표색
 
-            // 스프라이트/색 세팅
-            block.sprite = GetSprite(currentSequence[i]);
-            block.color = GetColor(currentSequence[i]);
+            // 링
+            Image ring = null;
+            if (slotRingSprite != null && additiveUIMaterial != null)
+            {
+                var ringGO = new GameObject($"Ring_{i}", typeof(RectTransform), typeof(Image));
+                ringGO.transform.SetParent(bg.transform, false);
+                var rr = (RectTransform)ringGO.transform;
+                rr.anchorMin = rr.anchorMax = new Vector2(0.5f, 0.5f);
+                rr.sizeDelta = bg.rectTransform.sizeDelta * ringScale;
+                rr.anchoredPosition = Vector2.zero;
+                ring = ringGO.GetComponent<Image>();
+                ring.sprite = slotRingSprite;
+                ring.material = additiveUIMaterial;
+                ring.preserveAspect = true;
+                ring.color = GetDirColor(currentSequence[i], ringAlpha);
+                ring.raycastTarget = false;
+            }
 
-            // 초기 스케일 작게
-            block.transform.localScale = Vector3.one * 0.2f;
+            // 화살표
+            var arrowGO = new GameObject($"Arrow_{i}", typeof(RectTransform), typeof(Image));
+            arrowGO.transform.SetParent(bg.transform, false);
+            var ar = (RectTransform)arrowGO.transform;
+            ar.anchorMin = ar.anchorMax = new Vector2(0.5f, 0.5f);
+            ar.sizeDelta = bg.rectTransform.sizeDelta * 0.62f;
+            ar.anchoredPosition = Vector2.zero;
+            var arrowImg = arrowGO.GetComponent<Image>();
+            arrowImg.preserveAspect = true;
+            arrowImg.sprite = GetArrowSprite(currentSequence[i]);
+            arrowImg.color = GetDirColor(currentSequence[i], 1f);
 
-            // 랜덤 위치 배치
-            Vector2 localPos = new Vector2(
-                Random.Range(panelMin.x + 40f, panelMax.x - 40f),
-                Random.Range(panelMin.y + 40f, panelMax.y - 40f)
-            );
-            block.rectTransform.anchoredPosition = localPos;
-
-            spawnedBlocks.Add(block);
-
-            // 등장 스케일 애니
-            StartCoroutine(ScaleUp(block.transform, spawnScaleTime));
+            StartCoroutine(ScaleUp(bg.transform, spawnScaleTime));
+            slots.Add(new SlotUI { bg = bg, ring = ring, arrow = arrowImg });
         }
     }
 
-    private IEnumerator ScaleUp(Transform tr, float t)
-    {
-        float el = 0f;
-        Vector3 from = Vector3.one * 0.2f;
-        Vector3 to = Vector3.one;
-        while (el < t)
-        {
-            el += Time.deltaTime;
-            float k = el / t;
-            tr.localScale = Vector3.LerpUnclamped(from, to, EaseOutBack(k));
-            yield return null;
-        }
-        tr.localScale = to;
-    }
-
-    // 입력 감지
+    // ====== Input ======
     private CommandDir? GetPressedArrow()
     {
         if (Input.GetKeyDown(KeyCode.UpArrow)) return CommandDir.Up;
@@ -287,131 +318,93 @@ public class Command_Input : MonoBehaviour
     {
         if (inputCursor >= currentSequence.Count) return;
 
-        CommandDir target = currentSequence[inputCursor];
-        Image targetBlock = spawnedBlocks[inputCursor];
+        var target = currentSequence[inputCursor];
+        var slot = slots[inputCursor];
 
         if (input == target)
         {
-            // 정답 처리
-            OnCorrect(targetBlock);
+            OnCorrect(slot);
             inputCursor++;
-
-            // 모두 성공
-            if (inputCursor >= currentSequence.Count)
-            {
-                OnPhaseClear();
-            }
+            if (inputCursor >= currentSequence.Count) OnPhaseClear();
         }
         else
         {
-            // 오답 처리: 시간 즉시 0.5s 감소, X 마킹, 화면 흔들림
-            OnWrong(targetBlock);
+            OnWrong(slot);
             phaseTimer = Mathf.Max(0f, phaseTimer - wrongPenaltyTime);
         }
     }
 
-    private void OnCorrect(Image block)
+    private void OnCorrect(SlotUI slot)
     {
-        // 스파클
+        if (slot == null) return;
         if (sparklePrefab != null)
         {
-            ParticleSystem fx = Instantiate(sparklePrefab, block.transform.position, Quaternion.identity, block.transform.parent);
-            fx.Play();
-            Destroy(fx.gameObject, 2f);
+            var fx = Instantiate(sparklePrefab, slot.bg.rectTransform.position, Quaternion.identity, slot.bg.transform);
+            fx.Play(); Destroy(fx.gameObject, 2f);
         }
-        // 잠깐 후 비활성
-        StartCoroutine(DisableAfter(block, correctDeactivateDelay));
+        StartCoroutine(DisableArrowAfter(slot, 0.05f));
     }
 
-    private void OnWrong(Image nearBlock)
+    private IEnumerator DisableArrowAfter(SlotUI slot, float delay)
     {
-        // X 마크
-        if (wrongXPrefab != null && nearBlock != null)
+        yield return new WaitForSeconds(delay);
+        if (slot != null && slot.arrow != null)
         {
-            Image x = Instantiate(wrongXPrefab, nearBlock.rectTransform.position, Quaternion.identity, nearBlock.transform.parent);
+            slot.arrow.enabled = false;
+            slot.bg.color = emptySlotColor;
+            if (slot.ring != null) slot.ring.enabled = false;
+        }
+    }
+
+    private void OnWrong(SlotUI slot)
+    {
+        if (wrongXPrefab != null && slot != null)
+        {
+            Image x = Instantiate(wrongXPrefab, slot.bg.transform);
+            x.gameObject.SetActive(true); x.enabled = true;
+            var xr = x.rectTransform;
+            xr.anchorMin = xr.anchorMax = new Vector2(0.5f, 0.5f);
+            xr.anchoredPosition = Vector2.zero;
+            xr.sizeDelta = slot.bg.rectTransform.sizeDelta * 0.9f;
+            x.preserveAspect = true; x.raycastTarget = false;
+            var c = x.color; c.a = 1f; x.color = c;
+            x.transform.SetAsLastSibling();
             StartCoroutine(FadeAndDestroy(x, 0.25f));
         }
-        // 화면 흔들림
         if (MainCamera != null) StartCoroutine(ShakeCamera(MainCamera, shakeTime, shakeIntensity));
     }
 
+    // ====== Results ======
     private void OnPhaseTimeout()
     {
-        // 제한시간 실패 -> 플레이어 피해
-        ApplyPlayerDamage(playerDamageOnTimeout);
-
-        // 붉은 오버레이 번쩍
+        playerHP = Mathf.Max(0f, playerHP - playerDamageOnTimeout);
         BlinkDamageOverlay();
-
-        // 패배 체크
-        if (playerHP <= 0f)
-        {
-            StartCoroutine(PlayPlayerDefeat());
-            return;
-        }
-
-        // 다음 페이즈 재시도(다시 생성)
+        if (playerHP <= 0f) { StartCoroutine(PlayPlayerDefeat()); return; }
         StartNewPhase();
     }
 
     private void OnPhaseClear()
     {
-        // 교주 피해
-        ApplyLeaderDamage(leaderDamageOnSuccess);
-
-        // 성스러운 오버레이 번쩍
+        leaderHP = Mathf.Max(0f, leaderHP - leaderDamageOnSuccess);
         BlinkHolyOverlay();
-
-        if (leaderHP <= 0f)
-        {
-            StartCoroutine(PlayLeaderDefeat());
-            return;
-        }
-
-        // 다음 페이즈로
+        if (leaderHP <= 0f) { StartCoroutine(PlayLeaderDefeat()); return; }
         StartNewPhase();
     }
 
-    private void ApplyPlayerDamage(float dmg)
-    {
-        playerHP = Mathf.Max(0f, playerHP - dmg);
-    }
-
-    private void ApplyLeaderDamage(float dmg)
-    {
-        leaderHP = Mathf.Max(0f, leaderHP - dmg);
-    }
-
-    private void BlinkDamageOverlay()
-    {
-        if (damageVignette == null) return;
-        StartCoroutine(BlinkOverlayOnce(damageVignette, 0.9f, overlayFadeTime));
-    }
-
-    private void BlinkHolyOverlay()
-    {
-        if (holyVignette == null) return;
-        StartCoroutine(BlinkOverlayOnce(holyVignette, 0.9f, overlayFadeTime));
-    }
+    // ====== Overlays ======
+    private void BlinkDamageOverlay() { if (damageVignette != null) StartCoroutine(BlinkOverlayOnce(damageVignette, 0.9f, overlayFadeTime)); }
+    private void BlinkHolyOverlay() { if (holyVignette != null) StartCoroutine(BlinkOverlayOnce(holyVignette, 0.9f, overlayFadeTime)); }
 
     private IEnumerator BlinkOverlayOnce(Image img, float peakAlpha, float fadeTime)
     {
         if (img == null) yield break;
-
-        // 순간 피크
         SetImageAlpha(img, peakAlpha);
-
-        // 30% 이하 지속 규칙은 UpdateVignettesPersistent에서 관리되므로
-        // 여기서는 일정 시간에 걸쳐 자연감쇠만 시도
         float el = 0f;
         while (el < fadeTime)
         {
             el += Time.deltaTime;
-            // 30% 이하 지속이면 나가지 않고 유지
             if (ShouldHoldOverlay(img)) yield break;
-
-            float a = Mathf.Lerp(peakAlpha, 0f, el / fadeTime);
-            SetImageAlpha(img, a);
+            SetImageAlpha(img, Mathf.Lerp(peakAlpha, 0f, el / fadeTime));
             yield return null;
         }
         SetImageAlpha(img, ShouldHoldOverlay(img) ? 0.8f : 0f);
@@ -422,33 +415,9 @@ public class Command_Input : MonoBehaviour
         bool playerLow = (playerHP <= playerMaxHP * lowHPThreshold);
         bool leaderLow = (leaderHP <= leaderMaxHP * lowHPThreshold);
 
-        // 둘 다 30%↓면 성스러운 느낌 우선
-        if (playerLow && leaderLow)
-        {
-            HoldOverlay(holyVignette, 0.8f);
-            ReleaseOverlay(damageVignette, overlayFadeTime);
-            return;
-        }
-
-        // 플레이어만 30%↓ -> 붉은 지속
-        if (playerLow)
-        {
-            HoldOverlay(damageVignette, 0.8f);
-        }
-        else
-        {
-            ReleaseOverlay(damageVignette, overlayFadeTime);
-        }
-
-        // 교주만 30%↓ -> 성스러운 지속
-        if (leaderLow)
-        {
-            HoldOverlay(holyVignette, 0.8f);
-        }
-        else
-        {
-            ReleaseOverlay(holyVignette, overlayFadeTime);
-        }
+        if (playerLow && leaderLow) { HoldOverlay(holyVignette, 0.8f); ReleaseOverlay(damageVignette, overlayFadeTime); return; }
+        if (playerLow) HoldOverlay(damageVignette, 0.8f); else ReleaseOverlay(damageVignette, overlayFadeTime);
+        if (leaderLow) HoldOverlay(holyVignette, 0.8f); else ReleaseOverlay(holyVignette, overlayFadeTime);
     }
 
     private bool ShouldHoldOverlay(Image img)
@@ -456,122 +425,82 @@ public class Command_Input : MonoBehaviour
         if (img == damageVignette)
         {
             bool playerLow = (playerHP <= playerMaxHP * lowHPThreshold);
-            bool bothLow = playerHP <= playerMaxHP * lowHPThreshold && leaderHP <= leaderMaxHP * lowHPThreshold;
-            // 둘 다 낮으면 성스러움 우선 -> 데미지 오버레이는 홀드하지 않음
+            bool bothLow = playerLow && (leaderHP <= leaderMaxHP * lowHPThreshold);
             return playerLow && !bothLow;
         }
-        if (img == holyVignette)
-        {
-            bool leaderLow = (leaderHP <= leaderMaxHP * lowHPThreshold);
-            // 둘 다 낮아도 성스러움 우선 규칙에 의해 hold
-            return leaderLow;
-        }
+        if (img == holyVignette) return (leaderHP <= leaderMaxHP * lowHPThreshold);
         return false;
     }
 
     private void HoldOverlay(Image img, float targetAlpha)
     {
         if (img == null) return;
-        float a = img.color.a;
-        if (a < targetAlpha) SetImageAlpha(img, Mathf.Lerp(a, targetAlpha, Time.deltaTime * 8f));
-        else SetImageAlpha(img, targetAlpha);
+        var a = img.color.a;
+        SetImageAlpha(img, a < targetAlpha ? Mathf.Lerp(a, targetAlpha, Time.deltaTime * 8f) : targetAlpha);
     }
-
     private void ReleaseOverlay(Image img, float fadeTime)
     {
         if (img == null) return;
-        float a = img.color.a;
-        if (a <= 0f) return;
-        float newA = Mathf.MoveTowards(a, 0f, Time.deltaTime * (1f / Mathf.Max(0.001f, fadeTime)));
-        SetImageAlpha(img, newA);
+        SetImageAlpha(img, Mathf.MoveTowards(img.color.a, 0f, Time.deltaTime * (1f / Mathf.Max(0.001f, fadeTime))));
     }
 
+    // ====== Defeat/Victory ======
     private IEnumerator PlayPlayerDefeat()
     {
         inputLocked = true;
-
-        // 플레이어 확대 + 어둠 잠식(DirectingCamera 연출)
         if (DirectingCamera != null && Player != null)
         {
             DirectingCamera.enabled = true;
-
-            Transform pt = Player.transform;
-            Vector3 baseScale = pt.localScale;
-
+            Transform pt = Player.transform; Vector3 baseScale = pt.localScale;
             float t = 0f;
             while (t < 1.2f)
             {
-                t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / 1.2f);
+                t += Time.deltaTime; float k = Mathf.Clamp01(t / 1.2f);
                 pt.localScale = Vector3.Lerp(baseScale, baseScale * 1.6f, k);
-
-                // 화면 어둡게(피 오버레이를 검은색처럼 써도 되지만, 여기서는 데미지 비넷 담금)
                 HoldOverlay(damageVignette, Mathf.Lerp(0.3f, 1f, k));
                 yield return null;
             }
         }
-
-        // 기둥 연출 비활성(패배 씬이라면 필요 없음)
         yield return new WaitForSeconds(0.5f);
-
-        // 여기서 재시작/결과창 호출 등 후처리
-        // 예: SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        // TODO: 패배 후 처리
     }
 
     private IEnumerator PlayLeaderDefeat()
     {
         inputLocked = true;
-
-        // 배경이 어둡고 여러 개의 빛 기둥이 교주를 비추는 연출
         if (DirectingCamera != null) DirectingCamera.enabled = true;
-
-        // 기둥 점등
-        foreach (var col in columns)
-        {
-            if (col != null) col.SetActive(true);
-        }
-
-        // 잠시 후 교주 제거
+        foreach (var col in columns) if (col != null) col.SetActive(true);
         yield return new WaitForSeconds(1.0f);
-
         if (Leader != null) Leader.SetActive(false);
-
-        // 화면 밝기 회복(성스러운 오버레이 서서히)
         for (float t = 0f; t < 1.2f; t += Time.deltaTime)
         {
             HoldOverlay(holyVignette, Mathf.Lerp(0.2f, 0.8f, t / 1.2f));
             yield return null;
         }
-
-        // 여기서 클리어 처리(보상/다음 씬 등)
+        // TODO: 클리어 처리
     }
 
-    private IEnumerator DisableAfter(Image block, float delay)
+    // ====== Utils ======
+    private IEnumerator ScaleUp(Transform tr, float t)
     {
-        yield return new WaitForSeconds(delay);
-        if (block != null) block.enabled = false;
+        float el = 0f; Vector3 from = Vector3.one * 0.2f, to = Vector3.one;
+        while (el < t) { el += Time.deltaTime; float k = el / t; tr.localScale = Vector3.LerpUnclamped(from, to, EaseOutBack(k)); yield return null; }
+        tr.localScale = to;
     }
 
     private IEnumerator FadeAndDestroy(Image x, float life)
     {
         if (x == null) yield break;
+        var c0 = x.color; c0.a = 1f; x.color = c0;
         float el = 0f;
-        while (el < life)
-        {
-            el += Time.deltaTime;
-            float a = Mathf.Lerp(1f, 0f, el / life);
-            SetImageAlpha(x, a);
-            yield return null;
-        }
+        while (el < life) { el += Time.deltaTime; SetImageAlpha(x, Mathf.Lerp(1f, 0f, el / life)); yield return null; }
         if (x != null) Destroy(x.gameObject);
     }
 
     private IEnumerator ShakeCamera(Camera cam, float t, float intensity)
     {
         if (cam == null) yield break;
-        Transform ct = cam.transform;
-        Vector3 basePos = mainCamOriginalPos;
-
+        Transform ct = cam.transform; Vector3 basePos = mainCamOriginalPos;
         float el = 0f;
         while (el < t)
         {
@@ -584,19 +513,13 @@ public class Command_Input : MonoBehaviour
         ct.localPosition = basePos;
     }
 
-    private void CleanupBlocks()
+    private void CleanupSlots()
     {
-        for (int i = 0; i < spawnedBlocks.Count; i++)
-        {
-            if (spawnedBlocks[i] != null)
-            {
-                Destroy(spawnedBlocks[i].gameObject);
-            }
-        }
-        spawnedBlocks.Clear();
+        for (int i = 0; i < slots.Count; i++) if (slots[i].bg != null) Destroy(slots[i].bg.gameObject);
+        slots.Clear();
     }
 
-    private Sprite GetSprite(CommandDir dir)
+    private Sprite GetArrowSprite(CommandDir dir)
     {
         switch (dir)
         {
@@ -608,45 +531,31 @@ public class Command_Input : MonoBehaviour
         return null;
     }
 
-    private Color GetColor(CommandDir dir)
+    private Color GetDirColor(CommandDir dir, float alpha = 1f)
     {
-        switch (dir)
+        Color c = dir switch
         {
-            case CommandDir.Up: return colUp;       // 빨강
-            case CommandDir.Down: return colDown;   // 노랑
-            case CommandDir.Left: return colLeft;   // 초록
-            case CommandDir.Right: return colRight; // 파랑
-        }
-        return Color.white;
+            CommandDir.Up => colorUp,
+            CommandDir.Down => colorDown,
+            CommandDir.Left => colorLeft,
+            CommandDir.Right => colorRight,
+            _ => Color.white
+        };
+        c.a = alpha; return c;
     }
 
     private void SetImageAlpha(Image img, float a)
     {
-        if (img == null) return;
-        Color c = img.color;
-        c.a = Mathf.Clamp01(a);
-        img.color = c;
+        if (img == null) return; var c = img.color; c.a = Mathf.Clamp01(a); img.color = c;
     }
 
-    // 부드러운 백 이징(등장 스케일용)
     private float EaseOutBack(float x)
     {
-        const float c1 = 1.70158f;
-        const float c3 = c1 + 1f;
+        const float c1 = 1.70158f, c3 = c1 + 1f;
         return 1f + c3 * Mathf.Pow(x - 1f, 3) + c1 * Mathf.Pow(x - 1f, 2);
     }
 
-    // 에디터에서 즉시 테스트할 수 있는 헬퍼(선택)
-    [ContextMenu("Force Timeout")]
-    private void Debug_ForceTimeout()
-    {
-        phaseTimer = 0f;
-    }
-
-    [ContextMenu("Force Clear")]
-    private void Debug_ForceClear()
-    {
-        inputCursor = currentSequence.Count;
-        OnPhaseClear();
-    }
+    // 에디터 디버그
+    [ContextMenu("Force Timeout")] private void Debug_ForceTimeout() { phaseTimer = 0f; }
+    [ContextMenu("Force Clear")] private void Debug_ForceClear() { inputCursor = currentSequence.Count; OnPhaseClear(); }
 }
