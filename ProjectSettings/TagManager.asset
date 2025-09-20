@@ -10,6 +10,8 @@ TagManager:
   - FlowerB
   - FlowerC
   - Door
+  - Block
+  - NoBlock
   layers:
   - Default
   - TransparentFX
