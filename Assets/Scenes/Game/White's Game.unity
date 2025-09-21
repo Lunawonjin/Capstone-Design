@@ -433,19 +433,14 @@ MonoBehaviour:
   playerMaxHP: 100
   leaderMaxHP: 500
   playerHP: 100
-  leaderHP: 300
+  leaderHP: 500
   lowHPThreshold: 0.3
   commandPanel: {fileID: 959311273}
   commandBlockPrefab: {fileID: 1913197754}
-  slotRingSprite: {fileID: 0}
-  additiveUIMaterial: {fileID: 0}
-  ringScale: 1.12
-  ringAlpha: 0.8
   colorUp: {r: 1, g: 0.4, b: 0.4, a: 1}
   colorDown: {r: 1, g: 0.75, b: 0.3, a: 1}
   colorLeft: {r: 0.6, g: 1, b: 0.5, a: 1}
   colorRight: {r: 0.4, g: 0.85, b: 1, a: 1}
-  emptySlotColor: {r: 0.55, g: 0.93, b: 1, a: 0.95}
   slotColorAlpha: 1
   slotPaddingX: 80
   minSlotSpacing: 40
@@ -458,10 +453,10 @@ MonoBehaviour:
   wrongXPrefab: {fileID: 2088821012}
   MainCamera: {fileID: 2001272461}
   DirectingCamera: {fileID: 851391557}
-  damageVignette: {fileID: 1769435246}
-  holyVignette: {fileID: 393918757}
   columns: []
-  useStagePlan: 1
+  leaderHPSlider: {fileID: 1525434393}
+  timeSlider: {fileID: 64822318}
+  sliderSmooth: 12
   loopStagePlan: 0
   stagePlan:
   - count: 5
@@ -496,33 +491,26 @@ MonoBehaviour:
     repeats: 2
     customTime: 0
     time: 5
-  startCommandCount: 5
-  commandIncreaseRange: {x: 1, y: 2}
-  maxCommands: 12
-  timeByCount:
-  - count: 5
-    time: 5
-  - count: 6
-    time: 4.6
-  - count: 7
-    time: 4.2
-  - count: 8
-    time: 5
-  - count: 9
-    time: 5
-  - count: 10
-    time: 5
-  - count: 11
-    time: 5
-  - count: 12
-    time: 5
   difficultyTimeScale: 1
   playerDamageOnTimeout: 15
-  leaderDamageOnSuccess: 20
+  leaderDamageOnSuccess: 50
   wrongPenaltyTime: 0.5
   shakeIntensity: 8
   shakeTime: 0.08
-  overlayFadeTime: 0.6
+  globalVolume: {fileID: 0}
+  damageColor: {r: 1, g: 0.1, b: 0.1, a: 1}
+  holyColor: {r: 1, g: 0.95, b: 0.5, a: 1}
+  blinkPeakNormal: 0.15
+  blinkPeakLowHP: 0.85
+  blinkFadeTime: 1.2
+  holdIntensity: 0.5
+  vignetteSmoothness: 0.95
+  vignetteRounded: 1
+  useColorFlash: 1
+  flashAmountNormal: 0.45
+  flashAmountLowHP: 0.7
+  flashFadeTime: 0.7
+  flashExposure: -0.3
 --- !u!4 &236275469
 Transform:
   m_ObjectHideFlags: 0
@@ -774,7 +762,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0.87476075, b: 0.59164417, a: 0.392}
+  m_Color: {r: 1, g: 0.87476075, b: 0.59164417, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1985,7 +1973,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2386,7 +2374,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
