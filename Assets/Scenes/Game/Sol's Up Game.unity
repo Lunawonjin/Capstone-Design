@@ -649,7 +649,11 @@ MonoBehaviour:
   firstBlockY: -2.5
   startYAfterFirst: -1
   stepY: 1.5
-  moveSpeed: 8
+  moveSpeeds:
+  - 8
+  - 11
+  - 6
+  defaultMoveSpeed: 3
   arriveThreshold: 0.02
   offscreenMargin: 1
   cameraTarget: {fileID: 867239110}
