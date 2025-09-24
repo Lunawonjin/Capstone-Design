@@ -2719,6 +2719,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1425800728}
   - component: {fileID: 1425800727}
+  - component: {fileID: 1425800731}
   - component: {fileID: 1425800729}
   - component: {fileID: 1425800730}
   m_Layer: 0
@@ -2800,6 +2801,23 @@ MonoBehaviour:
   settingPanel: {fileID: 914168132}
   gameSceneName: Player's Room
   slotCount: 3
+--- !u!114 &1425800731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1425800726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35d6d2e77b4a0e044b518e16ab55e3f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coinText: {fileID: 0}
+  levelText: {fileID: 0}
+  nameText: {fileID: 0}
+  dontDestroyOnLoad: 1
+  refreshOnStart: 1
 --- !u!1 &1511384831
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,6 +12,7 @@ TagManager:
   - Door
   - Block
   - NoBlock
+  - HUD
   layers:
   - Default
   - TransparentFX

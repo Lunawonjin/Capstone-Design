@@ -415,7 +415,7 @@ public class TogglePanelWithPause : MonoBehaviour
         foreach (var rb in _playerRigidbodies)
         {
             if (rb == null) continue;
-            rb.velocity = Vector2.zero;
+            rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
         }
     }

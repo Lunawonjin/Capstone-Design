@@ -65,11 +65,11 @@ public class PlayerJump : MonoBehaviour
     {
         if (controlFall)
         {
-            float vy = rb.velocity.y;
+            float vy = rb.linearVelocity.y;
             vy -= fallAccel * Time.fixedDeltaTime;                // 아래로 가속
             float cap = -Mathf.Abs(fallMaxSpeed);                 // 최대 하강속도 캡
             if (vy < cap) vy = cap;
-            rb.velocity = new Vector2(rb.velocity.x, vy);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, vy);
         }
     }
 
@@ -83,7 +83,7 @@ public class PlayerJump : MonoBehaviour
         // 1) Kinematic으로 정확히 +riseAmount 만큼 빠르게 상승
         var prevType = rb.bodyType;
         rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
 
         Vector3 start = transform.position;
         Vector3 target = new Vector3(start.x, start.y + riseAmount, start.z);
@@ -107,8 +107,8 @@ public class PlayerJump : MonoBehaviour
 
         // 3) Dynamic 전환 + 하강 제어 시작
         rb.bodyType = prevType; // 보통 Dynamic
-        var v = rb.velocity; v.y = -Mathf.Abs(fallStartSpeed);
-        rb.velocity = v;
+        var v = rb.linearVelocity; v.y = -Mathf.Abs(fallStartSpeed);
+        rb.linearVelocity = v;
 
         controlFall = true; // 낙하 y속도 직접 제어
 
@@ -136,7 +136,7 @@ public class PlayerJump : MonoBehaviour
                     onBlock = true;
                     controlFall = false; // 착지 시 낙하 제어 종료
                     // 착지 순간, 바로 다음 입력을 위해 vy 정리(선택)
-                    var v = rb.velocity; v.y = 0f; rb.velocity = v;
+                    var v = rb.linearVelocity; v.y = 0f; rb.linearVelocity = v;
 
                     // "점프 후 착지"라면 카메라 스텝 트리거
                     if (jumpedThisAir && spawnManager != null)
@@ -168,8 +168,8 @@ public class PlayerJump : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         controlFall = true; // 낙하 제어 켜고
-        var v = rb.velocity; v.y = -Mathf.Max(fallStartSpeed, 10f); // 확 떨어지게
-        rb.velocity = v;
+        var v = rb.linearVelocity; v.y = -Mathf.Max(fallStartSpeed, 10f); // 확 떨어지게
+        rb.linearVelocity = v;
         jumpedThisAir = false;
         onBlock = false;
     }

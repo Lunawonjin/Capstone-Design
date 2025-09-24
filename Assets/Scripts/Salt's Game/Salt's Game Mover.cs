@@ -34,7 +34,7 @@ public class SaltGameMover : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             // 점프 전에 Y속도를 0으로 초기화 (일관성 있는 점프를 위해)
-            rb.velocity = new Vector2(rb.velocity.x, 0f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             isGrounded = false;
             //Debug.Log("점프 실행됨!");
@@ -61,7 +61,7 @@ public class SaltGameMover : MonoBehaviour
     void FixedUpdate()
     {
         // Rigidbody2D의 velocity를 사용한 좌우 이동
-        rb.velocity = new Vector2(moveDirection.x * moveSpeed, rb.velocity.y);
+        rb.linearVelocity = new Vector2(moveDirection.x * moveSpeed, rb.linearVelocity.y);
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
