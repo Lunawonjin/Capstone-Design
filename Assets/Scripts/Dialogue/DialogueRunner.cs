@@ -2,7 +2,9 @@
 // Unity 6 (LTS) / TextMeshPro 분기형 대화
 // - PromptText는 별도 폰트 크기(promptFontSize)로 출력
 // - 선택지 동안 speakerText는 끄지 않고, 인스펙터에서 지정한 오브젝트(toggleDuringChoiceTarget)만 비/활성
-// - 내부 선택지 컨테이너 + 버튼 풀링(최소 할당), FindFirstObjectByType 사용
+// - 내부 선택지 컨테이너 + 버튼 풀링(최소 할당)
+// - 대사 시작 시 PlayerMove.Freeze(), 종료 시 지정 오브젝트 비활성 + PlayerMove.Unfreeze()
+// - FindFirstObjectByType<T>(FindObjectsInactive) 단일 인자 버전으로 수정
 
 using System;
 using System.Collections;
@@ -81,9 +83,9 @@ public class DialogueRunnerAdvanced : MonoBehaviour
 
     // ===== Inspector: UI =====
     [Header("UI References")]
-    public TextMeshProUGUI speakerText;    // 화자 이름 (선택지 중에도 끄지 않음)
-    public TextMeshProUGUI bodyText;       // 본문
-    public TextMeshProUGUI promptText;     // 선택 프롬프트 전용
+    public TextMeshProUGUI speakerText;
+    public TextMeshProUGUI bodyText;
+    public TextMeshProUGUI promptText;
     public GameObject nextIndicator;
 
     [Header("Choice Button Prefab")]
@@ -105,32 +107,43 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     [Header("Behavior")]
     public bool deactivateOnEnd = true;
 
-    // ===== 화면 요소 토글 대상 =====
+    // ===== 선택지 동안 토글 =====
     [Header("선택지 동안 비활성화할 오브젝트")]
     [Tooltip("선택지가 열릴 때 비활성화하고, 선택 후 다시 활성화할 오브젝트(예: 본문 말풍선 그룹). speakerText는 끄지 않습니다.")]
     public GameObject toggleDuringChoiceTarget;
 
     // ===== Canvas / Choices 컨테이너 =====
     [Header("Canvas / Runtime Container")]
-    public Canvas targetCanvas;                  // 비면 자동
+    public Canvas targetCanvas;
     public Vector2 referenceResolution = new(1920, 1080);
     [Range(0, 1)] public float matchWidthOrHeight = 0.5f;
 
-    [Tooltip("선택지 컨테이너 크기/위치(하단 중앙)")]
     public Vector2 choiceContainerSize = new(1100f, 520f);
     public Vector2 choiceContainerOffset = new(0f, 120f);
     public float choiceSpacing = 14f;
-    public Vector4 choicePaddingTLBR = new(24, 24, 24, 24); // Top, Left, Bottom, Right
+    public Vector4 choicePaddingTLBR = new(24, 24, 24, 24);
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
     // ===== 폰트/버튼 크기 =====
     [Header("Font & Button Size")]
     public float bodyFontSize = 52f;
     public float speakerFontSize = 46f;
-    public float promptFontSize = 52f;    // ← NEW: PromptText 전용 크기
+    public float promptFontSize = 52f;
     public float choiceFontSize = 44f;
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
+
+    // ===== 플레이어 제어 락 =====
+    [Header("Player Control Lock")]
+    [Tooltip("대사 중 플레이어 이동을 막을 대상. 비워두면 자동 탐색")]
+    public PlayerMove playerMove;
+    [Tooltip("Start 시 비활성 포함하여 자동 탐색 시도")]
+    public bool autoFindPlayerMove = true;
+    [Tooltip("FindFirstObjectByType 검색 시 비활성 오브젝트도 포함할지")]
+    public bool includeInactiveOnFind = true;
+
+    [Header("대화 종료 시 비활성화할 오브젝트들 (2개 권장)")]
+    public GameObject[] endDeactivateTargets = new GameObject[2];
 
     // ===== 내부 상태 =====
     private DialogueScript _script;
@@ -148,7 +161,7 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     private string _currentFullText = "";
     private WaitForSeconds _wait;
 
-    private RectTransform _choiceRoot; // 내부 컨테이너
+    private RectTransform _choiceRoot;
     private readonly List<Button> _activeButtons = new();
     private readonly Stack<Button> _buttonPool = new();
 
@@ -169,6 +182,14 @@ public class DialogueRunnerAdvanced : MonoBehaviour
 
         if (bodyText) { bodyText.enableAutoSizing = false; bodyText.fontSize = bodyFontSize; }
         if (speakerText) { speakerText.enableAutoSizing = false; speakerText.fontSize = speakerFontSize; }
+
+        // PlayerMove 자동 탐색 (단일 인자 버전)
+        if (autoFindPlayerMove && playerMove == null)
+        {
+            playerMove = includeInactiveOnFind
+                ? FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include)
+                : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
+        }
 
         if (jsonTextAsset == null) { Debug.LogError("[DialogueRunnerAdvanced] jsonTextAsset is null."); return; }
         LoadFromText(jsonTextAsset.text);
@@ -192,7 +213,10 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         if (targetCanvas == null)
         {
             targetCanvas = GetComponentInParent<Canvas>();
-            if (targetCanvas == null) targetCanvas = FindFirstObjectByType<Canvas>();
+            if (targetCanvas == null)
+            {
+                targetCanvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
+            }
             if (targetCanvas == null)
             {
                 var go = new GameObject("DialogueCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -203,7 +227,8 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 scaler.referenceResolution = referenceResolution;
                 scaler.matchWidthOrHeight = matchWidthOrHeight;
 
-                if (FindFirstObjectByType<EventSystem>() == null)
+                // EventSystem 없으면 생성
+                if (FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include) == null)
                     new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             }
         }
@@ -266,6 +291,8 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     {
         if (_script == null || _node == null)
         { Debug.LogError("[DialogueRunnerAdvanced] Missing script or start node."); return; }
+
+        OnDialogueBegin();
         _stepIndex = -1;
         NextStepOrLine();
     }
@@ -305,11 +332,9 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     // ===== Line =====
     private void ShowLine(string speaker, string text)
     {
-        // 선택지 UI 닫기
         if (promptText) promptText.gameObject.SetActive(false);
         if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
 
-        // 선택지 동안 꺼뒀던 오브젝트 원복
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         if (bodyText) bodyText.gameObject.SetActive(true);
         if (nextIndicator) nextIndicator.SetActive(false);
@@ -319,7 +344,6 @@ public class DialogueRunnerAdvanced : MonoBehaviour
             speakerText.enableAutoSizing = false;
             speakerText.fontSize = speakerFontSize;
             speakerText.text = speaker ?? "";
-            // 요구: speakerText는 끄지 않음 (항상 활성 상태 유지)
         }
 
         _currentFullText = text == null ? "" : (playerName.Length > 0 ? text.Replace("<이름>", playerName) : text);
@@ -381,21 +405,18 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         if (nextIndicator) nextIndicator.SetActive(true);
     }
 
-    // ===== Choice (PromptText 사용, speakerText는 유지, 지정 오브젝트만 토글) =====
+    // ===== Choice =====
     private void ShowChoice(string prompt, ChoiceOption[] options)
     {
         if (nextIndicator) nextIndicator.SetActive(false);
 
-        // 선택지 동안 끌 대상 오브젝트
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
         if (bodyText) bodyText.gameObject.SetActive(false);
-            // speakerText는 끄지 않음
 
-            // PromptText 표시
-            if (promptText)
+        if (promptText)
         {
             promptText.enableAutoSizing = false;
-            promptText.fontSize = promptFontSize; // ← 별도 크기
+            promptText.fontSize = promptFontSize;
             promptText.text = (prompt ?? "").Replace("<이름>", playerName);
             promptText.gameObject.SetActive(true);
         }
@@ -403,10 +424,8 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         EnsureChoiceRoot();
         _choiceRoot.gameObject.SetActive(true);
 
-        // 기존 버튼 반환
         ReleaseAllButtons();
 
-        // 노출 옵션 수집
         var visible = ListPool<ChoiceOption>.Get();
         if (options != null)
             for (int i = 0; i < options.Length; i++)
@@ -588,6 +607,27 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         }
     }
 
+    // ===== 대화 시작/종료 훅 =====
+    // 대화 시작/종료 훅
+    private void OnDialogueBegin()
+    {
+        if (playerMove != null) playerMove.controlEnabled = false; 
+    }
+
+    private void OnDialogueEnd()
+    {
+        if (endDeactivateTargets != null)
+        {
+            for (int i = 0; i < endDeactivateTargets.Length; i++)
+            {
+                var go = endDeactivateTargets[i];
+                if (go != null) go.SetActive(false);
+            }
+        }
+        if (playerMove != null) playerMove.controlEnabled = true; 
+    }
+
+
     // ===== End =====
     private void EndDialogue()
     {
@@ -596,6 +636,8 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         if (promptText) promptText.gameObject.SetActive(false);
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         ReleaseAllButtons();
+
+        OnDialogueEnd();
 
         if (deactivateOnEnd) gameObject.SetActive(false);
     }

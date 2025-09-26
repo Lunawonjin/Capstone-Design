@@ -3,10 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// TogglePanelWithPause (fixed with global lock counting + target watchdog)
+/// TogglePanelWithPause (fixed with global lock counting + target watchdog + ESC control)
 ///
 /// - 전역 락 카운트로 시간/오디오/입력/애니메이터를 관리(여러 버튼 혼용 안전)
 /// - 워치독: 외부에서 토글 대상이 꺼지거나 켜져도 상태를 자동 동기화
+/// - ESC 닫기: toggleTargets가 켜져 있을 때 Esc로 끄기
+///   단, escBlockerWhileActive(예: Warring 모달)가 켜져 있으면 Esc 입력을 막음
 /// </summary>
 [DisallowMultipleComponent]
 public class TogglePanelWithPause : MonoBehaviour
@@ -158,6 +160,13 @@ public class TogglePanelWithPause : MonoBehaviour
     [Tooltip("외부에서 대상 켜짐/꺼짐이 바뀌면 자동으로 Enter/ExitPause 동기화")]
     [SerializeField] private bool autoSyncWithTargets = true;
 
+    // === ESC 제어 ===
+    [Header("ESC Close")]
+    [SerializeField] private bool enableEscClose = true;                  // Esc로 toggleTargets 끄기
+    [SerializeField] private KeyCode escKey = KeyCode.Escape;             // 구 Input용 키
+    [Tooltip("이 오브젝트가 활성일 땐 Esc로 끄기 금지 (예: Warring 모달)")]
+    [SerializeField] private GameObject escBlockerWhileActive;            // ← Warring 패널 드래그
+
     private bool _isPausedNow = false;
 
     private readonly List<Animator> _animList = new List<Animator>(8);
@@ -172,6 +181,9 @@ public class TogglePanelWithPause : MonoBehaviour
         autoFindPlayerAnimators = true;
         autoFindPlayerMove = true;
         autoSyncWithTargets = true;
+
+        enableEscClose = true;
+        escKey = KeyCode.Escape;
     }
 
     private void Awake()
@@ -202,9 +214,17 @@ public class TogglePanelWithPause : MonoBehaviour
             ExitPause();
     }
 
-    // ★ 워치독: 외부에서 대상의 active 상태가 바뀌어도 자동 동기화
+    // ★ 워치독 + ESC 처리
     private void Update()
     {
+        // 0) ESC로 toggleTargets 끄기 (단, escBlockerWhileActive가 켜져 있으면 무시)
+        if (enableEscClose && !_IsEscBlockedByModal())
+        {
+            if (AnyTargetActive() && _WasEscPressed())
+                TurnOff();
+        }
+
+        // 1) 워치독: 외부에서 대상 active 상태가 바뀌어도 자동 동기화
         if (!autoSyncWithTargets || toggleTargets == null || toggleTargets.Length == 0) return;
 
         bool anyActive = AnyTargetActive();
@@ -424,5 +444,22 @@ public class TogglePanelWithPause : MonoBehaviour
     {
         foreach (var pm in _playerMoveList)
             PauseCoordinator.UnlockPlayer(pm);
+    }
+
+    // ===== ESC 헬퍼 =====
+    private bool _IsEscBlockedByModal()
+    {
+        // escBlockerWhileActive(예: Warring)가 활성이면 Esc로 끄기 금지
+        return escBlockerWhileActive != null && escBlockerWhileActive.activeSelf;
+    }
+
+    private bool _WasEscPressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        return UnityEngine.InputSystem.Keyboard.current != null
+            && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame;
+#else
+        return Input.GetKeyDown(escKey);
+#endif
     }
 }

@@ -5,28 +5,16 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// MapMenuController
-/// 
-/// - 맵의 3개 메뉴 아이템에 호버/클릭 기능 부여.
-/// - 클릭 시 현재 씬과 비교:
-///   * 같으면 Map 오브젝트만 비활성화
-///   * 다르면 씬 이동.
-/// 
-/// 사용 방법:
-/// 1) Map 루트 오브젝트(전체 UI 패널)에 이 스크립트를 붙인다.
-/// 2) menuItems 배열에 3개의 이미지(UI 오브젝트)를 순서대로 연결한다.
-/// 3) sceneNames 배열에 이동할 씬 이름을 정확히 입력한다.
-///    (Build Settings에 추가되어 있어야 함).
-/// 4) mapRoot에는 Map UI 루트(GameObject)를 넣는다.
-/// 5) 씬에 EventSystem, Canvas + GraphicRaycaster가 있어야 UI 입력이 동작.
+/// - M으로 맵 열기(커지며 등장), Esc로 닫기(작아지며 퇴장)
+/// - 3개 메뉴 아이템 호버/클릭
+/// - 클릭 시: 같은 씬이면 맵만 닫기, 다르면 씬 이동
 /// </summary>
 public class MapMenuController : MonoBehaviour
 {
     [Header("Menu Items (3 UI Images)")]
-    [Tooltip("마우스 호버/클릭을 받을 3개의 UI 오브젝트를 순서대로 등록합니다.")]
     [SerializeField] private GameObject[] menuItems = new GameObject[3];
 
     [Header("Target Scene Names (Size must match menuItems)")]
-    [Tooltip("클릭 시 이동할 씬 이름들 (Build Settings에 포함되어야 함)")]
     [SerializeField]
     private string[] sceneNames = new string[3]
     {
@@ -36,30 +24,69 @@ public class MapMenuController : MonoBehaviour
     };
 
     [Header("Hover Visual Settings")]
-    [Tooltip("호버 시 오브젝트에 적용할 스케일 배수")]
     [SerializeField, Range(1.0f, 2.0f)] private float hoverScale = 1.08f;
-
-    [Tooltip("호버 시 오브젝트에 적용할 컬러(알파는 기존 유지 권장). 기본: 약간 밝게")]
     [SerializeField] private Color hoverColor = new Color(1.05f, 1.05f, 1.05f, 1f);
-
-    [Tooltip("호버 해제 시 원래 상태로 되돌릴 때의 스케일 (보통 1)")]
     [SerializeField] private float normalScale = 1.0f;
-
-    [Tooltip("호버 해제 시 원래 컬러로 복귀 (Image의 기본 컬러) 여부")]
     [SerializeField] private bool revertToOriginalColor = true;
 
     [Header("Map Root")]
-    [Tooltip("현재 활성화/비활성화할 맵 루트 오브젝트")]
+    [Tooltip("활성/비활성화할 맵 루트 UI")]
     [SerializeField] private GameObject mapRoot;
+
+    [Tooltip("맵을 닫을 때 다시 켜 줄 월드/게임 오브젝트(옵션)")]
     [SerializeField] private GameObject mapAessts;
+
+    [Header("Keys")]
+    [SerializeField] private KeyCode openKey = KeyCode.M;
+    [SerializeField] private KeyCode closeKey = KeyCode.Escape;
+    [SerializeField] private KeyCode[] extraCloseKeys = { KeyCode.M, KeyCode.Escape };
+
+    [Header("Open/Close Animation (Unscaled Time)")]
+    [SerializeField] private Vector3 openStartScale = new Vector3(0.9f, 0.9f, 1f);
+    [SerializeField] private Vector3 openEndScale = Vector3.one;
+    [SerializeField, Min(0.01f)] private float openDuration = 0.14f;
+
+    [SerializeField] private Vector3 closeStartScale = Vector3.one;
+    [SerializeField] private Vector3 closeEndScale = new Vector3(0.9f, 0.9f, 1f);
+    [SerializeField, Min(0.01f)] private float closeDuration = 0.12f;
+
+    [Header("Alpha Fade (CanvasGroup)")]
+    [SerializeField] private bool useAlphaFade = true;
+
+    // 내부 참조
+    private RectTransform _rt;
+    private CanvasGroup _cg;
+    private bool _isOpen;
+    private bool _animating;
 
     private void Awake()
     {
         if (menuItems.Length != sceneNames.Length)
-        {
             Debug.LogWarning("menuItems와 sceneNames의 크기가 다릅니다.");
-        }
 
+        // 맵 루트 준비
+        if (mapRoot == null)
+        {
+            Debug.LogError("[MapMenuController] mapRoot가 비었습니다.");
+            enabled = false;
+            return;
+        }
+        _rt = mapRoot.GetComponent<RectTransform>();
+        _cg = mapRoot.GetComponent<CanvasGroup>();
+
+        // 초기 상태: 비활성 권장
+        if (_rt) _rt.localScale = openEndScale;
+        if (_cg && useAlphaFade)
+        {
+            _cg.alpha = 0f;
+            _cg.interactable = false;
+            _cg.blocksRaycasts = false;
+        }
+        mapRoot.SetActive(false);
+        _isOpen = false;
+        _animating = false;
+
+        // 메뉴 아이템 세팅
         int count = Mathf.Min(menuItems.Length, sceneNames.Length);
         for (int i = 0; i < count; i++)
         {
@@ -68,47 +95,129 @@ public class MapMenuController : MonoBehaviour
 
             var hover = go.GetComponent<HoverableMenuItem>();
             if (hover == null) hover = go.AddComponent<HoverableMenuItem>();
-
             hover.SetVisualParams(normalScale, hoverScale, hoverColor, revertToOriginalColor);
 
             string targetScene = sceneNames[i];
             hover.onClick = () =>
             {
                 string currentScene = SceneManager.GetActiveScene().name;
-
-                // 현재 씬과 이동할 씬이 같으면 Map만 비활성화
                 if (currentScene == targetScene)
                 {
-                    if (mapRoot != null)
-                    {
-                        mapRoot.SetActive(false);
-                        mapAessts.SetActive(true);
-                        Debug.Log($"현재 씬({currentScene})과 동일하여 Map만 비활성화");
-                    }
+                    // 같은 씬이면 맵만 부드럽게 닫기
+                    CloseMap();
+                    if (mapAessts) mapAessts.SetActive(true);
                 }
                 else
                 {
-                    // 다른 씬이면 씬 이동
+                    // 다른 씬이면 이동
                     SceneManager.LoadScene(targetScene);
                 }
             };
         }
     }
+
+    void Update()
+    {
+        if (WasPressed(openKey)) OpenMap();
+        if (_isOpen && WasPressed(closeKey) || WasPressed(extraCloseKeys)) CloseMap();
+    }
+    bool WasPressed(params KeyCode[] keys)
+    {
+        foreach (var k in keys)
+            if (Input.GetKeyDown(k)) return true;
+        return false;
+    }
+    // ===== 공개 API =====
+    public void OpenMap()
+    {
+        if (_animating || _isOpen) return;
+
+        _isOpen = true;
+        _animating = true;
+
+        mapRoot.SetActive(true);
+
+        if (_rt) _rt.localScale = openStartScale;
+        if (_cg && useAlphaFade)
+        {
+            _cg.alpha = 0f;
+            _cg.interactable = false;
+            _cg.blocksRaycasts = false;
+        }
+
+        StartCoroutine(Co_Open());
+    }
+
+    public void CloseMap()
+    {
+        if (_animating || !_isOpen) return;
+
+        _isOpen = false;
+        _animating = true;
+
+        if (_rt) _rt.localScale = closeStartScale;
+        if (_cg && useAlphaFade)
+        {
+            _cg.interactable = false;
+            _cg.blocksRaycasts = false;
+        }
+
+        StartCoroutine(Co_Close());
+    }
+
+    // ===== 연출 코루틴 =====
+    private System.Collections.IEnumerator Co_Open()
+    {
+        float t = 0f, d = Mathf.Max(0.01f, openDuration);
+        while (t < d)
+        {
+            float u = t / d;
+            float e = 1f - Mathf.Pow(1f - u, 3f); // EaseOutCubic
+
+            if (_rt) _rt.localScale = Vector3.LerpUnclamped(openStartScale, openEndScale, e);
+            if (_cg && useAlphaFade) _cg.alpha = Mathf.LerpUnclamped(0f, 1f, e);
+
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (_rt) _rt.localScale = openEndScale;
+        if (_cg && useAlphaFade)
+        {
+            _cg.alpha = 1f;
+            _cg.interactable = true;
+            _cg.blocksRaycasts = true;
+        }
+
+        _animating = false;
+    }
+
+    private System.Collections.IEnumerator Co_Close()
+    {
+        float t = 0f, d = Mathf.Max(0.01f, closeDuration);
+        float startAlpha = (_cg && useAlphaFade) ? _cg.alpha : 1f;
+
+        while (t < d)
+        {
+            float u = t / d;
+            float e = Mathf.Pow(u, 3f); // EaseInCubic
+
+            if (_rt) _rt.localScale = Vector3.LerpUnclamped(closeStartScale, closeEndScale, e);
+            if (_cg && useAlphaFade) _cg.alpha = Mathf.LerpUnclamped(startAlpha, 0f, e);
+
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (_rt) _rt.localScale = closeEndScale;
+        if (_cg && useAlphaFade) _cg.alpha = 0f;
+
+        mapRoot.SetActive(false);
+        _animating = false;
+    }
 }
 
-/// <summary>
-/// HoverableMenuItem
-/// 
-/// 역할:
-/// - UI 오브젝트에 마우스 호버/해제/클릭 동작을 부여.
-/// - IPointerEnterHandler / IPointerExitHandler / IPointerClickHandler 사용.
-/// - 시각 효과: 스케일 변경, 컬러 틴트(옵션).
-/// - 클릭 콜백: 외부에서 onClick 델리게이트로 주입.
-/// 
-/// 주의:
-/// - 같은 GameObject에 Image(또는 Graphic)가 있어야 UI Raycast가 동작.
-/// - 상호작용을 위해 Canvas에 GraphicRaycaster, 씬에 EventSystem이 필요.
-/// </summary>
+// ===== 그대로 사용 =====
 [RequireComponent(typeof(RectTransform))]
 public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
@@ -137,13 +246,9 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         _graphic = GetComponent<Graphic>();
 
         if (_graphic != null)
-        {
             _originalColor = _graphic.color;
-        }
         else
-        {
             Debug.LogWarning($"[HoverableMenuItem] '{name}' 에 Graphic(Image/Text 등)이 없어 컬러 틴트를 적용할 수 없습니다.", this);
-        }
 
         SetScale(_normalScale);
     }
@@ -172,45 +277,23 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         SetScale(_normalScale);
 
         if (_graphic != null && _revertToOriginalColor)
-        {
             _graphic.color = _originalColor;
-        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (eventData != null && eventData.button != PointerEventData.InputButton.Left)
-            return;
-
-        if (onClick != null)
-        {
-            onClick.Invoke();
-        }
-        else
-        {
-            Debug.LogWarning("[HoverableMenuItem] onClick 콜백이 설정되지 않음", this);
-        }
+        if (eventData != null && eventData.button != PointerEventData.InputButton.Left) return;
+        onClick?.Invoke();
     }
 
     private void SetScale(float target)
     {
-        if (_rect != null)
-        {
-            _rect.localScale = new Vector3(target, target, 1f);
-        }
-        else
-        {
-            transform.localScale = new Vector3(target, target, 1f);
-        }
+        if (_rect != null) _rect.localScale = new Vector3(target, target, 1f);
+        else transform.localScale = new Vector3(target, target, 1f);
     }
 
     private Color MultiplyColor(Color baseColor, Color mul)
     {
-        return new Color(
-            baseColor.r * mul.r,
-            baseColor.g * mul.g,
-            baseColor.b * mul.b,
-            baseColor.a * mul.a
-        );
+        return new Color(baseColor.r * mul.r, baseColor.g * mul.g, baseColor.b * mul.b, baseColor.a * mul.a);
     }
 }
