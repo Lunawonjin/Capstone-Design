@@ -2,32 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
-/// <summary>
-/// 시간안에 커맨드 블럭을 순서대로 입력해 교주를 물리치는 게임
-/// 게임이 시작되면 교주와 천하얀의 대화 후
-/// 커맨드 블럭이 랜덤으로 5개정도 배치되고 시간은 5초 부여
-/// 단계를 깰때 마다 교주의 체력이 감소되고 다음 페이즈에서 부여되는 시간초가 줄어들고 커맨드 블럭이 1~2개 늘어남 (최대 12개)
-/// 커맨드 실패를 하면 부여된 시간초가 즉시 0.5초 감소
-/// 시간초안에 클리어 하지 못하면 플레이어의 체력 감소
-/// 클리어하면 (미정)
-/// 
-/// 시스템
-/// 게임 커맨드가 등장할 UI 패널을 연결해 패널의 크기만큼 커맨드블럭의 크기 및 위치를 설정
-/// 등장할 때 엄청 작았다가 커지는 식으로 구성
-/// 커맨드 블럭의 방향키 위치에 따라 커맨드 블럭의 색 변경 
-/// ↑(빨강), ↓(노랑), ←(초록), →(파랑)
-/// 올바른 커맨드를 누르면 스파클이 튀면서 올바른 커맨드를 비활성화
-/// 틀린 커맨드를 누르면 커맨드에 X가 나오면서 화면이 약간 움찔?하는 상황 연출
-/// 시간안에 실패하면 플레이어의 체력을 감소하고 화면 가에 빨간색(피)가 잠깐 보였다 천천히 사라지는 연출
-/// 플레이어의 HP가 30%(미정) 이하라면 화면 가에 빨간색(피)가 사라지지 않고 남아있는 연출
-/// 시간안에 성공하면 교주를 공격하고 플레이어의 주변에 노란색,흰색이 섞인 성스러운 느낌을 화면 가에 잠깐 보였다 사라지는 연출
-/// 교주의 HP가 30%(미정) 이하라면 화면 가에 성스러운 느낌의 색이 사라지지 않고 남아있는 연출
-/// 만약 교주와 플레이어 둘 다 30%(미정) 이하라면 성스러운 느낌의 색이 사라지지않고 남아있는 연출을 우선함
-/// 플레이어의  HP가 0이 되면 플레이어를 확대 시키고 점점 어둠이 플레이어를 잠식하는 연출
-/// 플레이어가 교주를 쓰러트리게 된다면 어두웠던 배경에 빛이 한줄기 내려오더니 갑자기 여러개의 빛의 기둥이 교주를 비춤
-/// 그렇게 교주는 사라지고 밝은 되찾고 자신의 삶을 찾는 연출
-/// </summary>
 public class Command_Input : MonoBehaviour
 {
     [Header("플레이어/교주")]
@@ -37,15 +14,9 @@ public class Command_Input : MonoBehaviour
     public float playerHP = 100f, leaderHP = 100f;
     [Range(0.05f, 0.5f)] public float lowHPThreshold = 0.3f;
 
-    [Header("UI / 커맨드 라인 패널 & 프리팹")]
+    [Header("UI / 커맨드 라인")]
     public RectTransform commandPanel;     // 슬롯 부모
     public Image commandBlockPrefab;       // 동그란 BG 프리팹(Image)
-
-    [Header("네온 테마(옵션)")]
-    public Sprite slotRingSprite;
-    public Material additiveUIMaterial;    // UI/Particles/Additive
-    public float ringScale = 1.12f;
-    [Range(0f, 1f)] public float ringAlpha = 0.8f;
 
     [Header("방향별 색(인스펙터 변경)")]
     public Color colorUp = new Color(1.00f, 0.40f, 0.40f, 1f);
@@ -54,8 +25,7 @@ public class Command_Input : MonoBehaviour
     public Color colorRight = new Color(0.40f, 0.85f, 1.00f, 1f);
 
     [Header("슬롯 배치/스타일")]
-    public Color emptySlotColor = new Color(0.55f, 0.93f, 1f, 0.95f); // 정답 후 비워질 색
-    [Range(0f, 1f)] public float slotColorAlpha = 1f; // 슬롯 배경 투명도(방향색과 동일)
+    [Range(0f, 1f)] public float slotColorAlpha = 1f; // 슬롯 배경 투명도(방향색 기반)
     public float slotPaddingX = 80f;
     public float minSlotSpacing = 40f;
     public float spawnScaleTime = 0.2f;
@@ -67,51 +37,34 @@ public class Command_Input : MonoBehaviour
     public ParticleSystem sparklePrefab; // 정답 스파클
     public Image wrongXPrefab;           // 오답 X(Image 프리팹)
 
-    [Header("카메라/오버레이")]
+    [Header("카메라")]
     public Camera MainCamera, DirectingCamera;
-    public Image damageVignette, holyVignette;
 
     [Header("승리/패배 연출")]
     public GameObject[] columns;
 
-    // ====== 스테이지 플랜 ======
-    [Header("스테이지 플랜(인스펙터에서 순서 지정)")]
-    public bool useStagePlan = true;     // 켜면 아래 플랜 그대로 진행
-    public bool loopStagePlan = false;   // 끝나면 다시 처음으로
+    // ====== 슬라이더 UI ======
+    [Header("슬라이더 UI")]
+    public Slider leaderHPSlider;  // 0~1
+    public Slider timeSlider;      // 0~1
+    public float sliderSmooth = 12f;
+
+    // ====== 스테이지 플랜만 사용 ======
+    [Header("스테이지 플랜(순서대로 진행)")]
+    public bool loopStagePlan = false;
     [System.Serializable]
     public class StageEntry
     {
-        [Range(5, 12)] public int count = 5;    // 커맨드 개수
-        [Min(1)] public int repeats = 1;   // 몇 번 반복할지
-        public bool customTime = false;        // 시간 직접 지정?
-        [Min(0.1f)] public float time = 5f;    // customTime=true일 때 사용
+        [Range(5, 12)] public int count = 5;   // 커맨드 개수
+        [Min(1)] public int repeats = 1; // 반복 횟수
+        public bool customTime = false;       // 시간 오버라이드?
+        [Min(0.1f)] public float time = 5f; // customTime=true일 때 사용
     }
-    public List<StageEntry> stagePlan = new List<StageEntry>()
-    {
+    public List<StageEntry> stagePlan = new List<StageEntry>() {
         new StageEntry{count=5, repeats=3},
         new StageEntry{count=6, repeats=2},
     };
-
-    // ====== 자동 진행 모드(플랜 끌 때 사용) ======
-    [Header("자동 진행 모드(플랜 OFF일 때만 사용)")]
-    [Range(5, 12)] public int startCommandCount = 5;
-    public Vector2Int commandIncreaseRange = new Vector2Int(1, 2);
-    [Range(5, 12)] public int maxCommands = 12;
-
-    [System.Serializable]
-    public struct CountTime { [Range(5, 12)] public int count; [Min(0.1f)] public float time; }
-    public List<CountTime> timeByCount = new List<CountTime>()
-    {
-        new CountTime{count=5,  time=5.0f},
-        new CountTime{count=6,  time=4.6f},
-        new CountTime{count=7,  time=4.2f},
-        new CountTime{count=8,  time=3.8f},
-        new CountTime{count=9,  time=3.5f},
-        new CountTime{count=10, time=3.2f},
-        new CountTime{count=11, time=3.0f},
-        new CountTime{count=12, time=2.8f},
-    };
-    [Tooltip("전역 난이도 배수(시간에 곱). 1=기본, 0.8=빡셈, 1.2=쉬움")]
+    [Tooltip("전역 난이도 배수(시간에 곱)")]
     public float difficultyTimeScale = 1f;
 
     [Header("피해/패널티")]
@@ -119,39 +72,76 @@ public class Command_Input : MonoBehaviour
     public float leaderDamageOnSuccess = 20f;
     public float wrongPenaltyTime = 0.5f;
 
-    [Header("카메라/오버레이 옵션")]
+    [Header("카메라 옵션")]
     public float shakeIntensity = 8f;
     public float shakeTime = 0.08f;
-    public float overlayFadeTime = 0.6f;
+
+    // ====== URP Vignette + Color Flash ======
+    [Header("Vignette (URP)")]
+    public Volume globalVolume;                   // 없으면 런타임 생성
+    public Color damageColor = new Color(1f, 0.1f, 0.1f, 1f);
+    public Color holyColor = new Color(1f, 0.95f, 0.5f, 1f);
+
+    [Tooltip("일반 블링크 피크(진하기)")]
+    [Range(0f, 1f)] public float blinkPeakNormal = 0.9f;
+
+    [Tooltip("플레이어 HP 30%↓일 때 데미지 블링크 피크")]
+    [Range(0f, 1f)] public float blinkPeakLowHP = 1.0f;
+
+    [Tooltip("블링크가 사라지는 시간(길수록 오래 감)")]
+    [Min(0.05f)] public float blinkFadeTime = 1.6f;
+
+    [Tooltip("저HP 지속 세기(30%↓ 또는 성스러움 우선 조건일 때 유지)")]
+    [Range(0f, 1f)] public float holdIntensity = 0.6f;
+
+    [Tooltip("비네트 모서리 부드러움(URP)")]
+    [Range(0f, 1f)] public float vignetteSmoothness = 0.7f;
+    public bool vignetteRounded = true;
+
+    [Header("Color Flash (URP ColorAdjustments)")]
+    public bool useColorFlash = true;
+    [Range(0f, 1f)] public float flashAmountNormal = 0.45f; // 일반 플래시 세기
+    [Range(0f, 1f)] public float flashAmountLowHP = 0.70f;  // 30%↓일 때 플래시 세기
+    [Min(0.05f)] public float flashFadeTime = 0.7f;      // 플래시 사라지는 시간
+    public float flashExposure = -0.3f;                  // 플래시 때 노출 보정(살짝 어둡게)
 
     // 내부 상태
-    private float phaseTimer;
+    private float phaseTimer, phaseTimeMax;
     private int phaseIndex = 0;
     private int currentCommandCount;
-    private List<CommandDir> currentSequence = new List<CommandDir>();
+    private readonly List<CommandDir> currentSequence = new List<CommandDir>();
     private readonly List<SlotUI> slots = new List<SlotUI>();
     private int inputCursor = 0;
     private bool inputLocked = false;
     private Vector3 mainCamOriginalPos;
+    private float hpSliderVal = 1f, timeSliderVal = 1f;
 
-    // 스테이지 플랜 진행 포인터
-    private int planIndex = 0;        // stagePlan 인덱스
-    private int planRepeatProgress = 0; // 현재 항목에서 몇 번 소비했는지
+    // Stage Plan 진행 포인터
+    private int planIndex = 0;
+    private int planRepeatProgress = 0;
 
     private enum CommandDir { Up, Down, Left, Right }
-    private class SlotUI { public Image bg, ring, arrow; }
+    private class SlotUI { public Image bg, arrow; }
 
-    // ====== Unity lifecycle ======
+    // Post FX 핸들
+    private Vignette _vignette;
+    private ColorAdjustments _colorAdj;
+    private Coroutine _blinkCR;
+    private bool _isBlinking;
+
     private void Awake()
     {
         if (MainCamera != null) mainCamOriginalPos = MainCamera.transform.localPosition;
-        SetImageAlpha(damageVignette, 0f);
-        SetImageAlpha(holyVignette, 0f);
+        EnsurePostFX();
+        SetVignette(0f, damageColor); // 시작은 꺼둠
+        if (useColorFlash) SetColorFlash(0f, Color.white);
     }
 
     private void Start()
     {
-        currentCommandCount = Mathf.Clamp(startCommandCount, 5, 12);
+        if (leaderHPSlider != null) { leaderHPSlider.minValue = 0; leaderHPSlider.maxValue = 1; leaderHPSlider.value = leaderHP / Mathf.Max(0.0001f, leaderMaxHP); hpSliderVal = leaderHPSlider.value; }
+        if (timeSlider != null) { timeSlider.minValue = 0; timeSlider.maxValue = 1; timeSlider.value = 1; timeSliderVal = 1; }
+
         StartNewPhase();
     }
 
@@ -168,20 +158,178 @@ public class Command_Input : MonoBehaviour
             if (p.HasValue) EvaluateInput(p.Value);
         }
 
-        UpdateVignettesPersistent();
+        UpdateSliders();
+        UpdateVignettePersistent();
     }
 
-    // ====== Phase control ======
+    // ====== Post FX ======
+    private void EnsurePostFX()
+    {
+        if (globalVolume == null)
+        {
+            globalVolume = FindObjectOfType<Volume>();
+            if (globalVolume == null)
+            {
+                var go = new GameObject("Global Volume (Auto)");
+                globalVolume = go.AddComponent<Volume>();
+                globalVolume.isGlobal = true;
+                globalVolume.priority = 999f;
+                globalVolume.profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            }
+        }
+        var profile = globalVolume.profile ?? (globalVolume.profile = ScriptableObject.CreateInstance<VolumeProfile>());
+
+        if (!profile.TryGet(out _vignette))
+            _vignette = profile.Add<Vignette>();
+        _vignette.active = true;
+        _vignette.intensity.overrideState = true;
+        _vignette.smoothness.overrideState = true;
+        _vignette.rounded.overrideState = true;
+        _vignette.color.overrideState = true;
+        _vignette.smoothness.value = vignetteSmoothness;
+        _vignette.rounded.value = vignetteRounded;
+
+        if (!profile.TryGet(out _colorAdj))
+            _colorAdj = profile.Add<ColorAdjustments>();
+        _colorAdj.active = true;
+        _colorAdj.colorFilter.overrideState = true;
+        _colorAdj.postExposure.overrideState = true;
+        _colorAdj.colorFilter.value = Color.white;
+        _colorAdj.postExposure.value = 0f;
+    }
+
+    private void SetVignette(float intensity, Color color)
+    {
+        if (_vignette == null) return;
+        _vignette.color.value = color;
+        _vignette.intensity.value = Mathf.Clamp01(intensity);
+    }
+
+    private void SetColorFlash(float amt, Color col)
+    {
+        if (!useColorFlash || _colorAdj == null) return;
+        amt = Mathf.Clamp01(amt);
+        _colorAdj.colorFilter.value = Color.Lerp(Color.white, col, amt);
+        _colorAdj.postExposure.value = Mathf.Lerp(0f, flashExposure, amt);
+    }
+
+    private void BlinkVignette(Color color, float peak, bool treatAsDamage)
+    {
+        if (_vignette == null) return;
+        if (_blinkCR != null) StopCoroutine(_blinkCR);
+        _blinkCR = StartCoroutine(VignetteBlinkRoutine(color, peak, treatAsDamage));
+    }
+
+    private IEnumerator VignetteBlinkRoutine(Color color, float peak, bool treatAsDamage)
+    {
+        _isBlinking = true;
+        _vignette.color.value = color;
+        _vignette.intensity.value = peak; // 바로 피크
+
+        // 컬러 플래시 피크
+        float flashPeak = (treatAsDamage && IsPlayerLow()) ? flashAmountLowHP : flashAmountNormal;
+        SetColorFlash(flashPeak, color);
+
+        float t = 0f;
+        while (t < blinkFadeTime)
+        {
+            t += Time.deltaTime;
+
+            bool holdDamage = IsPlayerLowOnly();
+            bool holdHoly = IsLeaderLow() || (IsPlayerLow() && IsLeaderLow());
+
+            float target = treatAsDamage
+                ? (holdDamage ? holdIntensity : Mathf.Lerp(peak, 0f, t / blinkFadeTime))
+                : (holdHoly ? holdIntensity : Mathf.Lerp(peak, 0f, t / blinkFadeTime));
+
+            // 비네트 진하기 보간
+            _vignette.intensity.value = Mathf.Lerp(_vignette.intensity.value, target, 0.45f);
+
+            // 컬러 플래시도 함께 감쇠/유지
+            float flashTarget = treatAsDamage
+                ? (holdDamage ? holdIntensity : Mathf.Lerp(flashPeak, 0f, t / flashFadeTime))
+                : (holdHoly ? holdIntensity : Mathf.Lerp(flashPeak, 0f, t / flashFadeTime));
+            SetColorFlash(flashTarget, color);
+
+            yield return null;
+        }
+
+        // 유지 조건이 없으면 원상 복귀
+        if (!(IsPlayerLow() || IsLeaderLow()))
+            SetColorFlash(0f, Color.white);
+
+        _isBlinking = false;
+    }
+
+    private bool IsPlayerLow() => playerHP <= playerMaxHP * lowHPThreshold;
+    private bool IsLeaderLow() => leaderHP <= leaderMaxHP * lowHPThreshold;
+    private bool IsPlayerLowOnly() => IsPlayerLow() && !IsLeaderLow();
+
+    private void UpdateVignettePersistent()
+    {
+        if (_vignette == null || _isBlinking) return;
+
+        if (IsPlayerLow() && IsLeaderLow())
+        {
+            _vignette.color.value = holyColor;
+            _vignette.intensity.value = Mathf.Lerp(_vignette.intensity.value, holdIntensity, Time.deltaTime * 6f);
+            SetColorFlash(holdIntensity, holyColor);
+            return;
+        }
+        if (IsPlayerLowOnly())
+        {
+            _vignette.color.value = damageColor;
+            _vignette.intensity.value = Mathf.Lerp(_vignette.intensity.value, holdIntensity, Time.deltaTime * 6f);
+            SetColorFlash(holdIntensity, damageColor);
+            return;
+        }
+        if (IsLeaderLow())
+        {
+            _vignette.color.value = holyColor;
+            _vignette.intensity.value = Mathf.Lerp(_vignette.intensity.value, holdIntensity, Time.deltaTime * 6f);
+            SetColorFlash(holdIntensity, holyColor);
+            return;
+        }
+
+        _vignette.intensity.value = Mathf.Lerp(_vignette.intensity.value, 0f, Time.deltaTime * 4f);
+        if (useColorFlash && _colorAdj != null)
+        {
+            _colorAdj.colorFilter.value = Color.Lerp(_colorAdj.colorFilter.value, Color.white, Time.deltaTime * 4f);
+            _colorAdj.postExposure.value = Mathf.Lerp(_colorAdj.postExposure.value, 0f, Time.deltaTime * 4f);
+        }
+    }
+
+    // ====== Sliders ======
+    private void UpdateSliders()
+    {
+        if (leaderHPSlider != null)
+        {
+            float target = leaderHP / Mathf.Max(0.0001f, leaderMaxHP);
+            hpSliderVal = Mathf.Lerp(hpSliderVal, target, Time.deltaTime * sliderSmooth);
+            leaderHPSlider.value = hpSliderVal;
+        }
+        if (timeSlider != null)
+        {
+            float target = (phaseTimeMax > 0f) ? Mathf.Clamp01(phaseTimer / phaseTimeMax) : 0f;
+            timeSliderVal = Mathf.Lerp(timeSliderVal, target, Time.deltaTime * sliderSmooth);
+            timeSlider.value = timeSliderVal;
+        }
+    }
+
+    // ====== Phase ======
     private void StartNewPhase()
     {
         phaseIndex++;
         inputCursor = 0;
         inputLocked = true;
 
-        // 이번 페이즈용 count/time 선택(플랜 우선)
-        ChooseCountAndTimeForThisPhase(out int count, out float time);
+        ChooseFromStagePlan(out int count, out float time);
         currentCommandCount = count;
-        phaseTimer = Mathf.Max(0.1f, time * Mathf.Max(0.01f, difficultyTimeScale));
+
+        float t = Mathf.Max(0.1f, time * Mathf.Max(0.01f, difficultyTimeScale));
+        phaseTimer = t;
+        phaseTimeMax = t;
+        if (timeSlider != null) { timeSlider.value = 1f; timeSliderVal = 1f; }
 
         GenerateSequence(currentCommandCount);
         BuildSlotLineAndFill(currentCommandCount);
@@ -189,57 +337,47 @@ public class Command_Input : MonoBehaviour
         StartCoroutine(UnlockInputAfterSpawn());
     }
 
-    private void ChooseCountAndTimeForThisPhase(out int count, out float time)
+    private void ChooseFromStagePlan(out int count, out float time)
     {
-        if (useStagePlan && stagePlan != null && stagePlan.Count > 0)
+        if (stagePlan == null || stagePlan.Count == 0)
         {
-            // 현재 항목
-            var entry = stagePlan[Mathf.Clamp(planIndex, 0, stagePlan.Count - 1)];
-            count = Mathf.Clamp(entry.count, 5, 12);
-            time = entry.customTime ? entry.time : GetTimeForCount(count);
+            count = 5; time = 5f; return;
+        }
 
-            // 다음 페이즈를 위해 진행 포인터 갱신
-            planRepeatProgress++;
-            int need = Mathf.Max(1, entry.repeats);
-            if (planRepeatProgress >= need)
-            {
-                planRepeatProgress = 0;
-                planIndex++;
-                if (planIndex >= stagePlan.Count)
-                {
-                    planIndex = loopStagePlan ? 0 : stagePlan.Count - 1; // 루프 안 하면 마지막 상태 유지
-                }
-            }
-        }
-        else
+        var e = stagePlan[Mathf.Clamp(planIndex, 0, stagePlan.Count - 1)];
+        count = Mathf.Clamp(e.count, 5, 12);
+        time = e.customTime ? e.time : DefaultTimeForCount(count);
+
+        planRepeatProgress++;
+        if (planRepeatProgress >= Mathf.Max(1, e.repeats))
         {
-            // 자동 증가 모드
-            if (phaseIndex > 1)
-            {
-                int inc = Random.Range(commandIncreaseRange.x, commandIncreaseRange.y + 1);
-                currentCommandCount = Mathf.Clamp(currentCommandCount + inc, 5, maxCommands);
-            }
-            count = currentCommandCount;
-            time = GetTimeForCount(count);
+            planRepeatProgress = 0;
+            planIndex++;
+            if (planIndex >= stagePlan.Count)
+                planIndex = loopStagePlan ? 0 : stagePlan.Count - 1; // 루프 Off면 마지막 단계 유지
         }
+    }
+
+    private float DefaultTimeForCount(int count)
+    {
+        switch (Mathf.Clamp(count, 5, 12))
+        {
+            case 5: return 5.0f;
+            case 6: return 4.6f;
+            case 7: return 4.2f;
+            case 8: return 3.8f;
+            case 9: return 3.5f;
+            case 10: return 3.2f;
+            case 11: return 3.0f;
+            case 12: return 2.8f;
+        }
+        return 3.0f;
     }
 
     private IEnumerator UnlockInputAfterSpawn()
     {
         yield return new WaitForSeconds(spawnScaleTime);
         inputLocked = false;
-    }
-
-    private float GetTimeForCount(int count)
-    {
-        float? exact = null; float nearest = -1f; int nd = 999;
-        foreach (var ct in timeByCount)
-        {
-            if (ct.count == count) exact = ct.time;
-            int d = Mathf.Abs(ct.count - count);
-            if (d < nd) { nd = d; nearest = ct.time; }
-        }
-        return exact.HasValue ? exact.Value : (nearest > 0f ? nearest : 3f);
     }
 
     private void GenerateSequence(int count)
@@ -269,24 +407,6 @@ public class Command_Input : MonoBehaviour
             bg.transform.localScale = Vector3.one * 0.2f;
             bg.color = GetDirColor(currentSequence[i], slotColorAlpha); // 슬롯=화살표색
 
-            // 링
-            Image ring = null;
-            if (slotRingSprite != null && additiveUIMaterial != null)
-            {
-                var ringGO = new GameObject($"Ring_{i}", typeof(RectTransform), typeof(Image));
-                ringGO.transform.SetParent(bg.transform, false);
-                var rr = (RectTransform)ringGO.transform;
-                rr.anchorMin = rr.anchorMax = new Vector2(0.5f, 0.5f);
-                rr.sizeDelta = bg.rectTransform.sizeDelta * ringScale;
-                rr.anchoredPosition = Vector2.zero;
-                ring = ringGO.GetComponent<Image>();
-                ring.sprite = slotRingSprite;
-                ring.material = additiveUIMaterial;
-                ring.preserveAspect = true;
-                ring.color = GetDirColor(currentSequence[i], ringAlpha);
-                ring.raycastTarget = false;
-            }
-
             // 화살표
             var arrowGO = new GameObject($"Arrow_{i}", typeof(RectTransform), typeof(Image));
             arrowGO.transform.SetParent(bg.transform, false);
@@ -300,7 +420,7 @@ public class Command_Input : MonoBehaviour
             arrowImg.color = GetDirColor(currentSequence[i], 1f);
 
             StartCoroutine(ScaleUp(bg.transform, spawnScaleTime));
-            slots.Add(new SlotUI { bg = bg, ring = ring, arrow = arrowImg });
+            slots.Add(new SlotUI { bg = bg, arrow = arrowImg });
         }
     }
 
@@ -337,23 +457,21 @@ public class Command_Input : MonoBehaviour
     private void OnCorrect(SlotUI slot)
     {
         if (slot == null) return;
+
+        // 스파클은 슬롯 자식이 아닌 패널 밑으로 생성해 안전하게 유지
         if (sparklePrefab != null)
         {
-            var fx = Instantiate(sparklePrefab, slot.bg.rectTransform.position, Quaternion.identity, slot.bg.transform);
+            var fx = Instantiate(sparklePrefab, slot.bg.rectTransform.position, Quaternion.identity, commandPanel);
             fx.Play(); Destroy(fx.gameObject, 2f);
         }
-        StartCoroutine(DisableArrowAfter(slot, 0.05f));
+
+        StartCoroutine(DisableArrowAfter(slot, 0.05f)); // 화살표만 꺼짐(배경색 유지)
     }
 
     private IEnumerator DisableArrowAfter(SlotUI slot, float delay)
     {
         yield return new WaitForSeconds(delay);
-        if (slot != null && slot.arrow != null)
-        {
-            slot.arrow.enabled = false;
-            slot.bg.color = emptySlotColor;
-            if (slot.ring != null) slot.ring.enabled = false;
-        }
+        if (slot != null && slot.arrow != null) slot.arrow.enabled = false;
     }
 
     private void OnWrong(SlotUI slot)
@@ -368,7 +486,11 @@ public class Command_Input : MonoBehaviour
             xr.sizeDelta = slot.bg.rectTransform.sizeDelta * 0.9f;
             x.preserveAspect = true; x.raycastTarget = false;
             var c = x.color; c.a = 1f; x.color = c;
+
+            // 슬롯이 파괴되어도 안전하도록 패널로 분리
+            x.transform.SetParent(commandPanel, true);
             x.transform.SetAsLastSibling();
+
             StartCoroutine(FadeAndDestroy(x, 0.25f));
         }
         if (MainCamera != null) StartCoroutine(ShakeCamera(MainCamera, shakeTime, shakeIntensity));
@@ -378,7 +500,10 @@ public class Command_Input : MonoBehaviour
     private void OnPhaseTimeout()
     {
         playerHP = Mathf.Max(0f, playerHP - playerDamageOnTimeout);
-        BlinkDamageOverlay();
+
+        float peak = IsPlayerLow() ? blinkPeakLowHP : blinkPeakNormal;
+        BlinkVignette(damageColor, peak, true);
+
         if (playerHP <= 0f) { StartCoroutine(PlayPlayerDefeat()); return; }
         StartNewPhase();
     }
@@ -386,62 +511,10 @@ public class Command_Input : MonoBehaviour
     private void OnPhaseClear()
     {
         leaderHP = Mathf.Max(0f, leaderHP - leaderDamageOnSuccess);
-        BlinkHolyOverlay();
+        BlinkVignette(holyColor, blinkPeakNormal, false);
+
         if (leaderHP <= 0f) { StartCoroutine(PlayLeaderDefeat()); return; }
         StartNewPhase();
-    }
-
-    // ====== Overlays ======
-    private void BlinkDamageOverlay() { if (damageVignette != null) StartCoroutine(BlinkOverlayOnce(damageVignette, 0.9f, overlayFadeTime)); }
-    private void BlinkHolyOverlay() { if (holyVignette != null) StartCoroutine(BlinkOverlayOnce(holyVignette, 0.9f, overlayFadeTime)); }
-
-    private IEnumerator BlinkOverlayOnce(Image img, float peakAlpha, float fadeTime)
-    {
-        if (img == null) yield break;
-        SetImageAlpha(img, peakAlpha);
-        float el = 0f;
-        while (el < fadeTime)
-        {
-            el += Time.deltaTime;
-            if (ShouldHoldOverlay(img)) yield break;
-            SetImageAlpha(img, Mathf.Lerp(peakAlpha, 0f, el / fadeTime));
-            yield return null;
-        }
-        SetImageAlpha(img, ShouldHoldOverlay(img) ? 0.8f : 0f);
-    }
-
-    private void UpdateVignettesPersistent()
-    {
-        bool playerLow = (playerHP <= playerMaxHP * lowHPThreshold);
-        bool leaderLow = (leaderHP <= leaderMaxHP * lowHPThreshold);
-
-        if (playerLow && leaderLow) { HoldOverlay(holyVignette, 0.8f); ReleaseOverlay(damageVignette, overlayFadeTime); return; }
-        if (playerLow) HoldOverlay(damageVignette, 0.8f); else ReleaseOverlay(damageVignette, overlayFadeTime);
-        if (leaderLow) HoldOverlay(holyVignette, 0.8f); else ReleaseOverlay(holyVignette, overlayFadeTime);
-    }
-
-    private bool ShouldHoldOverlay(Image img)
-    {
-        if (img == damageVignette)
-        {
-            bool playerLow = (playerHP <= playerMaxHP * lowHPThreshold);
-            bool bothLow = playerLow && (leaderHP <= leaderMaxHP * lowHPThreshold);
-            return playerLow && !bothLow;
-        }
-        if (img == holyVignette) return (leaderHP <= leaderMaxHP * lowHPThreshold);
-        return false;
-    }
-
-    private void HoldOverlay(Image img, float targetAlpha)
-    {
-        if (img == null) return;
-        var a = img.color.a;
-        SetImageAlpha(img, a < targetAlpha ? Mathf.Lerp(a, targetAlpha, Time.deltaTime * 8f) : targetAlpha);
-    }
-    private void ReleaseOverlay(Image img, float fadeTime)
-    {
-        if (img == null) return;
-        SetImageAlpha(img, Mathf.MoveTowards(img.color.a, 0f, Time.deltaTime * (1f / Mathf.Max(0.001f, fadeTime))));
     }
 
     // ====== Defeat/Victory ======
@@ -457,12 +530,11 @@ public class Command_Input : MonoBehaviour
             {
                 t += Time.deltaTime; float k = Mathf.Clamp01(t / 1.2f);
                 pt.localScale = Vector3.Lerp(baseScale, baseScale * 1.6f, k);
-                HoldOverlay(damageVignette, Mathf.Lerp(0.3f, 1f, k));
+                SetVignette(Mathf.Lerp(_vignette.intensity.value, 1f, Time.deltaTime * 4f), damageColor);
                 yield return null;
             }
         }
         yield return new WaitForSeconds(0.5f);
-        // TODO: 패배 후 처리
     }
 
     private IEnumerator PlayLeaderDefeat()
@@ -474,10 +546,9 @@ public class Command_Input : MonoBehaviour
         if (Leader != null) Leader.SetActive(false);
         for (float t = 0f; t < 1.2f; t += Time.deltaTime)
         {
-            HoldOverlay(holyVignette, Mathf.Lerp(0.2f, 0.8f, t / 1.2f));
+            SetVignette(Mathf.Lerp(_vignette.intensity.value, 0.7f, Time.deltaTime * 4f), holyColor);
             yield return null;
         }
-        // TODO: 클리어 처리
     }
 
     // ====== Utils ======
@@ -490,11 +561,19 @@ public class Command_Input : MonoBehaviour
 
     private IEnumerator FadeAndDestroy(Image x, float life)
     {
-        if (x == null) yield break;
-        var c0 = x.color; c0.a = 1f; x.color = c0;
+        if (!x) yield break;
+        var col = x.color; col.a = 1f; x.color = col;
+
         float el = 0f;
-        while (el < life) { el += Time.deltaTime; SetImageAlpha(x, Mathf.Lerp(1f, 0f, el / life)); yield return null; }
-        if (x != null) Destroy(x.gameObject);
+        while (el < life)
+        {
+            if (!x) yield break; // 중간에 파괴되면 종료
+            el += Time.deltaTime;
+            var c = x.color; c.a = Mathf.Lerp(1f, 0f, el / life);
+            x.color = c;
+            yield return null;
+        }
+        if (x) Destroy(x.gameObject);
     }
 
     private IEnumerator ShakeCamera(Camera cam, float t, float intensity)
@@ -515,7 +594,7 @@ public class Command_Input : MonoBehaviour
 
     private void CleanupSlots()
     {
-        for (int i = 0; i < slots.Count; i++) if (slots[i].bg != null) Destroy(slots[i].bg.gameObject);
+        foreach (var s in slots) if (s.bg != null) Destroy(s.bg.gameObject);
         slots.Clear();
     }
 
@@ -544,18 +623,13 @@ public class Command_Input : MonoBehaviour
         c.a = alpha; return c;
     }
 
-    private void SetImageAlpha(Image img, float a)
-    {
-        if (img == null) return; var c = img.color; c.a = Mathf.Clamp01(a); img.color = c;
-    }
-
     private float EaseOutBack(float x)
     {
         const float c1 = 1.70158f, c3 = c1 + 1f;
         return 1f + c3 * Mathf.Pow(x - 1f, 3) + c1 * Mathf.Pow(x - 1f, 2);
     }
 
-    // 에디터 디버그
+    // 디버그
     [ContextMenu("Force Timeout")] private void Debug_ForceTimeout() { phaseTimer = 0f; }
     [ContextMenu("Force Clear")] private void Debug_ForceClear() { inputCursor = currentSequence.Count; OnPhaseClear(); }
 }

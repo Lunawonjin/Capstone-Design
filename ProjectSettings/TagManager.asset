@@ -10,6 +10,9 @@ TagManager:
   - FlowerB
   - FlowerC
   - Door
+  - Block
+  - NoBlock
+  - HUD
   layers:
   - Default
   - TransparentFX
