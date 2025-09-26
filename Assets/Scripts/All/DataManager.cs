@@ -61,7 +61,7 @@ public class DataManager : MonoBehaviour
 
     [Header("표기 형식")]
     [Tooltip("코인 표기 포맷(예: \"Coin: {0}\", \"{0:N0} G\")")]
-    [SerializeField] private string coinFormat = "Coin: {0}";
+    [SerializeField] private string coinFormat = "{0}";
     [Tooltip("레벨 표기 포맷(예: \"Lv. {0}\")")]
     [SerializeField] private string levelFormat = "Lv. {0}";
     [Tooltip("이름 표기 포맷(예: \"{0}\")")]
