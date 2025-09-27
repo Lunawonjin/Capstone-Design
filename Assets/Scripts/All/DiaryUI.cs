@@ -4,6 +4,7 @@
 // - Tab: DiaryPanel, DiaryAssets 둘 다 활성화
 // - 연출(스케일/알파)은 DiaryAssets에만 적용
 // - Esc: 닫기(외부 차단 플래그 지원)
+// - Exit 버튼: 클릭 시 닫기(비활성화)
 // - UnscaledTime 기반 트윈
 
 using UnityEngine;
@@ -22,7 +23,11 @@ public class DiaryUI : MonoBehaviour
     [SerializeField] private GameObject diaryPanel;
     [Tooltip("실제 콘텐츠(애니메이션 대상). 알파/스케일 연출은 여기만 적용")]
     [SerializeField] private GameObject diaryAssets;
+
+    [Header("버튼 참조")]
     [SerializeField] private Button bookIconButton;
+    [Tooltip("다이어리 닫기(Exit). 누르면 Close() 호출")]
+    [SerializeField] private Button exitButton;
 
     [Header("키 설정")]
     [SerializeField] private KeyCode toggleKey = KeyCode.Tab;
@@ -78,6 +83,7 @@ public class DiaryUI : MonoBehaviour
         _rtAssets = diaryAssets.GetComponent<RectTransform>();
 
         if (bookIconButton != null) bookIconButton.onClick.AddListener(Toggle);
+        if (exitButton != null) exitButton.onClick.AddListener(Close); // Exit 버튼으로 닫기
     }
 
     void Start()
@@ -93,6 +99,7 @@ public class DiaryUI : MonoBehaviour
     void OnDestroy()
     {
         if (bookIconButton != null) bookIconButton.onClick.RemoveListener(Toggle);
+        if (exitButton != null) exitButton.onClick.RemoveListener(Close);
     }
 
     void Update()
