@@ -65,7 +65,7 @@ public class PlayerCollisionHandler : MonoBehaviour
     void Reset()
     {
         var rb = GetComponent<Rigidbody2D>();
-        rb.isKinematic = true;
+        rb.bodyType = RigidbodyType2D.Kinematic;
         rb.gravityScale = 0f;
     }
 
