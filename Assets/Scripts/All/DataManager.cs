@@ -25,12 +25,16 @@ public class PlayerData
     // 마지막 씬 이름
     public string Scene;
 
+    // 요일(1~7) : 월(1) 화(2) 수(3) 목(4) 금(5) 토(6) 일(7)
+    public int Weekday;
+
     // 기본값
     public PlayerData()
     {
         Level = 1;
         Day = 1;
         Scene = ""; // 미저장 상태
+        Weekday = 1; // Day=1은 월요일로 시작(필요 시 DataManager의 baseWeekdayForDay1로 재동기화됨)
     }
 }
 
@@ -41,6 +45,7 @@ public class PlayerData
 /// - HUD 자동 바인딩
 /// - 저장된 씬/좌표 복원(옵션)
 /// - Unity 6 API 사용(linearVelocity 등)
+/// - 요일(1~7, 월~일) 저장/증가/표기 + 주말 조건 제공
 /// </summary>
 public class DataManager : MonoBehaviour
 {
@@ -70,10 +75,18 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string nameObjectName = "Text_Name";
 
     [Header("표기 형식")]
+    [Tooltip("예: {0}일 {1}요일  → {0}=일차, {1}=요일명(월/화/수/목/금/토/일)")]
+    [SerializeField] private string dayFormat = "{0}일 {1}요일";
     [SerializeField] private string coinFormat = "{0}";
     [SerializeField] private string levelFormat = "Lv. {0}";
-    [SerializeField] private string dayFormat = "{0}일차";
     [SerializeField] private string nameFormat = "{0}";
+
+    [Header("요일 동기화 옵션")]
+    [Tooltip("Day=1이 무슨 요일인지(1~7: 월=1 … 일=7)")]
+    [Range(1, 7)][SerializeField] private int baseWeekdayForDay1 = 1;
+
+    [Tooltip("SetDay 호출 시 Day값에 맞춰 Weekday를 자동으로 재계산")]
+    [SerializeField] private bool autoSyncWeekdayOnSetDay = true;
 
     [Header("플레이어 위치 적용 옵션")]
     [SerializeField] private bool applySavedPositionOnLoad = true;
@@ -83,11 +96,14 @@ public class DataManager : MonoBehaviour
     [Header("자동 씬 로드 옵션")]
     public bool autoLoadSavedSceneOnStart = false;
 
+    // 내부: 요일 이름표(1~7 인덱스 사용; 0은 미사용)
+    private static readonly string[] WEEK_KO = { "", "월", "화", "수", "목", "금", "토", "일" };
+
     // HUD 변경 감지용 스냅샷
-    int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue;
+    int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue, _lastWeekday = int.MinValue;
     string _lastName = null;
 
-    // 초기화
+    // ===== 초기화 =====
     void Awake()
     {
         if (instance == null)
@@ -114,7 +130,12 @@ public class DataManager : MonoBehaviour
             if (nameText) DontDestroyOnLoad(nameText.gameObject);
         }
 
+        // 씬 변경 시 HUD 재바인딩 + 저장 위치 적용
         SceneManager.sceneLoaded += OnSceneLoaded_RebindHUD_AndApplyPos;
+
+        // Weekday 보정(구세이브/초기 데이터 보호)
+        EnsureWeekdayValid();
+
         SnapshotValues();
     }
 
@@ -147,18 +168,12 @@ public class DataManager : MonoBehaviour
 
     // ==================== 저장/로드/삭제 ====================
 
-    /// <summary>
-    /// 슬롯 파일 경로(폴더 보장)
-    /// </summary>
     private string GetSlotPath(int slot)
     {
         if (!Directory.Exists(path)) Directory.CreateDirectory(path);
         return System.IO.Path.Combine(path, $"slot_{slot}.json");
     }
 
-    /// <summary>
-    /// 저장
-    /// </summary>
     public void SaveData()
     {
         if (nowSlot < 0)
@@ -172,6 +187,7 @@ public class DataManager : MonoBehaviour
         {
             if (nowPlayer.Level < 1) nowPlayer.Level = 1;
             if (nowPlayer.Day < 1) nowPlayer.Day = 1;
+            EnsureWeekdayValid();
 
             string json = JsonUtility.ToJson(nowPlayer, false);
             File.WriteAllText(file, json);
@@ -185,9 +201,6 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 로드
-    /// </summary>
     public void LoadData()
     {
         if (nowSlot < 0)
@@ -213,6 +226,10 @@ public class DataManager : MonoBehaviour
             if (!nowPlayer.HasSavedPosition && (nowPlayer.Px != 0f || nowPlayer.Py != 0f || nowPlayer.Pz != 0f))
                 nowPlayer.HasSavedPosition = true;
 
+            // 요일 필드가 0이면 Day 기준으로 재계산
+            if (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7)
+                RecomputeWeekdayFromDay();
+
             NotifyChanged();
             SnapshotValues();
 
@@ -226,20 +243,16 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 데이터 초기화(메모리)
-    /// </summary>
     public void DataClear()
     {
         nowSlot = -1;
         nowPlayer = new PlayerData();
+        // Day=1 → baseWeekdayForDay1 반영
+        if (autoSyncWeekdayOnSetDay) RecomputeWeekdayFromDay();
         NotifyChanged();
         SnapshotValues();
     }
 
-    /// <summary>
-    /// 해당 슬롯이 존재하는가
-    /// </summary>
     public bool ExistsSlot(int slot)
     {
         if (slot < 0) return false;
@@ -247,9 +260,6 @@ public class DataManager : MonoBehaviour
         return File.Exists(f);
     }
 
-    /// <summary>
-    /// 하나라도 세이브가 있는가
-    /// </summary>
     public bool HasAnySave(int slotCount = 3)
     {
         for (int i = 0; i < slotCount; i++)
@@ -257,9 +267,6 @@ public class DataManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// 가장 최근(수정 시간 최신) 슬롯 반환
-    /// </summary>
     public int GetMostRecentSaveSlot(int slotCount = 3)
     {
         int best = -1;
@@ -274,9 +281,6 @@ public class DataManager : MonoBehaviour
         return best;
     }
 
-    /// <summary>
-    /// 가장 최근 세이브 로드 시도
-    /// </summary>
     public bool TryLoadMostRecentSave(int slotCount = 3)
     {
         int s = GetMostRecentSaveSlot(slotCount);
@@ -295,9 +299,6 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 지정 슬롯 삭제
-    /// </summary>
     public bool DeleteData(int slot)
     {
         if (slot < 0) return false;
@@ -331,10 +332,89 @@ public class DataManager : MonoBehaviour
     public void SetLevel(int level) { nowPlayer.Level = Mathf.Max(1, level); NotifyChanged(); SnapshotValues(); }
     public void AddLevel(int delta) { nowPlayer.Level = Mathf.Max(1, nowPlayer.Level + delta); NotifyChanged(); SnapshotValues(); }
 
-    public void SetDay(int day) { nowPlayer.Day = Mathf.Max(1, day); NotifyChanged(); SnapshotValues(); }
-    public void AddDay(int delta) { nowPlayer.Day = Mathf.Max(1, nowPlayer.Day + delta); NotifyChanged(); SnapshotValues(); }
+    /// <summary>
+    /// Day를 직접 설정. autoSyncWeekdayOnSetDay=true면 Day=1의 기준 요일(baseWeekdayForDay1)로 Weekday 재계산.
+    /// </summary>
+    public void SetDay(int day)
+    {
+        nowPlayer.Day = Mathf.Max(1, day);
+        if (autoSyncWeekdayOnSetDay) RecomputeWeekdayFromDay();
+        NotifyChanged(); SnapshotValues();
+    }
+
+    /// <summary>
+    /// Day를 증감. 요일도 함께 순환(1~7).
+    /// </summary>
+    public void AddDay(int delta)
+    {
+        int before = nowPlayer.Day;
+        nowPlayer.Day = Mathf.Max(1, nowPlayer.Day + delta);
+
+        // 요일 동기화: delta만큼 순환
+        if (delta != 0)
+        {
+            int wd = GetWeekday();
+            wd = WrapWeekday(wd + delta);
+            SetWeekday(wd, notify: false);
+        }
+
+        NotifyChanged(); SnapshotValues();
+    }
 
     public void SetPlayerName(string newName) { nowPlayer.Name = newName ?? ""; NotifyChanged(); SnapshotValues(); }
+
+    // ==================== 요일 유틸 ====================
+
+    /// <summary>1~7 범위의 요일 반환(월=1 … 일=7). 저장값이 깨졌으면 보정.</summary>
+    public int GetWeekday()
+    {
+        EnsureWeekdayValid();
+        return nowPlayer.Weekday;
+    }
+
+    /// <summary>요일(1~7) 강제 지정. notify=false면 HUD는 호출부에서 묶어서 갱신 가능.</summary>
+    public void SetWeekday(int weekday, bool notify = true)
+    {
+        nowPlayer.Weekday = WrapWeekday(weekday);
+        if (notify) { NotifyChanged(); SnapshotValues(); }
+    }
+
+    /// <summary>토/일이면 주말</summary>
+    public bool IsWeekend => GetWeekday() is 6 or 7;
+
+    /// <summary>요일명(월/화/수/목/금/토/일) 반환</summary>
+    public string GetWeekdayName()
+    {
+        int w = GetWeekday();
+        return WEEK_KO[w];
+    }
+
+    /// <summary>Day 값을 기준으로 Weekday 재계산. Day=1 → baseWeekdayForDay1.</summary>
+    public void RecomputeWeekdayFromDay()
+    {
+        int day = Mathf.Max(1, nowPlayer.Day);
+        int baseW = WrapWeekday(baseWeekdayForDay1);
+        // Day=1 → baseW, Day=2 → baseW+1 …
+        int w = WrapWeekday(baseW + (day - 1));
+        nowPlayer.Weekday = w;
+    }
+
+    private int WrapWeekday(int w)
+    {
+        // 1..7 범위로 순환
+        int r = w % 7;
+        if (r <= 0) r += 7;
+        return r;
+    }
+
+    private void EnsureWeekdayValid()
+    {
+        if (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7)
+        {
+            // 저장값이 없거나 깨졌으면 Day 기준으로 재계산
+            RecomputeWeekdayFromDay();
+        }
+    }
 
     // ==================== 위치/씬 저장 ====================
 
@@ -350,9 +430,6 @@ public class DataManager : MonoBehaviour
 
     // ==================== 씬 로드 + 위치 적용 ====================
 
-    /// <summary>
-    /// 저장된 씬을 로드하고 플레이어를 저장된 위치로 이동
-    /// </summary>
     public IEnumerator LoadSavedSceneAndPlacePlayer()
     {
         if (nowPlayer == null || string.IsNullOrEmpty(nowPlayer.Scene))
@@ -361,21 +438,16 @@ public class DataManager : MonoBehaviour
         string targetScene = nowPlayer.Scene;
         string currentScene = SceneManager.GetActiveScene().name;
 
-        // 다른 씬이면 먼저 로드
         if (!string.Equals(targetScene, currentScene, StringComparison.Ordinal))
         {
             var op = SceneManager.LoadSceneAsync(targetScene);
             while (!op.isDone) yield return null;
         }
 
-        // 플레이어가 생성될 때까지 대기 후 위치 적용
         if (applySavedPositionOnLoad && nowPlayer.HasSavedPosition)
             yield return ApplyPositionWhenReady();
     }
 
-    /// <summary>
-    /// 플레이어를 찾을 때까지 대기 후 위치 적용
-    /// </summary>
     private IEnumerator ApplyPositionWhenReady()
     {
         float t = 0f;
@@ -394,29 +466,26 @@ public class DataManager : MonoBehaviour
 
         Vector3 target = new Vector3(nowPlayer.Px, nowPlayer.Py, nowPlayer.Pz);
 
-        // Rigidbody2D 우선
         var rb2 = player.GetComponent<Rigidbody2D>();
         if (rb2)
         {
-            rb2.linearVelocity = Vector2.zero; // Unity 6 API
+            rb2.linearVelocity = Vector2.zero;
             rb2.angularVelocity = 0f;
             rb2.position = new Vector2(target.x, target.y);
             player.transform.position = target;
             yield break;
         }
 
-        // 3D Rigidbody
         var rb3 = player.GetComponent<Rigidbody>();
         if (rb3)
         {
-            rb3.linearVelocity = Vector3.zero; // Unity 6 API
+            rb3.linearVelocity = Vector3.zero;
             rb3.angularVelocity = Vector3.zero;
             rb3.position = target;
             player.transform.position = target;
             yield break;
         }
 
-        // 기본 Transform 이동
         player.transform.position = target;
     }
 
@@ -429,7 +498,13 @@ public class DataManager : MonoBehaviour
     {
         if (coinText) coinText.text = string.Format(coinFormat, nowPlayer.Coin);
         if (levelText) levelText.text = string.Format(levelFormat, nowPlayer.Level);
-        if (dayText) dayText.text = string.Format(dayFormat, nowPlayer.Day);
+
+        // Day + 요일
+        if (dayText)
+        {
+            string weekdayName = GetWeekdayName(); // 월/화/수/목/금/토/일
+            dayText.text = string.Format(dayFormat, nowPlayer.Day, weekdayName);
+        }
 
         if (nameText)
         {
@@ -520,6 +595,7 @@ public class DataManager : MonoBehaviour
         _lastCoin = nowPlayer?.Coin ?? 0;
         _lastLevel = nowPlayer?.Level ?? 1;
         _lastDay = nowPlayer?.Day ?? 1;
+        _lastWeekday = nowPlayer?.Weekday ?? 1;
         _lastName = nowPlayer?.Name ?? "";
     }
 
@@ -529,6 +605,7 @@ public class DataManager : MonoBehaviour
         return _lastCoin != nowPlayer.Coin
             || _lastLevel != nowPlayer.Level
             || _lastDay != nowPlayer.Day
+            || _lastWeekday != (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7 ? WrapWeekday(nowPlayer.Weekday) : nowPlayer.Weekday)
             || _lastName != (nowPlayer.Name ?? "");
     }
 }

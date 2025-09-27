@@ -3,37 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// DoorTriggerSwitch_LatchedWithKey (Unity 6 / 6000.x)
+/// DoorTriggerSwitch_OpenOnTouchOrM (Unity 6 / 6000.x)
 ///
-/// 조건
-/// - Player가 문과 "충돌 중"일 때 S키를 눌러야(Map 열기) 발동.
-///   1) Enter 순간: S가 이미 눌린 상태면 즉시 발동(GetKey)
-///   2) Stay 순간: 충돌 유지 중에 S를 "누르는 순간" 발동(GetKeyDown)
-///
-/// 래치
-/// - 발동 후, Player가 문에서 실제로 "벗어날 때(겹침 해제)"까지 재트리거 금지.
-/// - Exit 이벤트 유실을 대비해 "실제 겹침 해제"를 검사하는 코루틴을 전용 Runner에서 수행.
-///
-/// 권장
-/// - Door 오브젝트는 characterRoomRoot 바깥 계층에 두는 것을 권장(물리 이벤트 유실 감소).
-/// - 그래도 본 스크립트는 자체 겹침 검사로 안전하게 동작.
-///
-/// 사용법
-/// 1) Door 오브젝트에 Collider(2D/3D) 추가(Trigger 권장).
-/// 2) Player 오브젝트 Tag="Player".
-/// 3) characterRoomRoot(현재 방 루트), mapRoot(맵 루트) 할당.
-/// 4) openKey 기본 S.
+/// 목적
+/// - 플레이어가 문과 "닿기만 하면" 맵을 연다(키 불필요).
+/// - 또한 어디서든 M 키를 누르면 맵을 연다(전역 단축키).
+/// - 맵 열기는 MapMenuController 있으면 OpenMap() 호출, 없으면 루트 ON/OFF로 폴백.
+/// - 발동 뒤, 플레이어가 문에서 "실제 분리"될 때까지 재트리거 금지(래치).
+/// - UIExclusiveManager와 연동해 폴백 전환 시에도 겹침 방지.
 /// </summary>
 [DisallowMultipleComponent]
-[AddComponentMenu("Game/Door Trigger Switch (Latched + Key)")]
-public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
+[AddComponentMenu("Game/Door Trigger Switch (Open On Touch or M)")]
+public sealed class DoorTriggerSwitch : MonoBehaviour
 {
-    // ---------- 코루틴 전용 러너(절대 비활성화되지 않도록 유지) ----------
+    // 코루틴 전용 러너(씬 전환/비활성 영향 받지 않도록)
     private sealed class CoroutineRunner : MonoBehaviour
     {
         public Coroutine Run(IEnumerator r) => StartCoroutine(r);
     }
-
     private static CoroutineRunner _runner;
     private static CoroutineRunner EnsureRunner()
     {
@@ -44,41 +31,48 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
         _runner = go.AddComponent<CoroutineRunner>();
         return _runner;
     }
-    // -------------------------------------------------------------------
 
-    [Header("Object References")]
-    [SerializeField] private GameObject characterRoomRoot; // OFF 대상(현재 방 루트)
-    [SerializeField] private GameObject mapRoot;           // ON 대상(맵 루트)
+    [Header("References")]
+    [Tooltip("맵 열기 애니메이션/논리를 담당하는 컨트롤러(있으면 이를 우선 사용)")]
+    [SerializeField] private MapMenuController mapController;
+
+    [Tooltip("MapMenuController가 없을 때 쓰는 폴백: 현재 방 루트(OFF 대상)")]
+    [SerializeField] private GameObject characterRoomRoot;
+
+    [Tooltip("MapMenuController가 없을 때 쓰는 폴백: 맵 루트(ON 대상)")]
+    [SerializeField] private GameObject mapRoot;
+
+    [Header("UI Exclusive Group (선택: 폴백 전환 시 겹침 방지)")]
+    [SerializeField] private UIExclusiveManager uiGroup;
 
     [Header("Tags")]
     [SerializeField] private string playerTag = "Player";
-    [SerializeField] private string doorTag = "Door";   // 선택 검증용(경고만)
+    [SerializeField] private string doorTag = "Door"; // 선택적 검증용
 
-    [Header("Key")]
-    [Tooltip("문과 충돌 중 이 키를 눌러야 맵이 켜짐")]
-    [SerializeField] private KeyCode openKey = KeyCode.S;
+    [Header("Global Open Key")]
+    [Tooltip("전역 단축키(M). 어디서든 누르면 맵을 연다")]
+    [SerializeField] private KeyCode globalOpenKey = KeyCode.M;
 
     [Header("Behavior")]
     [Tooltip("true면 최초 1회만 동작, false면 분리 후 재사용 가능")]
     [SerializeField] private bool oneShot = false;
 
-    [Tooltip("전환 전 참조 유효성 검사 수행")]
+    [Tooltip("전환 전 참조 유효성 검사 수행(MapMenuController 없을 때만 의미)")]
     [SerializeField] private bool validateBeforeSwitch = true;
 
     [Header("Latch Options")]
-    [Tooltip("스위치 직후, 분리 판정 시작까지 최소 대기(재활성 1~2틱 지나가게) - 실시간 기준")]
+    [Tooltip("스위치 직후, 분리 판정 시작까지 최소 대기(실시간 기준)")]
     [SerializeField, Min(0f)] private float minSeparationCheckDelay = 0.02f;
 
-    [Tooltip("분리 대기 최대 시간(0=무한 대기). 예외 상황 무한 래치 방지용 - 실시간 기준")]
+    [Tooltip("분리 대기 최대 시간(0=무한 대기, 실시간 기준)")]
     [SerializeField, Min(0f)] private float maxWaitUntilSeparated = 0f;
 
     // 내부 상태
     private bool _switchedOnce = false;
-    private bool _waitingForExit = false; // 래치: 실제 분리 전까지 재트리거 금지
-    private bool _playerOverlapping = false; // 현재 프레임에 플레이어가 문과 겹침 상태인지(Stay 판단 보조)
+    private bool _waitingForExit = false; // 실제 분리 전까지 재트리거 금지
     private Coroutine _waitCo = null;
 
-    // 겹침 판정용 캐시
+    // 겹침 판정 캐시(래치 해제를 위해 필요)
     private readonly List<Collider> _doorCols3D = new();
     private readonly List<Collider2D> _doorCols2D = new();
     private readonly List<Collider> _playerCols3D = new();
@@ -87,101 +81,66 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
     private void Awake()
     {
         if (!string.IsNullOrEmpty(doorTag) && !CompareTag(doorTag))
-            Debug.LogWarning($"[DoorSwitch] 이 오브젝트의 Tag가 '{doorTag}'가 아닙니다. 현재 '{tag}'", this);
+            Debug.LogWarning($"[DoorSwitch] 문 오브젝트 Tag가 '{doorTag}'가 아닙니다. 현재 '{tag}'", this);
 
-        if (characterRoomRoot == null) Debug.LogWarning("[DoorSwitch] characterRoomRoot 미할당", this);
-        if (mapRoot == null) Debug.LogWarning("[DoorSwitch] mapRoot 미할당", this);
-        if (characterRoomRoot != null && mapRoot != null && characterRoomRoot == mapRoot)
-            Debug.LogWarning("[DoorSwitch] characterRoomRoot와 mapRoot가 동일", this);
+        if (mapController == null && (characterRoomRoot == null || mapRoot == null))
+            Debug.LogWarning("[DoorSwitch] MapMenuController 미할당 상태에서는 characterRoomRoot/mapRoot가 필요합니다.", this);
+
+        if (uiGroup == null)
+        {
+#if UNITY_2023_1_OR_NEWER
+            uiGroup = Object.FindAnyObjectByType<UIExclusiveManager>();
+            if (uiGroup == null) uiGroup = Object.FindFirstObjectByType<UIExclusiveManager>();
+#else
+            uiGroup = Object.FindObjectOfType<UIExclusiveManager>();
+#endif
+        }
+    }
+
+    private void Update()
+    {
+        // 전역 단축키(M)로 항상 맵 열기
+        if (Input.GetKeyDown(globalOpenKey))
+            TryOpenMapGlobal();
     }
 
     // ------------------- 2D Physics -------------------
-    private void OnTriggerEnter2D(Collider2D other) => TryHandleEnter(other.gameObject);
-    private void OnCollisionEnter2D(Collision2D col) => TryHandleEnter(col.gameObject);
-    private void OnTriggerStay2D(Collider2D other) => TryHandleStay(other.gameObject);
-    private void OnCollisionStay2D(Collision2D col) => TryHandleStay(col.gameObject);
+    private void OnTriggerEnter2D(Collider2D other) => TryOpenOnTouch(other.gameObject);
+    private void OnCollisionEnter2D(Collision2D col) => TryOpenOnTouch(col.gameObject);
 
     // ------------------- 3D Physics -------------------
-    private void OnTriggerEnter(Collider other) => TryHandleEnter(other.gameObject);
-    private void OnCollisionEnter(Collision col) => TryHandleEnter(col.gameObject);
-    private void OnTriggerStay(Collider other) => TryHandleStay(other.gameObject);
-    private void OnCollisionStay(Collision col) => TryHandleStay(col.gameObject);
+    private void OnTriggerEnter(Collider other) => TryOpenOnTouch(other.gameObject);
+    private void OnCollisionEnter(Collision col) => TryOpenOnTouch(col.gameObject);
 
     /// <summary>
-    /// Enter: S가 이미 눌려 있는 상태(GetKey)라면 즉시 발동 시도.
+    /// 플레이어가 문에 "닿는 순간" 맵 열기(키 요구 없음).
+    /// 래치 활성 상태면 무시.
     /// </summary>
-    private void TryHandleEnter(GameObject otherGO)
+    private void TryOpenOnTouch(GameObject otherGO)
     {
         if (!IsPlayer(otherGO)) return;
-        _playerOverlapping = true; // Enter 프레임에도 겹침 true
-
         if (_waitingForExit) return;
         if (oneShot && _switchedOnce) return;
 
-        // S가 눌린 채로 진입했을 때만 즉시 발동
-        if (!Input.GetKey(openKey)) return;
-
-        TryOpenMap(otherGO);
+        TryOpenMapCore(otherGO);
     }
 
     /// <summary>
-    /// Stay: 겹침 유지 중 S를 "누르는 순간(GetKeyDown)" 발동.
+    /// 전역 M 키로 맵 열기(충돌 조건 무시).
     /// </summary>
-    private void TryHandleStay(GameObject otherGO)
+    private void TryOpenMapGlobal()
     {
-        if (!IsPlayer(otherGO)) return;
-        _playerOverlapping = true;
-
         if (_waitingForExit) return;
         if (oneShot && _switchedOnce) return;
 
-        // 충돌 유지 중 S를 "누르는 순간"만 허용
-        if (!Input.GetKeyDown(openKey)) return;
-
-        TryOpenMap(otherGO);
-    }
-
-    private void LateUpdate()
-    {
-        // 프레임 끝에서 초기화(다음 프레임에 새로 Stay/Enter 없으면 false가 됨)
-        _playerOverlapping = false;
+        TryOpenMapCore(null);
     }
 
     /// <summary>
-    /// 실제 맵 열기 시도(키 조건을 만족하고, 참조 유효하면 스위치 + 래치 코루틴 시작)
+    /// 공통 맵 열기 루틴: 래치 설정 → 코루틴으로 분리 대기 → 맵 오픈 실행.
     /// </summary>
-    private void TryOpenMap(GameObject playerGO)
+    private void TryOpenMapCore(GameObject playerGO)
     {
-        if (validateBeforeSwitch && !IsValidToSwitch())
-        {
-            Debug.LogWarning("[DoorSwitch] 전환 불가: 참조 누락/동일 오브젝트", this);
-            return;
-        }
-
-        // 래치 선설정 후, 전용 러너에서 코루틴 가동 → 그 다음 스위치
-        _waitingForExit = true;
-        if (oneShot) _switchedOnce = true;
-
-        CacheDoorColliders();
-        CachePlayerCollidersFrom(playerGO);
-
-        if (_waitCo != null && _runner != null) _runner.StopCoroutine(_waitCo);
-        _waitCo = EnsureRunner().Run(WaitUntilSeparatedThenUnlock());
-
-        DoSwitch();
-    }
-
-    /// <summary>
-    /// 외부 강제 전환(API): 충돌 중 S키 로직 없이 강제 오픈해야 할 때 사용.
-    /// </summary>
-    public void ForceSwitch(GameObject playerGO = null)
-    {
-        if (validateBeforeSwitch && !IsValidToSwitch())
-        {
-            Debug.LogWarning("[DoorSwitch] 전환 불가(Force): 참조 누락/동일 오브젝트", this);
-            return;
-        }
-
         _waitingForExit = true;
         if (oneShot) _switchedOnce = true;
 
@@ -191,13 +150,12 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
         if (_waitCo != null && _runner != null) _runner.StopCoroutine(_waitCo);
         _waitCo = EnsureRunner().Run(WaitUntilSeparatedThenUnlock());
 
-        DoSwitch();
+        DoOpen();
     }
 
     // ---------------- Latch Routine ----------------
     private IEnumerator WaitUntilSeparatedThenUnlock()
     {
-        // 실시간 대기: 맵 ON/일시정지 등 timeScale 영향 배제
         if (minSeparationCheckDelay > 0f)
             yield return new WaitForSecondsRealtime(minSeparationCheckDelay);
 
@@ -214,7 +172,7 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
                     elapsed += Time.unscaledDeltaTime;
                     if (elapsed >= maxWaitUntilSeparated)
                     {
-                        Debug.LogWarning("[DoorSwitch] 최대 대기 초과. 안전 해제.", this);
+                        Debug.LogWarning("[DoorSwitch] 분리 대기 최대 시간 초과. 래치 안전 해제.", this);
                         break;
                     }
                 }
@@ -230,7 +188,6 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
     // ---------------- Overlap Checks ----------------
     private bool IsStillOverlapping()
     {
-        // 3D: Bounds 교차(간단)
         foreach (var d in _doorCols3D)
         {
             if (!d) continue;
@@ -240,7 +197,6 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
                 if (d.bounds.Intersects(p.bounds)) return true;
             }
         }
-        // 2D: Bounds 교차(간단)
         foreach (var d in _doorCols2D)
         {
             if (!d) continue;
@@ -278,25 +234,43 @@ public sealed class DoorTriggerSwitch_LatchedWithKey : MonoBehaviour
     // ---------------- Helpers ----------------
     private bool IsPlayer(GameObject obj) => obj && obj.CompareTag(playerTag);
 
-    private bool IsValidToSwitch()
+    private void DoOpen()
     {
-        if (characterRoomRoot == null || mapRoot == null) return false;
-        if (characterRoomRoot == mapRoot) return false;
-        return true;
-    }
+        // 1) MapMenuController가 있으면 그쪽에서 겹침을 이미 막아줌
+        if (mapController != null)
+        {
+            mapController.OpenMap();
+            return;
+        }
 
-    private void DoSwitch()
-    {
+        // 2) 폴백: 직접 SetActive로 켤 때도 겹침 방지
+        if (validateBeforeSwitch)
+        {
+            if (characterRoomRoot == null || mapRoot == null || characterRoomRoot == mapRoot)
+            {
+                Debug.LogWarning("[DoorSwitch] 폴백 전환 불가: 참조 누락/동일 오브젝트", this);
+                return;
+            }
+        }
+
+        if (uiGroup != null)
+        {
+            if (!uiGroup.TryActivate(mapRoot))
+            {
+                // 다른 UI가 이미 켜져 있으므로 맵 오픈 거절
+                return;
+            }
+        }
+
         if (characterRoomRoot && characterRoomRoot.activeSelf) characterRoomRoot.SetActive(false);
         if (mapRoot && !mapRoot.activeSelf) mapRoot.SetActive(true);
-        Debug.Log("[DoorSwitch] Character Room → OFF, Map → ON", this);
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if (characterRoomRoot != null && mapRoot != null && characterRoomRoot == mapRoot)
-            Debug.LogWarning("[DoorSwitch] characterRoomRoot와 mapRoot가 동일", this);
+        if (mapController == null && characterRoomRoot != null && mapRoot != null && characterRoomRoot == mapRoot)
+            Debug.LogWarning("[DoorSwitch] 폴백 전환에서 characterRoomRoot와 mapRoot가 동일합니다.", this);
     }
 #endif
 }

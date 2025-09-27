@@ -2902,6 +2902,8 @@ MonoBehaviour:
     Py: 0
     Pz: 0
     HasSavedPosition: 0
+    Scene: 
+    Weekday: 1
   path: 
   nowSlot: 0
   coinText: {fileID: 0}
@@ -2916,13 +2918,16 @@ MonoBehaviour:
   levelObjectName: Text_Level
   dayObjectName: Text_Day
   nameObjectName: Text_Name
+  dayFormat: "{0}\uC77C {1}\uC694\uC77C"
   coinFormat: '{0}'
   levelFormat: Lv. {0}
-  dayFormat: "{0}\uC77C\uCC28"
   nameFormat: '{0}'
+  baseWeekdayForDay1: 1
+  autoSyncWeekdayOnSetDay: 1
   applySavedPositionOnLoad: 1
   playerTagForReposition: Player
   applyPosTimeoutSec: 3
+  autoLoadSavedSceneOnStart: 0
 --- !u!4 &1425800728
 Transform:
   m_ObjectHideFlags: 0
@@ -2956,6 +2961,7 @@ MonoBehaviour:
   - {fileID: 1044956605}
   - {fileID: 1927431254}
   newPlayerName: {fileID: 1298580848}
+  startSceneName: Player's Room
 --- !u!114 &1425800730
 MonoBehaviour:
   m_ObjectHideFlags: 0
