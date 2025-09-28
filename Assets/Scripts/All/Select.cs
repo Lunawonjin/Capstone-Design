@@ -8,23 +8,32 @@ using TMPro;
 public class Select : MonoBehaviour
 {
     [Header("새 플레이어 이름 입력 패널")]
-    public GameObject creat;                  // 새 플레이어 이름 입력 패널
+    [SerializeField] private GameObject creat;
 
-    [Header("슬롯 UI")]
-    public TMP_Text[] slotText;               // 각 슬롯 버튼 아래 텍스트
-    public TMP_Text newPlayerName;            // 새 플레이어 이름 입력(TMP_Text)
+    [Header("슬롯 UI 라벨")]
+    [SerializeField] private TMP_Text[] slotText;          // 각 슬롯 버튼 아래 라벨
+
+    [Header("이름 입력")]
+    [SerializeField] private TMP_InputField newPlayerInput; // 실제 유저 입력창
+    [SerializeField] private TMP_Text newPlayerPreview; // (선택) 프리뷰/라벨을 입력 소스로 쓸 때
 
     [Header("시작/폴백 씬 이름")]
     [SerializeField] private string startSceneName = "Player's Room";
 
-    private bool[] savefile = new bool[3];    // 각 슬롯 세이브 존재 여부
+    [Header("빈 슬롯 라벨 유지")]
+    [Tooltip("빈 슬롯이면 프리팹/로컬라이즈 기본 라벨을 그대로 둡니다. 끄면 빈 슬롯 라벨을 공백으로 비웁니다.")]
+    [SerializeField] private bool leaveEmptySlotTextUntouched = true;
+
+    private readonly bool[] savefile = new bool[3]; // 각 슬롯 세이브 존재 여부
 
     void Start()
     {
         RefreshSlotsUI();
     }
 
-    // 저장 파일 경로 규칙: <persistent>/save/slot_{i}.json
+    // --- 경로/입출력 유틸 ---
+
+    // 정확한 슬롯 파일 경로: <persistent>/save/slot_{i}.json
     private string SlotPath(int i)
     {
         var dm = DataManager.instance;
@@ -32,41 +41,68 @@ public class Select : MonoBehaviour
         return Path.Combine(dm.path, $"slot_{i}.json");
     }
 
-    // 시작/갱신 시 슬롯 UI를 채운다. (파일을 직접 읽어서 이름만 프리뷰)
+    // 저장 파일에서 이름만 안전하게 읽기(상태 비침투)
+    private string ReadPlayerNameSafe(string file)
+    {
+        try
+        {
+            string json = File.ReadAllText(file);
+            PlayerData pd = JsonUtility.FromJson<PlayerData>(json);
+            return pd != null ? pd.Name : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // 입력 필드/프리뷰에서 이름 읽기
+    private string GetEnteredPlayerName()
+    {
+        if (newPlayerInput != null)
+        {
+            var t = newPlayerInput.text?.Trim();
+            if (!string.IsNullOrEmpty(t)) return t;
+        }
+        if (newPlayerPreview != null)
+        {
+            var t = newPlayerPreview.text?.Trim();
+            if (!string.IsNullOrEmpty(t)) return t;
+        }
+        return "";
+    }
+
+    // --- UI 갱신 ---
+
     private void RefreshSlotsUI()
     {
         for (int i = 0; i < savefile.Length; i++)
-        {
-            string file = SlotPath(i);
-            bool exists = File.Exists(file);
-            savefile[i] = exists;
-
-            if (slotText != null && i < slotText.Length && slotText[i] != null)
-            {
-                if (!exists)
-                {
-                    slotText[i].text = "비어있음";
-                    continue;
-                }
-
-                // 이름만 미리보기
-                try
-                {
-                    string json = File.ReadAllText(file);
-                    PlayerData pd = JsonUtility.FromJson<PlayerData>(json);
-                    string name = (pd != null && !string.IsNullOrEmpty(pd.Name)) ? pd.Name : "Player";
-                    slotText[i].text = name;
-                }
-                catch
-                {
-                    slotText[i].text = "손상된 저장";
-                }
-            }
-        }
-        // DataManager 상태를 건드리지 않음
+            RefreshSingleSlotUI(i);
     }
 
-    // 슬롯 버튼 클릭
+    private void RefreshSingleSlotUI(int i)
+    {
+        string file = SlotPath(i);
+        bool exists = File.Exists(file);
+        savefile[i] = exists;
+
+        if (slotText == null || i >= slotText.Length || slotText[i] == null) return;
+
+        if (exists)
+        {
+            string name = ReadPlayerNameSafe(file);
+            slotText[i].text = string.IsNullOrEmpty(name) ? "Player" : name;
+        }
+        else
+        {
+            // 빈 슬롯: 요청대로 텍스트를 건드리지 않음
+            if (!leaveEmptySlotTextUntouched)
+                slotText[i].text = string.Empty; // 완전히 비우고 싶을 때만
+        }
+    }
+
+    // --- 슬롯 선택/생성/진입 ---
+
     public void Slot(int number)
     {
         if (number < 0 || number >= savefile.Length)
@@ -79,138 +115,84 @@ public class Select : MonoBehaviour
 
         if (savefile[number])
         {
-            // 기존 저장 → 저장된 씬으로 진입
-            StartCoroutine(Co_LoadAndEnterSaved(number));
+            SafeLoad();
+            GoGame();
         }
         else
         {
-            // 신규 → 이름 입력 패널
             Creat();
         }
     }
 
-    // 새 플레이어 이름 입력 패널 열기
     public void Creat()
     {
-        if (creat != null) creat.SetActive(true);
+        if (creat) creat.SetActive(true);
     }
 
-    // "시작" 버튼에서 호출: 신규 저장을 만들고 시작 씬으로 진입
     public void GoGame()
     {
-        StartCoroutine(Co_NewGameOrContinue());
-    }
-
-    // 신규 저장 or 기존 저장 분기
-    private IEnumerator Co_NewGameOrContinue()
-    {
-        var dm = DataManager.instance;
-        int s = dm.nowSlot;
+        int s = DataManager.instance.nowSlot;
 
         if (s < 0 || s >= savefile.Length)
         {
             Debug.LogWarning("[Select] 유효한 슬롯이 선택되지 않음. 먼저 슬롯을 선택하세요.");
-            if (creat != null) creat.SetActive(true);
-            yield break;
+            if (creat) creat.SetActive(true);
+            return;
         }
 
-        string file = SlotPath(s);
-        bool exists = File.Exists(file);
+        bool exists = File.Exists(SlotPath(s));
 
         if (!exists)
         {
-            // 신규 생성
-            string name = (newPlayerName != null) ? newPlayerName.text.Trim() : "";
+            // 새 저장 생성
+            string name = GetEnteredPlayerName();
             if (string.IsNullOrEmpty(name)) name = "Player";
 
-            dm.nowPlayer = new PlayerData
+            DataManager.instance.nowPlayer = new PlayerData
             {
                 Name = name,
                 Level = 1,
                 Coin = 0,
                 Item = 0,
                 Day = 1,
-                Scene = startSceneName,   // 시작 씬을 세이브에 기록
-                HasSavedPosition = false  // 시작은 스폰 지점
+                Scene = startSceneName,
+                HasSavedPosition = false
             };
 
-            dm.SaveData();
+            DataManager.instance.SaveData();
             savefile[s] = true;
 
-            // 시작 씬으로 진입(스폰 지점에서 시작하므로 좌표 적용 불필요)
-            yield return LoadSceneAsyncSafe(startSceneName);
+            // 라벨에 즉시 반영
+            RefreshSingleSlotUI(s);
         }
         else
         {
-            // 기존 저장 불러오기 → 저장된 씬으로
-            yield return Co_LoadAndEnterSaved(s);
+            SafeLoad();
         }
+
+        // 시작 씬으로 이동
+        if (!string.IsNullOrEmpty(startSceneName))
+            SceneManager.LoadScene(startSceneName);
+        else
+            Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
     }
 
-    // 기존 저장 로드 → 저장된 씬으로 이동 → 좌표 적용
-    private IEnumerator Co_LoadAndEnterSaved(int slot)
-    {
-        var dm = DataManager.instance;
+    // --- 로드/삭제 ---
 
-        // 예외 안전 로드
-        if (!SafeLoad())
-        {
-            Debug.LogError("[Select] 저장 로드 실패. 신규 생성으로 전환하세요.");
-            yield break;
-        }
-
-        // 저장된 씬 이름 확인
-        string target = dm.nowPlayer != null ? dm.nowPlayer.Scene : null;
-        if (string.IsNullOrEmpty(target) || !Application.CanStreamedLevelBeLoaded(target))
-        {
-            // 폴백: 시작 씬
-            target = startSceneName;
-        }
-
-        // 씬 로드
-        yield return LoadSceneAsyncSafe(target);
-
-        // 저장된 좌표가 있다면 적용
-        yield return dm.LoadSavedSceneAndPlacePlayer();
-    }
-
-    // 공용: 안전한 씬 로드 래퍼
-    private IEnumerator LoadSceneAsyncSafe(string sceneName)
-    {
-        if (string.IsNullOrEmpty(sceneName))
-        {
-            Debug.LogError("[Select] 유효하지 않은 씬 이름");
-            yield break;
-        }
-
-        if (!Application.CanStreamedLevelBeLoaded(sceneName))
-        {
-            Debug.LogError("[Select] 빌드에 없는 씬: " + sceneName);
-            yield break;
-        }
-
-        AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
-        while (!op.isDone) yield return null;
-    }
-
-    // 예외 안전 로드(성공 여부 반환)
-    private bool SafeLoad()
+    private void SafeLoad()
     {
         try
         {
             DataManager.instance.LoadData();
-            return true;
         }
         catch (System.Exception e)
         {
             Debug.LogError("[Select] 로드 실패: " + e.Message);
             DataManager.instance.DataClear();
-            return false;
         }
     }
 
-
-    // 슬롯 삭제 버튼: 해당 슬롯의 세이브를 삭제하고 UI 갱신
+    // 슬롯 삭제: 파일만 지우고 라벨은 건드리지 않음(요청사항)
     public void DeleteSlot(int number)
     {
         if (number < 0 || number >= savefile.Length)
@@ -220,17 +202,24 @@ public class Select : MonoBehaviour
         }
 
         bool deleted = DataManager.instance.DeleteData(number);
-        savefile[number] = false;
-
-        if (slotText != null && number < slotText.Length && slotText[number] != null)
-            slotText[number].text = "비어있음";
-
-        if (DataManager.instance.nowSlot == number)
-            DataManager.instance.DataClear();
 
         if (deleted)
+        {
+            savefile[number] = false;
+
+            // 텍스트는 변경하지 않음(프리팹/로컬라이즈 라벨 유지).
+            // 완전히 비우고 싶다면 옵션을 끄고 아래가 적용됨.
+            if (!leaveEmptySlotTextUntouched && slotText != null && number < slotText.Length && slotText[number] != null)
+                slotText[number].text = string.Empty;
+
+            if (DataManager.instance.nowSlot == number)
+                DataManager.instance.DataClear();
+
             Debug.Log("[Select] 슬롯 " + number + " 저장 삭제 완료");
+        }
         else
+        {
             Debug.Log("[Select] 슬롯 " + number + " 저장 파일이 없거나 삭제할 것이 없음");
+        }
     }
 }

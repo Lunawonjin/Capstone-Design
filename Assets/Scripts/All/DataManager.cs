@@ -28,6 +28,9 @@ public class PlayerData
     // 요일(1~7) : 월(1) 화(2) 수(3) 목(4) 금(5) 토(6) 일(7)
     public int Weekday;
 
+    // 언어 코드("ko","en","jp") — 기본 "ko"
+    public string Language;
+
     // 기본값
     public PlayerData()
     {
@@ -35,6 +38,7 @@ public class PlayerData
         Day = 1;
         Scene = ""; // 미저장 상태
         Weekday = 1; // Day=1은 월요일로 시작(필요 시 DataManager의 baseWeekdayForDay1로 재동기화됨)
+        Language = "ko";
     }
 }
 
@@ -46,6 +50,7 @@ public class PlayerData
 /// - 저장된 씬/좌표 복원(옵션)
 /// - Unity 6 API 사용(linearVelocity 등)
 /// - 요일(1~7, 월~일) 저장/증가/표기 + 주말 조건 제공
+/// - 언어 코드("ko","en","jp") 저장/로드/조회/설정
 /// </summary>
 public class DataManager : MonoBehaviour
 {
@@ -102,6 +107,7 @@ public class DataManager : MonoBehaviour
     // HUD 변경 감지용 스냅샷
     int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue, _lastWeekday = int.MinValue;
     string _lastName = null;
+    string _lastLanguage = null;
 
     // ===== 초기화 =====
     void Awake()
@@ -135,6 +141,9 @@ public class DataManager : MonoBehaviour
 
         // Weekday 보정(구세이브/초기 데이터 보호)
         EnsureWeekdayValid();
+
+        // Language 필드 보정(구세이브 보호)
+        EnsureLanguageValid();
 
         SnapshotValues();
     }
@@ -188,6 +197,7 @@ public class DataManager : MonoBehaviour
             if (nowPlayer.Level < 1) nowPlayer.Level = 1;
             if (nowPlayer.Day < 1) nowPlayer.Day = 1;
             EnsureWeekdayValid();
+            EnsureLanguageValid();
 
             string json = JsonUtility.ToJson(nowPlayer, false);
             File.WriteAllText(file, json);
@@ -230,6 +240,9 @@ public class DataManager : MonoBehaviour
             if (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7)
                 RecomputeWeekdayFromDay();
 
+            // 언어 코드 보정
+            EnsureLanguageValid();
+
             NotifyChanged();
             SnapshotValues();
 
@@ -249,6 +262,7 @@ public class DataManager : MonoBehaviour
         nowPlayer = new PlayerData();
         // Day=1 → baseWeekdayForDay1 반영
         if (autoSyncWeekdayOnSetDay) RecomputeWeekdayFromDay();
+        EnsureLanguageValid();
         NotifyChanged();
         SnapshotValues();
     }
@@ -362,6 +376,51 @@ public class DataManager : MonoBehaviour
     }
 
     public void SetPlayerName(string newName) { nowPlayer.Name = newName ?? ""; NotifyChanged(); SnapshotValues(); }
+
+    // ==================== 언어 코드 API ====================
+
+    /// <summary>
+    /// 현재 언어 코드 문자열("ko","en","jp") 조회
+    /// </summary>
+    public string GetLanguageCode()
+    {
+        EnsureLanguageValid();
+        return nowPlayer.Language;
+    }
+
+    /// <summary>
+    /// 언어 코드 설정("ko","en","jp" 중 하나). 유효하지 않으면 "ko"로 보정.
+    /// 필요 시 저장까지 바로 하고 싶으면 saveImmediately=true로 호출.
+    /// </summary>
+    public void SetLanguageCode(string code, bool saveImmediately = false)
+    {
+        string normalized = NormalizeLang(code);
+        nowPlayer.Language = normalized;
+        NotifyChanged();
+        SnapshotValues();
+
+        if (saveImmediately && nowSlot >= 0)
+            SaveData();
+    }
+
+    private void EnsureLanguageValid()
+    {
+        nowPlayer.Language = NormalizeLang(nowPlayer.Language);
+    }
+
+    private string NormalizeLang(string code)
+    {
+        if (string.IsNullOrEmpty(code)) return "ko";
+        switch (code.ToLowerInvariant())
+        {
+            case "ko": return "ko";
+            case "en": return "en";
+            case "jp":
+            case "ja": // 호환 처리(ja를 받으면 jp로 저장)
+                return "jp";
+            default: return "ko";
+        }
+    }
 
     // ==================== 요일 유틸 ====================
 
@@ -597,6 +656,7 @@ public class DataManager : MonoBehaviour
         _lastDay = nowPlayer?.Day ?? 1;
         _lastWeekday = nowPlayer?.Weekday ?? 1;
         _lastName = nowPlayer?.Name ?? "";
+        _lastLanguage = nowPlayer?.Language ?? "ko";
     }
 
     bool HasValueChanged()
@@ -606,6 +666,7 @@ public class DataManager : MonoBehaviour
             || _lastLevel != nowPlayer.Level
             || _lastDay != nowPlayer.Day
             || _lastWeekday != (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7 ? WrapWeekday(nowPlayer.Weekday) : nowPlayer.Weekday)
-            || _lastName != (nowPlayer.Name ?? "");
+            || _lastName != (nowPlayer.Name ?? "")
+            || _lastLanguage != (string.IsNullOrEmpty(nowPlayer.Language) ? "ko" : nowPlayer.Language);
     }
 }

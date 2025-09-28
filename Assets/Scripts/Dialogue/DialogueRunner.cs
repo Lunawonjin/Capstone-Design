@@ -1,119 +1,46 @@
-// DialogueRunnerAdvanced.cs
-// Unity 6 (LTS) / TextMeshPro 분기형 대화
-// - PromptText는 별도 폰트 크기(promptFontSize)로 출력
-// - 선택지 동안 speakerText는 끄지 않고, 인스펙터에서 지정한 오브젝트(toggleDuringChoiceTarget)만 비/활성
-// - 내부 선택지 컨테이너 + 버튼 풀링(최소 할당)
-// - 대사 시작 시 PlayerMove.Freeze(), 종료 시 지정 오브젝트 비활성 + PlayerMove.Unfreeze()
-// - FindFirstObjectByType<T>(FindObjectsInactive) 단일 인자 버전으로 수정
+// DialogueRunnerCSVLocalized.cs
+// Unity 6 (LTS) / TextMeshPro / Localization 사용
+// - JSON 제거, 단일 CSV(TextAsset)로 노드/스텝을 정의
+// - CSV에는 "문자열 그 자체"가 아니라 String Table의 Key만 적는다
+// - 현재 선택된 Locale(에디터 드롭다운/런타임 변경)에 맞춰 텍스트를 가져와
+//   한 글자씩 타이핑 출력한다(스페이스: 스킵/다음 진행)
+// - 선택지 프롬프트/옵션도 모두 Localization 키로 지정
+// - 선택지 동안 특정 오브젝트를 끄고(speaker는 유지하고 싶을 때) 종료 시 복귀
+// - PlayerMove 유무에 따라 입력 잠금/복귀 지원(선택)
+// - EventSystem/Canvas가 없으면 자동 생성
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.EventSystems;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
-public class DialogueRunnerAdvanced : MonoBehaviour
+[DisallowMultipleComponent]
+public class DialogueRunnerCSVLocalized : MonoBehaviour
 {
-    // ===== JSON Model =====
-    [Serializable] public class NumericVar { public string name; public float value; }
-    [Serializable] public class FlagVar { public string name; public bool value; }
-
-    [Serializable]
-    public class Condition
-    {
-        public string type;  // "num" or "flag"
-        public string var;
-        public string op;    // num: ==, !=, >, <, >=, <= / flag: ==, !=
-        public string value;
-    }
-
-    [Serializable]
-    public class SetVar
-    {
-        public string type;  // "num" or "flag"
-        public string var;
-        public string op;    // num: "=", "+=", "-=", "floor0" / flag: "setTrue","setFalse","toggle","="
-        public float num;
-        public bool flag;
-    }
-
-    [Serializable]
-    public class ChoiceOption
-    {
-        [TextArea] public string text;
-        public Condition[] ifAll;
-        public SetVar[] set;
-        public string nextNodeId;
-    }
-
-    [Serializable]
-    public class Step
-    {
-        public string kind; // "line", "choice", "set", "goto"
-
-        // line
-        public string speaker;
-        [TextArea] public string text;
-        public Condition[] ifAll;
-
-        // choice
-        public string prompt;
-        public ChoiceOption[] options;
-
-        // set
-        public SetVar[] set;
-
-        // goto
-        public string gotoNode;
-    }
-
-    [Serializable] public class Node { public string id; public Step[] steps; }
-
-    [Serializable]
-    public class DialogueScript
-    {
-        public string id;
-        public string startNodeId;
-        public NumericVar[] numericVars;
-        public FlagVar[] flagVars;
-        public Node[] nodes;
-    }
-
-    // ===== Inspector: UI =====
-    [Header("UI References")]
+    // ====== UI 레퍼런스 ======
+    [Header("UI")]
+    [Tooltip("화자 이름 출력용 TMP")]
     public TextMeshProUGUI speakerText;
+    [Tooltip("본문 대사 출력용 TMP")]
     public TextMeshProUGUI bodyText;
+    [Tooltip("선택지 프롬프트 출력용 TMP")]
     public TextMeshProUGUI promptText;
+    [Tooltip("다음 진행 표시 아이콘(점멸 화살표 등)")]
     public GameObject nextIndicator;
 
-    [Header("Choice Button Prefab")]
-    [Tooltip("UGUI Button + 자식에 TMP_Text 필수")]
+    [Header("선택지 버튼 프리팹 (UGUI Button + 자식에 TMP_Text 필수)")]
     public Button choiceButtonPrefab;
 
-    // ===== Data / Player =====
-    [Header("Data Source")]
-    public TextAsset jsonTextAsset;
-    public string playerName = "플레이어";
-
-    // ===== Typing / Input =====
-    [Header("Typing & Input")]
-    [Range(0f, 0.1f)] public float charDelay = 0.03f;
-    public bool respectRichText = true;
-    public KeyCode advanceKey = KeyCode.Space;
-
-    // ===== Behavior =====
-    [Header("Behavior")]
-    public bool deactivateOnEnd = true;
-
-    // ===== 선택지 동안 토글 =====
-    [Header("선택지 동안 비활성화할 오브젝트")]
-    [Tooltip("선택지가 열릴 때 비활성화하고, 선택 후 다시 활성화할 오브젝트(예: 본문 말풍선 그룹). speakerText는 끄지 않습니다.")]
-    public GameObject toggleDuringChoiceTarget;
-
-    // ===== Canvas / Choices 컨테이너 =====
-    [Header("Canvas / Runtime Container")]
+    [Header("선택지 컨테이너(없으면 자동 생성)")]
     public Canvas targetCanvas;
     public Vector2 referenceResolution = new(1920, 1080);
     [Range(0, 1)] public float matchWidthOrHeight = 0.5f;
@@ -124,8 +51,7 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     public Vector4 choicePaddingTLBR = new(24, 24, 24, 24);
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
-    // ===== 폰트/버튼 크기 =====
-    [Header("Font & Button Size")]
+    [Header("폰트/버튼 크기")]
     public float bodyFontSize = 52f;
     public float speakerFontSize = 46f;
     public float promptFontSize = 52f;
@@ -133,39 +59,74 @@ public class DialogueRunnerAdvanced : MonoBehaviour
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
 
-    // ===== 플레이어 제어 락 =====
-    [Header("Player Control Lock")]
-    [Tooltip("대사 중 플레이어 이동을 막을 대상. 비워두면 자동 탐색")]
+    // ====== 타이핑/입력 ======
+    [Header("타이핑/입력")]
+    [Range(0f, 0.1f)] public float charDelay = 0.03f;
+    public bool respectRichText = true;
+    public KeyCode advanceKey = KeyCode.Space;
+
+    // ====== 동작 옵션 ======
+    [Header("동작 옵션")]
+    [Tooltip("대화 종료 시 이 오브젝트를 비활성화")]
+    public bool deactivateOnEnd = true;
+
+    [Tooltip("선택지 표시 동안 비활성화할 오브젝트(본문 말풍선 그룹 등). speakerText는 끄지 않음.")]
+    public GameObject toggleDuringChoiceTarget;
+
+    [Header("플레이어 입력 잠금(선택)")]
     public PlayerMove playerMove;
-    [Tooltip("Start 시 비활성 포함하여 자동 탐색 시도")]
     public bool autoFindPlayerMove = true;
-    [Tooltip("FindFirstObjectByType 검색 시 비활성 오브젝트도 포함할지")]
     public bool includeInactiveOnFind = true;
 
-    [Header("대화 종료 시 비활성화할 오브젝트들 (2개 권장)")]
+    [Header("대화 종료 시 비활성화할 오브젝트들(선택)")]
     public GameObject[] endDeactivateTargets = new GameObject[2];
 
-    // ===== 내부 상태 =====
-    private DialogueScript _script;
-    private readonly Dictionary<string, float> _num = new();
-    private readonly Dictionary<string, bool> _flag = new();
-    private readonly Dictionary<string, Node> _nodeById = new();
+    // ====== 데이터 소스 ======
+    [Header("CSV / String Table")]
+    [Tooltip("UTF-8 CSV(TextAsset). 헤더 고정: nodeId,stepIndex,kind,speakerKey,bodyKey,promptKey,optionKeys,optionNextNodes")]
+    public TextAsset csvTextAsset;
 
-    private Node _node;
+    [Tooltip("String Table Collection 이름(예: \"Dialogue Table\")")]
+    public string stringTableCollectionName = "Dialogue Table";
+
+    [Tooltip("시작 노드 ID(비우면 CSV의 첫 번째 노드가 시작점)")]
+    public string startNodeId = "";
+
+    // ====== 내부 모델 ======
+    [Serializable]
+    public class Step
+    {
+        public string kind;          // "line" 또는 "choice"
+        public string speakerKey;    // 화자 이름 키
+        public string bodyKey;       // 본문 대사 키
+        public string promptKey;     // 선택지 프롬프트 키
+        public string[] optionKeys;  // 선택지 텍스트 키 배열
+        public string[] optionNext;  // 각 선택지 클릭 시 이동할 노드 id 배열
+    }
+
+    // nodeId -> 순서 리스트
+    private readonly Dictionary<string, List<Step>> _nodes = new();
+
+    // 진행 상태
+    private string _currentNodeId;
     private int _stepIndex = -1;
 
+    // 타이핑 상태
     private Coroutine _typingRoutine;
     private bool _isTyping = false;
     private bool _waitingChoice = false;
-
     private string _currentFullText = "";
     private WaitForSeconds _wait;
 
+    // 선택지 UI
     private RectTransform _choiceRoot;
     private readonly List<Button> _activeButtons = new();
     private readonly Stack<Button> _buttonPool = new();
 
-    // ===== Unity =====
+    // String Table 핸들
+    private StringTable _stringTable;
+
+    // ====== Unity 수명주기 ======
     private void Awake()
     {
         if (speakerText) speakerText.text = "";
@@ -183,7 +144,7 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         if (bodyText) { bodyText.enableAutoSizing = false; bodyText.fontSize = bodyFontSize; }
         if (speakerText) { speakerText.enableAutoSizing = false; speakerText.fontSize = speakerFontSize; }
 
-        // PlayerMove 자동 탐색 (단일 인자 버전)
+        // PlayerMove 자동 탐색
         if (autoFindPlayerMove && playerMove == null)
         {
             playerMove = includeInactiveOnFind
@@ -191,9 +152,53 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
         }
 
-        if (jsonTextAsset == null) { Debug.LogError("[DialogueRunnerAdvanced] jsonTextAsset is null."); return; }
-        LoadFromText(jsonTextAsset.text);
-        StartDialogue();
+        if (csvTextAsset == null)
+        {
+            Debug.LogError("[DialogueRunnerCSVLocalized] CSV가 비어 있습니다.");
+            return;
+        }
+
+        // CSV 파싱
+        try
+        {
+            ParseCsv(csvTextAsset.text, out string firstNodeId);
+            if (string.IsNullOrEmpty(startNodeId))
+                _currentNodeId = firstNodeId;
+            else
+                _currentNodeId = startNodeId;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[DialogueRunnerCSVLocalized] CSV 파싱 실패: " + e.Message);
+            return;
+        }
+
+        // Localization 초기화 및 String Table 로드 후 시작
+        StartCoroutine(Co_InitAndStart());
+    }
+
+    private IEnumerator Co_InitAndStart()
+    {
+        // Localization Settings 준비 대기
+        var initOp = LocalizationSettings.InitializationOperation;
+        if (!initOp.IsDone) yield return initOp;
+
+        // 지정된 String Table 로드
+        var tableOp = LocalizationSettings.StringDatabase.GetTableAsync(stringTableCollectionName);
+        yield return tableOp;
+        _stringTable = tableOp.Result;
+
+        if (_stringTable == null)
+        {
+            Debug.LogError("[DialogueRunnerCSVLocalized] String Table을 찾을 수 없습니다: " + stringTableCollectionName);
+            yield break;
+        }
+
+        // 시작 훅
+        OnDialogueBegin();
+
+        _stepIndex = -1;
+        NextStepOrLine();
     }
 
     private void Update()
@@ -207,7 +212,13 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         }
     }
 
-    // ===== 보장 =====
+    private void OnValidate()
+    {
+        if (charDelay < 0f) charDelay = 0f;
+        _wait = new WaitForSeconds(Mathf.Max(0f, charDelay));
+    }
+
+    // ====== 캔버스/선택지 컨테이너 보장 ======
     private void EnsureCanvas()
     {
         if (targetCanvas == null)
@@ -222,12 +233,12 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 var go = new GameObject("DialogueCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
                 targetCanvas = go.GetComponent<Canvas>();
                 targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
                 var scaler = go.GetComponent<CanvasScaler>();
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
                 scaler.referenceResolution = referenceResolution;
                 scaler.matchWidthOrHeight = matchWidthOrHeight;
 
-                // EventSystem 없으면 생성
                 if (FindFirstObjectByType<EventSystem>(FindObjectsInactive.Include) == null)
                     new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             }
@@ -257,10 +268,10 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         vlg.childForceExpandWidth = true;
         vlg.childForceExpandHeight = false;
         vlg.padding = new RectOffset(
-            Mathf.RoundToInt(choicePaddingTLBR.y), // Left
-            Mathf.RoundToInt(choicePaddingTLBR.w), // Right
-            Mathf.RoundToInt(choicePaddingTLBR.x), // Top
-            Mathf.RoundToInt(choicePaddingTLBR.z)  // Bottom
+            Mathf.RoundToInt(choicePaddingTLBR.y),
+            Mathf.RoundToInt(choicePaddingTLBR.w),
+            Mathf.RoundToInt(choicePaddingTLBR.x),
+            Mathf.RoundToInt(choicePaddingTLBR.z)
         );
 
         var csf = go.AddComponent<ContentSizeFitter>();
@@ -270,67 +281,221 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         _choiceRoot.gameObject.SetActive(false);
     }
 
-    // ===== 로드/시작 =====
-    public void LoadFromText(string json)
+    // ====== CSV 파서 ======
+    // 헤더 고정:
+    // nodeId,stepIndex,kind,speakerKey,bodyKey,promptKey,optionKeys,optionNextNodes
+    // optionKeys / optionNextNodes는 세미콜론(;)로 구분
+    private void ParseCsv(string csv, out string firstNodeId)
     {
-        _script = null; _node = null; _nodeById.Clear(); _num.Clear(); _flag.Clear();
-        try { _script = JsonUtility.FromJson<DialogueScript>(json); }
-        catch (Exception e) { Debug.LogError("[DialogueRunnerAdvanced] JSON parse failed: " + e.Message); return; }
+        firstNodeId = "";
 
-        if (_script.numericVars != null) foreach (var v in _script.numericVars) _num[v.name] = v.value;
-        if (_script.flagVars != null) foreach (var f in _script.flagVars) _flag[f.name] = f.value;
-        if (_script.nodes != null) foreach (var n in _script.nodes) _nodeById[n.id] = n;
-
-        if (!_nodeById.TryGetValue(_script.startNodeId, out _node))
-        { Debug.LogError("[DialogueRunnerAdvanced] startNodeId not found: " + _script.startNodeId); return; }
-
-        _stepIndex = -1;
-    }
-
-    public void StartDialogue()
-    {
-        if (_script == null || _node == null)
-        { Debug.LogError("[DialogueRunnerAdvanced] Missing script or start node."); return; }
-
-        OnDialogueBegin();
-        _stepIndex = -1;
-        NextStepOrLine();
-    }
-
-    // ===== 진행 =====
-    private void NextStepOrLine()
-    {
-        if (_waitingChoice) return;
-
-        while (true)
+        using (var sr = new StringReader(csv))
         {
-            _stepIndex++;
+            string? header = sr.ReadLine();
+            if (header == null) throw new Exception("빈 CSV");
 
-            if (_node == null || _node.steps == null || _stepIndex >= _node.steps.Length)
-            { EndDialogue(); return; }
+            // 헤더가 정규 포맷인지 판정
+            bool headerLooksStructured = header.Contains("nodeId") && header.Contains("stepIndex") && header.Contains("kind");
 
-            var step = _node.steps[_stepIndex];
-            if (!CheckConditions(step.ifAll)) continue;
-
-            switch (step.kind)
+            var tempLines = new List<string>();
+            string? line;
+            while ((line = sr.ReadLine()) != null)
             {
-                case "line": ShowLine(step.speaker, step.text); return;
-                case "choice": ShowChoice(step.prompt, step.options); return;
-                case "set": ApplySet(step.set); continue;
-                case "goto":
-                    if (!string.IsNullOrEmpty(step.gotoNode) && _nodeById.TryGetValue(step.gotoNode, out var to))
-                    { _node = to; _stepIndex = -1; continue; }
-                    Debug.LogWarning("[DialogueRunnerAdvanced] goto target not found: " + step.gotoNode);
-                    continue;
-                default:
-                    Debug.LogWarning("[DialogueRunnerAdvanced] Unknown kind: " + step.kind);
-                    continue;
+                if (!string.IsNullOrWhiteSpace(line)) tempLines.Add(line);
+            }
+
+            if (tempLines.Count == 0) throw new Exception("데이터 행이 없습니다.");
+
+            if (headerLooksStructured)
+            {
+                // ===== A포맷: 엄격 8컬럼 =====
+                firstNodeId = ParseStructuredCsvRows(tempLines);
+            }
+            else
+            {
+                // ===== B포맷: 간단/Localization 내보내기 유사 =====
+                // 기대: 첫 컬럼이 String Table의 키(예: Dialog_0001). 나머지 열은 무시.
+                // 모든 행을 nodeId="Start" 아래의 line으로 직렬 배치.
+                firstNodeId = BuildSimpleSequenceFromKeys(tempLines);
             }
         }
     }
 
-    // ===== Line =====
-    private void ShowLine(string speaker, string text)
+    // A포맷: 정규 8컬럼 라인들을 파싱
+    private string ParseStructuredCsvRows(List<string> rows)
+    {
+        string firstNodeId = "";
+        bool firstAssigned = false;
+
+        for (int r = 0; r < rows.Count; r++)
+        {
+            var cols = SplitCsvLine(rows[r]);
+            if (cols.Count < 8)
+                throw new Exception("컬럼 수가 부족합니다. 라인: " + rows[r]);
+
+            string nodeId = cols[0].Trim();
+            string stepIndexStr = cols[1].Trim();
+            string kind = cols[2].Trim();
+            string speakerKey = cols[3].Trim();
+            string bodyKey = cols[4].Trim();
+            string promptKey = cols[5].Trim();
+            string optionKeysRaw = cols[6].Trim();
+            string optionNextRaw = cols[7].Trim();
+
+            if (!firstAssigned)
+            {
+                firstNodeId = nodeId;
+                firstAssigned = true;
+            }
+
+            if (!_nodes.TryGetValue(nodeId, out var list))
+            {
+                list = new List<Step>(8);
+                _nodes[nodeId] = list;
+            }
+
+            var step = new Step
+            {
+                kind = kind,
+                speakerKey = speakerKey,
+                bodyKey = bodyKey,
+                promptKey = promptKey,
+                optionKeys = string.IsNullOrEmpty(optionKeysRaw) ? Array.Empty<string>() : optionKeysRaw.Split(';'),
+                optionNext = string.IsNullOrEmpty(optionNextRaw) ? Array.Empty<string>() : optionNextRaw.Split(';')
+            };
+
+            if (!int.TryParse(stepIndexStr, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int idx))
+                idx = list.Count;
+
+            while (list.Count <= idx) list.Add(null);
+            list[idx] = step;
+        }
+
+        // null 제거
+        foreach (var kv in _nodes)
+        {
+            var compact = new List<Step>(kv.Value.Count);
+            for (int i = 0; i < kv.Value.Count; i++)
+                if (kv.Value[i] != null) compact.Add(kv.Value[i]);
+            _nodes[kv.Key] = compact;
+        }
+
+        return firstNodeId;
+    }
+
+    // B포맷: "키,..." 형태의 라인들을 단일 노드 Start 아래에 순서대로 line으로 생성
+    private string BuildSimpleSequenceFromKeys(List<string> rows)
+    {
+        const string nodeId = "Start";
+        var list = new List<Step>(rows.Count);
+        _nodes[nodeId] = list;
+
+        for (int r = 0; r < rows.Count; r++)
+        {
+            var cols = SplitCsvLine(rows[r]);
+            if (cols.Count < 1) continue;
+
+            // 첫 컬럼을 String Table 키로 사용
+            string key = cols[0].Trim();
+            if (string.IsNullOrEmpty(key)) continue;
+
+            list.Add(new Step
+            {
+                kind = "line",
+                speakerKey = "",   // 간단 모드에서는 화자 생략
+                bodyKey = key,     // 본문 키로 바로 사용
+                promptKey = "",
+                optionKeys = Array.Empty<string>(),
+                optionNext = Array.Empty<string>()
+            });
+        }
+
+        return nodeId;
+    }
+
+    // 따옴표/콤마 처리 CSV 분리기(기존 것 그대로 사용)
+    private List<string> SplitCsvLine(string line)
+    {
+        var result = new List<string>(8);
+        bool inQuotes = false;
+        int start = 0;
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+            if (c == '\"')
+            {
+                if (inQuotes && i + 1 < line.Length && line[i + 1] == '\"') { i++; }
+                else { inQuotes = !inQuotes; }
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                result.Add(Unquote(line.Substring(start, i - start)));
+                start = i + 1;
+            }
+        }
+        result.Add(Unquote(line.Substring(start)));
+        return result;
+    }
+
+    private string Unquote(string s)
+    {
+        s = s.Trim();
+        if (s.Length >= 2 && s[0] == '\"' && s[s.Length - 1] == '\"')
+            s = s.Substring(1, s.Length - 2).Replace("\"\"", "\"");
+        return s;
+    }
+
+    // ====== 진행 ======
+    private void NextStepOrLine()
+    {
+        if (_waitingChoice) return;
+        if (string.IsNullOrEmpty(_currentNodeId) || !_nodes.TryGetValue(_currentNodeId, out var steps) || steps == null)
+        {
+            EndDialogue();
+            return;
+        }
+
+        _stepIndex++;
+        if (_stepIndex >= steps.Count)
+        {
+            EndDialogue();
+            return;
+        }
+
+        var step = steps[_stepIndex];
+        if (step == null)
+        {
+            NextStepOrLine();
+            return;
+        }
+
+        switch (step.kind)
+        {
+            case "line":
+                ShowLine(step.speakerKey, step.bodyKey);
+                return;
+            case "choice":
+                ShowChoice(step.promptKey, step.optionKeys, step.optionNext);
+                return;
+            default:
+                Debug.LogWarning("[DialogueRunnerCSVLocalized] 알 수 없는 kind: " + step.kind);
+                NextStepOrLine();
+                return;
+        }
+    }
+
+    // ====== 로컬라이즈 유틸 ======
+    private string L(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return "";
+        if (_stringTable == null) return key; // 안전장치
+        var entry = _stringTable.GetEntry(key);
+        if (entry == null) return key;        // 키 누락 시 키 그대로
+        return entry.GetLocalizedString();
+    }
+
+    // ====== 한 줄 표시 ======
+    private void ShowLine(string speakerKey, string bodyKey)
     {
         if (promptText) promptText.gameObject.SetActive(false);
         if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
@@ -343,10 +508,10 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         {
             speakerText.enableAutoSizing = false;
             speakerText.fontSize = speakerFontSize;
-            speakerText.text = speaker ?? "";
+            speakerText.text = L(speakerKey);
         }
 
-        _currentFullText = text == null ? "" : (playerName.Length > 0 ? text.Replace("<이름>", playerName) : text);
+        _currentFullText = L(bodyKey);
 
         if (_typingRoutine != null) StopCoroutine(_typingRoutine);
         _typingRoutine = StartCoroutine(TypeLine(_currentFullText));
@@ -379,8 +544,16 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 if (c == '<')
                 {
                     int close = fullText.IndexOf('>', i);
-                    if (close == -1) { if (bodyText) bodyText.text += fullText.Substring(i); break; }
-                    else { if (bodyText) bodyText.text += fullText.Substring(i, close - i + 1); i = close + 1; }
+                    if (close == -1)
+                    {
+                        if (bodyText) bodyText.text += fullText.Substring(i);
+                        break;
+                    }
+                    else
+                    {
+                        if (bodyText) bodyText.text += fullText.Substring(i, close - i + 1);
+                        i = close + 1;
+                    }
                 }
                 else
                 {
@@ -405,8 +578,8 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         if (nextIndicator) nextIndicator.SetActive(true);
     }
 
-    // ===== Choice =====
-    private void ShowChoice(string prompt, ChoiceOption[] options)
+    // ====== 선택지 표시 ======
+    private void ShowChoice(string promptKey, string[] optionKeys, string[] optionNext)
     {
         if (nextIndicator) nextIndicator.SetActive(false);
 
@@ -417,7 +590,7 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         {
             promptText.enableAutoSizing = false;
             promptText.fontSize = promptFontSize;
-            promptText.text = (prompt ?? "").Replace("<이름>", playerName);
+            promptText.text = L(promptKey);
             promptText.gameObject.SetActive(true);
         }
 
@@ -425,28 +598,14 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         _choiceRoot.gameObject.SetActive(true);
 
         ReleaseAllButtons();
-
-        var visible = ListPool<ChoiceOption>.Get();
-        if (options != null)
-            for (int i = 0; i < options.Length; i++)
-                if (CheckConditions(options[i].ifAll)) visible.Add(options[i]);
-
-        if (visible.Count == 0)
-        {
-            _waitingChoice = false;
-            _choiceRoot.gameObject.SetActive(false);
-            if (promptText) promptText.gameObject.SetActive(false);
-            if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
-            NextStepOrLine();
-            ListPool<ChoiceOption>.Release(visible);
-            return;
-        }
-
         _waitingChoice = true;
 
-        for (int i = 0; i < visible.Count; i++)
+        int count = optionKeys != null ? optionKeys.Length : 0;
+        for (int i = 0; i < count; i++)
         {
-            var opt = visible[i];
+            string optKey = optionKeys[i];
+            string optNext = (optionNext != null && i < optionNext.Length) ? optionNext[i] : "";
+
             var btn = GetButton();
             btn.transform.SetParent(_choiceRoot, false);
 
@@ -456,12 +615,12 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 label.richText = true;
                 label.enableAutoSizing = false;
                 label.fontSize = choiceFontSize;
-                label.text = opt.text.Replace("<이름>", playerName);
+                label.text = L(optKey);
             }
             else
             {
                 var legacy = btn.GetComponentInChildren<Text>(true);
-                if (legacy) legacy.text = opt.text.Replace("<이름>", playerName);
+                if (legacy) legacy.text = L(optKey);
             }
 
             var le = btn.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
@@ -474,28 +633,31 @@ public class DialogueRunnerAdvanced : MonoBehaviour
             btn.onClick.AddListener(() =>
             {
                 SetButtonsInteractable(false);
-                ApplySet(opt.set);
-
                 _waitingChoice = false;
 
                 _choiceRoot.gameObject.SetActive(false);
                 if (promptText) promptText.gameObject.SetActive(false);
                 if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
 
-                if (!string.IsNullOrEmpty(opt.nextNodeId) && _nodeById.TryGetValue(opt.nextNodeId, out var to))
-                { _node = to; _stepIndex = -1; NextStepOrLine(); }
+                if (!string.IsNullOrEmpty(optNext) && _nodes.ContainsKey(optNext))
+                {
+                    _currentNodeId = optNext;
+                    _stepIndex = -1;
+                    NextStepOrLine();
+                }
                 else
-                { NextStepOrLine(); }
+                {
+                    NextStepOrLine();
+                }
             });
 
             _activeButtons.Add(btn);
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
-        ListPool<ChoiceOption>.Release(visible);
     }
 
-    // ===== 버튼 풀 =====
+    // ====== 버튼 풀 ======
     private Button GetButton()
     {
         Button btn = _buttonPool.Count > 0 ? _buttonPool.Pop() : Instantiate(choiceButtonPrefab);
@@ -525,93 +687,10 @@ public class DialogueRunnerAdvanced : MonoBehaviour
             if (_activeButtons[i]) _activeButtons[i].interactable = value;
     }
 
-    // ===== 조건/변수 =====
-    private bool CheckConditions(Condition[] conds)
-    {
-        if (conds == null || conds.Length == 0) return true;
-
-        for (int i = 0; i < conds.Length; i++)
-        {
-            var c = conds[i];
-            if (c == null) continue;
-
-            if (c.type == "num")
-            {
-                if (!_num.TryGetValue(c.var, out float cur)) cur = 0f;
-                if (!float.TryParse(c.value, System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out float rhs)) rhs = 0f;
-
-                switch (c.op)
-                {
-                    case "==": if (!Mathf.Approximately(cur, rhs)) return false; break;
-                    case "!=": if (Mathf.Approximately(cur, rhs)) return false; break;
-                    case ">": if (!(cur > rhs)) return false; break;
-                    case "<": if (!(cur < rhs)) return false; break;
-                    case ">=": if (!(cur >= rhs)) return false; break;
-                    case "<=": if (!(cur <= rhs)) return false; break;
-                    default: return false;
-                }
-            }
-            else if (c.type == "flag")
-            {
-                _flag.TryGetValue(c.var, out bool cur);
-                if (!bool.TryParse(c.value, out bool rhs)) rhs = false;
-
-                switch (c.op)
-                {
-                    case "==": if (cur != rhs) return false; break;
-                    case "!=": if (cur == rhs) return false; break;
-                    default: return false;
-                }
-            }
-            else return false;
-        }
-        return true;
-    }
-
-    private void ApplySet(SetVar[] sets)
-    {
-        if (sets == null) return;
-
-        for (int i = 0; i < sets.Length; i++)
-        {
-            var s = sets[i];
-            if (s == null) continue;
-
-            if (s.type == "num")
-            {
-                if (!_num.TryGetValue(s.var, out float cur)) cur = 0f;
-                switch (s.op)
-                {
-                    case "=": cur = s.num; break;
-                    case "+=": cur += s.num; break;
-                    case "-=": cur -= s.num; break;
-                    case "floor0": if (cur < 0f) cur = 0f; break;
-                    default: Debug.LogWarning("[SetVar] Unknown num op: " + s.op); break;
-                }
-                _num[s.var] = cur;
-            }
-            else if (s.type == "flag")
-            {
-                _flag.TryGetValue(s.var, out bool cur);
-                switch (s.op)
-                {
-                    case "=": cur = s.flag; break;
-                    case "setTrue": cur = true; break;
-                    case "setFalse": cur = false; break;
-                    case "toggle": cur = !cur; break;
-                    default: Debug.LogWarning("[SetVar] Unknown flag op: " + s.op); break;
-                }
-                _flag[s.var] = cur;
-            }
-        }
-    }
-
-    // ===== 대화 시작/종료 훅 =====
-    // 대화 시작/종료 훅
+    // ====== 시작/종료 훅 ======
     private void OnDialogueBegin()
     {
-        if (playerMove != null) playerMove.controlEnabled = false; 
+        if (playerMove != null) playerMove.controlEnabled = false;
     }
 
     private void OnDialogueEnd()
@@ -624,11 +703,9 @@ public class DialogueRunnerAdvanced : MonoBehaviour
                 if (go != null) go.SetActive(false);
             }
         }
-        if (playerMove != null) playerMove.controlEnabled = true; 
+        if (playerMove != null) playerMove.controlEnabled = true;
     }
 
-
-    // ===== End =====
     private void EndDialogue()
     {
         if (nextIndicator) nextIndicator.SetActive(false);
@@ -640,20 +717,5 @@ public class DialogueRunnerAdvanced : MonoBehaviour
         OnDialogueEnd();
 
         if (deactivateOnEnd) gameObject.SetActive(false);
-    }
-
-    // ===== 유틸 =====
-    private void OnValidate()
-    {
-        if (charDelay < 0f) charDelay = 0f;
-        _wait = new WaitForSeconds(Mathf.Max(0f, charDelay));
-    }
-
-    // 가벼운 List Pool
-    static class ListPool<T>
-    {
-        static readonly Stack<List<T>> _pool = new();
-        public static List<T> Get() => _pool.Count > 0 ? _pool.Pop() : new List<T>(8);
-        public static void Release(List<T> list) { list.Clear(); _pool.Push(list); }
     }
 }
