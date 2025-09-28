@@ -135,6 +135,18 @@ MonoBehaviour:
     m_Key: UI_Notification_Detail_2
     m_Metadata:
       m_Items: []
+  - m_Id: 62510497992704
+    m_Key: UI_Warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62316234608640
+    m_Key: UI_Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62729956560896
+    m_Key: UI_Warning_Text
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

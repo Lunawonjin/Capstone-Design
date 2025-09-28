@@ -153,6 +153,22 @@ MonoBehaviour:
       visit us again next weekend'
     m_Metadata:
       m_Items: []
+  - m_Id: 62316234608640
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62510497992704
+    m_Localized: Warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62729956560896
+    m_Localized: 'Any unsaved progress will be reset.
+
+
+      Do you really want
+      to exit?'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
