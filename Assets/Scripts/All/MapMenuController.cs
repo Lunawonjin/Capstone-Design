@@ -1,3 +1,7 @@
+// MapMenuController.cs
+// Unity 6 (LTS)
+// Feature: Map toggles with M and Esc, and now also closes via Exit button.
+
 using System;
 using System.Linq;
 using System.Collections;
@@ -11,37 +15,40 @@ public class MapMenuController : MonoBehaviour
 {
     public enum SceneIdMode { ByName, ByBuildIndex }
 
-    [Header("메뉴 버튼(이미지 등)")]
+    [Header("Menu Items (clickable)")]
     [SerializeField] private GameObject[] menuItems = Array.Empty<GameObject>();
 
-    [Header("씬 식별 모드")]
+    [Header("Scene Id Mode")]
     [SerializeField] private SceneIdMode sceneIdMode = SceneIdMode.ByBuildIndex;
 
-    [Header("타겟 씬 이름 (menuItems와 길이 일치)")]
+    [Header("Target Scene Names (align with menuItems)")]
     [SerializeField] private string[] sceneNames = Array.Empty<string>();
 
-    [Header("타겟 씬 빌드 인덱스 (menuItems와 길이 일치)")]
+    [Header("Target Scene Build Indices (align with menuItems)")]
     [SerializeField] private int[] sceneBuildIndices = Array.Empty<int>();
 
-    [Header("호버 연출")]
+    [Header("Hover Visuals")]
     [SerializeField, Range(1.0f, 2.0f)] private float hoverScale = 1.08f;
     [SerializeField] private Color hoverColor = new Color(1.05f, 1.05f, 1.05f, 1f);
     [SerializeField] private float normalScale = 1.0f;
     [SerializeField] private bool revertToOriginalColor = true;
 
     [Header("Map / MapPanel")]
-    [SerializeField] private GameObject map;      // 커지며 ON, 작아지며 OFF
-    [SerializeField] private GameObject mapPanel; // 즉시 ON/OFF
+    [SerializeField] private GameObject map;      // animated ON/OFF
+    [SerializeField] private GameObject mapPanel; // immediate ON/OFF
 
-    [Header("UI Exclusive Group (겹침 방지)")]
+    [Header("UI Exclusive Group (optional)")]
     [SerializeField] private UIExclusiveManager uiGroup;
 
-    [Header("단축키")]
+    [Header("Hotkeys")]
     [SerializeField] private KeyCode openKey = KeyCode.M;
     [SerializeField] private KeyCode closeKey = KeyCode.Escape;
     [SerializeField] private KeyCode[] extraCloseKeys = { KeyCode.M, KeyCode.Escape };
 
-    [Header("Map 애니메이션 (Unscaled Time)")]
+    [Header("Buttons")]
+    [SerializeField] private Button exitButton;   // NEW: click to close map
+
+    [Header("Map Animation (Unscaled Time)")]
     [SerializeField] private Vector3 openStartScale = new Vector3(0.9f, 0.9f, 1f);
     [SerializeField] private Vector3 openEndScale = Vector3.one;
     [SerializeField, Min(0.01f)] private float openDuration = 0.14f;
@@ -49,33 +56,32 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private Vector3 closeEndScale = new Vector3(0.9f, 0.9f, 1f);
     [SerializeField, Min(0.01f)] private float closeDuration = 0.12f;
 
-    [Header("알파 페이드(CanvasGroup: Map만)")]
+    [Header("Alpha Fade (CanvasGroup on Map)")]
     [SerializeField] private bool useAlphaFade = true;
 
-    [Header("패널 워치독(외부 SetActive 동기화)")]
+    [Header("Panel Watchdog (sync external SetActive)")]
     [SerializeField] private bool syncWithPanelActive = true;
 
-    // ── Shopping Center 제한 ───────────────────────────
-    [Header("Shopping Center (주말에만 이동 허용)")]
-    [SerializeField] private int shopItemIndex = 2;                 // 메뉴 엘리먼트[2]
-    [SerializeField] private string shopSceneName = "Shopping Center"; // 이름 비교
+    // Shopping Center restriction
+    [Header("Shopping Center (weekend only)")]
+    [SerializeField] private int shopItemIndex = 2;
+    [SerializeField] private string shopSceneName = "Shopping Center";
 
-    [Header("Notification (평일 차단용)")]
+    [Header("Notification (block on weekdays)")]
     [SerializeField] private GameObject notificationRoot;
     [SerializeField] private Button okButton;
-    [SerializeField] private bool notificationBlocksClicks = true; // TRUE: 뒤 클릭 차단
+    [SerializeField] private bool notificationBlocksClicks = true;
     [SerializeField, Min(0.01f)] private float notifOpenDuration = 0.14f;
     [SerializeField, Min(0.01f)] private float notifCloseDuration = 0.12f;
     [SerializeField] private Vector3 notifStartScale = new Vector3(0.9f, 0.9f, 1f);
     [SerializeField] private Vector3 notifEndScale = Vector3.one;
-    // ──────────────────────────────────────────────────
 
-    // 내부
+    // internals
     RectTransform _mapRT; CanvasGroup _mapCG;
     RectTransform _notifRT; CanvasGroup _notifCG;
     bool _isOpen, _animating, _notifAnimating;
 
-    // ★ 알림 활성 상태 플래그(버튼 입력 차단&Esc 처리용)
+    // notification state
     bool _notifOpen;
 
     Coroutine _openCo, _closeCo, _notifOpenCo, _notifCloseCo;
@@ -84,21 +90,26 @@ public class MapMenuController : MonoBehaviour
     {
         if (!map || !mapPanel)
         {
-            Debug.LogError("[MapMenuController] map / mapPanel 참조가 필요합니다.");
+            Debug.LogError("[MapMenuController] map / mapPanel reference required.");
             enabled = false; return;
         }
 
         _mapRT = map.GetComponent<RectTransform>();
         _mapCG = map.GetComponent<CanvasGroup>();
 
-        // 초기 상태
+        // init states
         mapPanel.SetActive(false);
         map.SetActive(false);
         if (_mapRT) _mapRT.localScale = openEndScale;
-        if (_mapCG && useAlphaFade) { _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false; }
+        if (_mapCG && useAlphaFade)
+        {
+            _mapCG.alpha = 0f;
+            _mapCG.interactable = false;
+            _mapCG.blocksRaycasts = false;
+        }
         _isOpen = _animating = false;
 
-        // Notification 초기화
+        // notification init
         if (notificationRoot)
         {
             _notifRT = notificationRoot.GetComponent<RectTransform>();
@@ -107,8 +118,8 @@ public class MapMenuController : MonoBehaviour
             if (_notifCG)
             {
                 _notifCG.alpha = 0f;
-                _notifCG.interactable = true;                      // 버튼 클릭 가능
-                _notifCG.blocksRaycasts = notificationBlocksClicks; // 뒤 클릭 차단 여부
+                _notifCG.interactable = true;
+                _notifCG.blocksRaycasts = notificationBlocksClicks;
             }
             notificationRoot.SetActive(false);
             _notifOpen = false;
@@ -122,7 +133,7 @@ public class MapMenuController : MonoBehaviour
         if (!uiGroup) uiGroup = UnityEngine.Object.FindObjectOfType<UIExclusiveManager>();
 #endif
 
-        // 메뉴 아이템 바인딩
+        // bind hover items
         for (int i = 0; i < menuItems.Length; i++)
         {
             var go = menuItems[i]; if (!go) continue;
@@ -132,18 +143,22 @@ public class MapMenuController : MonoBehaviour
             hover.onClick = () => OnMenuClick(idx);
         }
 
-        // 빌드 인덱스 자동 매핑(있으면 사용)
+        // auto map build indices
         AutoResolveBuildIndices();
+
+        // NEW: Exit button wiring
+        if (exitButton) exitButton.onClick.AddListener(OnClickExit);
     }
 
     void OnDestroy()
     {
         if (okButton) okButton.onClick.RemoveListener(HideNotification);
+        if (exitButton) exitButton.onClick.RemoveListener(OnClickExit);
     }
 
     void Update()
     {
-        // ★ 알림 떠 있을 땐 ESC로 "알림만" 닫고, 다른 입력은 모두 무시
+        // if notification is open, Esc closes only the notification
         if (_notifOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             HideNotification();
@@ -151,8 +166,12 @@ public class MapMenuController : MonoBehaviour
         }
 
         if (Input.GetKeyDown(openKey)) OpenMap();
-        if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown)) CloseMap();
 
+        // toggle/close by keys
+        if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown))
+            CloseMap();
+
+        // watchdog sync
         if (syncWithPanelActive)
         {
             if (mapPanel.activeSelf && !_isOpen && !_animating) OpenMap(fromPanelWatchdog: true);
@@ -160,20 +179,26 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    // ── 메뉴 클릭 ───────────────────────────────────────────────
+    // NEW: Exit button handler (closes map)
+    void OnClickExit()
+    {
+        // if notification is open and it blocks clicks, ignore
+        if (_notifOpen) return;
+        CloseMap();
+    }
+
+    // menu click
     void OnMenuClick(int idx)
     {
-        // ★ 알림이 떠 있으면 맵 내의 씬 이동 클릭 전부 차단
         if (_notifOpen) return;
 
-        // 쇼핑센터만 평일 차단 (주말에만 허용)
+        // weekend restriction for shopping
         if (idx == shopItemIndex && IsShopping(idx))
         {
             bool weekend = DataManager.instance != null && DataManager.instance.IsWeekend;
             if (!weekend) { ShowNotification(); return; }
         }
 
-        // 씬 이동 처리 (인덱스가 유효하면 인덱스로, 아니면 이름으로 폴백)
         var active = SceneManager.GetActiveScene();
 
         if (sceneIdMode == SceneIdMode.ByBuildIndex)
@@ -186,11 +211,15 @@ public class MapMenuController : MonoBehaviour
                 SceneManager.LoadScene(build);
                 return;
             }
-            // 폴백: 이름으로 이동
+            // fallback by name
         }
 
         string name = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
-        if (string.IsNullOrWhiteSpace(name)) { Debug.LogWarning($"[MapMenu] scene name missing at index {idx}"); return; }
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            Debug.LogWarning($"[MapMenu] scene name missing at index {idx}");
+            return;
+        }
 
         if (SceneNameEqualsRobust(active.name, name)) { CloseMap(); return; }
         SceneManager.LoadScene(name);
@@ -202,7 +231,7 @@ public class MapMenuController : MonoBehaviour
         return !string.IsNullOrEmpty(name) && SceneNameEqualsRobust(name, shopSceneName);
     }
 
-    // ── 공개 API ────────────────────────────────────────────────
+    // public API
     public void OpenMap(bool fromPanelWatchdog = false)
     {
         if (_animating || _isOpen) return;
@@ -282,21 +311,21 @@ public class MapMenuController : MonoBehaviour
         _animating = false; _isOpen = false;
     }
 
-    // ── Notification ───────────────────────────────────────────
+    // notification
     void ShowNotification()
     {
         if (!notificationRoot || _notifAnimating) return;
         if (_notifCloseCo != null) StopCoroutine(_notifCloseCo);
 
-        _notifOpen = true; // ★ 알림 활성 플래그 ON
+        _notifOpen = true;
 
         notificationRoot.SetActive(true);
         if (_notifRT) _notifRT.localScale = notifStartScale;
         if (_notifCG)
         {
             _notifCG.alpha = 0f;
-            _notifCG.interactable = true;                       // OK 버튼 등 동작
-            _notifCG.blocksRaycasts = notificationBlocksClicks; // 뒤 버튼 클릭 차단
+            _notifCG.interactable = true;
+            _notifCG.blocksRaycasts = notificationBlocksClicks;
         }
 
         _notifOpenCo = StartCoroutine(Co_ShowNotification());
@@ -342,10 +371,10 @@ public class MapMenuController : MonoBehaviour
 
         notificationRoot.SetActive(false);
         _notifAnimating = false;
-        _notifOpen = false; // ★ 알림 비활성 플래그 OFF
+        _notifOpen = false;
     }
 
-    // ── 보조 유틸 ───────────────────────────────────────────────
+    // utils
     void AutoResolveBuildIndices()
     {
         if (sceneIdMode != SceneIdMode.ByBuildIndex) return;
@@ -370,7 +399,6 @@ public class MapMenuController : MonoBehaviour
             if (nameToIndex.TryGetValue(norm, out int idx)) sceneBuildIndices[i] = idx;
             else
             {
-                // 빌드 세팅의 이름들도 normalize해서 비교
                 foreach (var kv in nameToIndex)
                 {
                     if (SceneNameEqualsRobust(kv.Key, norm)) { sceneBuildIndices[i] = kv.Value; break; }
@@ -405,7 +433,6 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private RectTransform _rect;
     private Graphic _graphic;
 
-    // 항상 최초 색을 기준으로 호버 컬러를 곱해, 누적 바램 방지
     private Color _baseColor;
     private bool _hasBaseColor;
 
@@ -429,7 +456,7 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         }
         else
         {
-            Debug.LogWarning($"[HoverableMenuItem] '{name}'에 Graphic이 없어 컬러 적용 불가", this);
+            Debug.LogWarning($"[HoverableMenuItem] '{name}' has no Graphic, color effect disabled", this);
         }
 
         SetScale(_normalScale);
@@ -437,7 +464,6 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     private void OnEnable()
     {
-        // 활성화 때도 원래 색/스케일로 초기화(누적 방지)
         if (_graphic != null && _hasBaseColor)
             _graphic.color = _baseColor;
         SetScale(_normalScale);
@@ -455,14 +481,14 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
     {
         SetScale(_hoverScale);
         if (_graphic != null && _hasBaseColor)
-            _graphic.color = MultiplyColor(_baseColor, _hoverColor); // 항상 baseColor 기준
+            _graphic.color = MultiplyColor(_baseColor, _hoverColor);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         SetScale(_normalScale);
         if (_graphic != null && _revertToOriginalColor && _hasBaseColor)
-            _graphic.color = _baseColor; // 원래 색으로 복귀
+            _graphic.color = _baseColor;
     }
 
     public void OnPointerClick(PointerEventData eventData)

@@ -1,3 +1,8 @@
+// StartMenu.cs
+// Unity 6 (LTS)
+// 변경점: EndPanel이 활성화된 동안 ESC(또는 Cancel 축)를 누르면
+//         OnClickExitCancel()을 호출해 No와 동일하게 EndPanel만 닫습니다.
+
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -15,6 +20,15 @@ public class StartMenu : MonoBehaviour
     public GameObject newGamePanel;
     public GameObject settingPanel;
 
+    [Header("종료 확인 패널(EndPanel)")]
+    public GameObject endPanel;      // Exit 클릭 시 띄울 확인 패널
+    public Button endYesButton;      // EndPanel의 Yes
+    public Button endNoButton;       // EndPanel의 No
+
+    [Header("ESC 입력 옵션")]
+    [Tooltip("Input.GetButtonDown(\"Cancel\")도 함께 인식 (기본 ESC 매핑)")]
+    public bool useCancelAxis = true;
+
     [Header("게임 씬 이름(폴백용)")]
     public string gameSceneName = "Player's Room";
 
@@ -25,35 +39,65 @@ public class StartMenu : MonoBehaviour
     {
         if (newGamePanel) newGamePanel.SetActive(false);
         if (settingPanel) settingPanel.SetActive(false);
+        if (endPanel) endPanel.SetActive(false); // EndPanel은 기본 비활성화
     }
 
     void Start()
     {
         if (newGameButton) newGameButton.onClick.AddListener(OnClickNewGame);
         if (settingButton) settingButton.onClick.AddListener(OnClickSetting);
-        if (exitButton) exitButton.onClick.AddListener(OnClickExit);
+        if (exitButton) exitButton.onClick.AddListener(OnClickExitRequest);
         if (loadGameButton) loadGameButton.onClick.AddListener(() => StartCoroutine(Co_OnClickLoadGame()));
 
-        bool hasAny = DataManager.instance.HasAnySave(slotCount);
+        if (endYesButton) endYesButton.onClick.AddListener(OnClickExitConfirm);
+        if (endNoButton) endNoButton.onClick.AddListener(OnClickExitCancel);
+
+        bool hasAny = false;
+        if (DataManager.instance != null)
+        {
+            hasAny = DataManager.instance.HasAnySave(slotCount);
+        }
         if (loadGameButton) loadGameButton.gameObject.SetActive(hasAny);
+    }
+
+    void Update()
+    {
+        // EndPanel이 표시 중일 때만 ESC를 소비하여 "No" 동작 수행
+        if (endPanel && endPanel.activeInHierarchy)
+        {
+            bool esc = Input.GetKeyDown(KeyCode.Escape);
+            if (!esc && useCancelAxis) esc = Input.GetButtonDown("Cancel");
+            if (esc)
+            {
+                OnClickExitCancel();   // No와 동일: EndPanel만 닫기
+            }
+        }
     }
 
     void OnClickNewGame()
     {
         if (newGamePanel) newGamePanel.SetActive(true);
         if (settingPanel) settingPanel.SetActive(false);
+        if (endPanel) endPanel.SetActive(false);
     }
 
     void OnClickSetting()
     {
         if (settingPanel) settingPanel.SetActive(true);
         if (newGamePanel) newGamePanel.SetActive(false);
+        if (endPanel) endPanel.SetActive(false);
     }
 
-    // ▼ 변경: 코루틴으로 저장된 씬을 우선 로드하고, 포지션 적용까지 호출
+    // 저장된 씬을 우선 로드하고, 포지션 적용까지 호출
     IEnumerator Co_OnClickLoadGame()
     {
         var dm = DataManager.instance;
+        if (dm == null)
+        {
+            Debug.LogWarning("[StartMenu] DataManager가 없습니다.");
+            yield break;
+        }
+
         bool ok = dm.TryLoadMostRecentSave(slotCount);
         if (!ok)
         {
@@ -61,13 +105,10 @@ public class StartMenu : MonoBehaviour
             yield break;
         }
 
-        // 저장된 씬 이름 가져오기
-        string target = dm.nowPlayer.Scene;
+        string target = dm.nowPlayer != null ? dm.nowPlayer.Scene : null;
 
-        // 폴백: 비어 있거나 빌드에 없으면 gameSceneName 사용
         bool hasSavedScene = !string.IsNullOrEmpty(target);
 #if UNITY_2021_1_OR_NEWER
-        // Unity 6에서도 Application.CanStreamedLevelBeLoaded는 제공됩니다.
         if (!hasSavedScene || !Application.CanStreamedLevelBeLoaded(target))
             target = gameSceneName;
 #else
@@ -75,15 +116,41 @@ public class StartMenu : MonoBehaviour
             target = gameSceneName;
 #endif
 
-        // 씬 로드
         AsyncOperation op = SceneManager.LoadSceneAsync(target);
         while (!op.isDone) yield return null;
 
-        // 씬이 로드된 뒤, 저장된 위치 적용(같은 씬이라도 좌표만 적용)
         yield return dm.LoadSavedSceneAndPlacePlayer();
     }
 
-    void OnClickExit()
+    // Exit 버튼: EndPanel 표시
+    void OnClickExitRequest()
+    {
+        if (endPanel)
+        {
+            if (newGamePanel) newGamePanel.SetActive(false);
+            if (settingPanel) settingPanel.SetActive(false);
+            endPanel.SetActive(true);
+        }
+        else
+        {
+            QuitApplication();
+        }
+    }
+
+    // EndPanel -> Yes
+    void OnClickExitConfirm()
+    {
+        QuitApplication();
+    }
+
+    // EndPanel -> No
+    void OnClickExitCancel()
+    {
+        if (endPanel) endPanel.SetActive(false);
+    }
+
+    // 공통 종료 처리
+    void QuitApplication()
     {
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

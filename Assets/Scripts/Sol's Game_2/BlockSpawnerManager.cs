@@ -1,16 +1,16 @@
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// 블럭 자동 순차 스폰
-/// - 좌/우 화면 밖에서 생성 → X=0으로 이동
-/// - 생성 시 태그 "NoBlock" → X==0 도착 시 "Block"으로 변경
-/// - 스프라이트 무작위 적용(null 슬롯은 회색 랜덤 컬러)
-/// - 카메라 펀치 모션: 플레이어가 착지할 때 PlayerJump가 TriggerCameraStep() 호출
-/// - 이동 속도: 인스펙터의 moveSpeeds 배열에서 랜덤 선택(비어있으면 defaultMoveSpeed 사용)
-/// </summary>
 public class BlockSpawnManager : MonoBehaviour
 {
+    // 스폰 X 전략
+    public enum SpawnXMode
+    {
+        OffscreenBiased,   // 화면 바깥 + 중앙 편향
+        ManualAbsolute,    // 절대 X
+        ManualRange        // 범위 랜덤 X
+    }
+
     [Header("프리팹 & 스프라이트")]
     public GameObject blockPrefab;
     public Sprite[] blockSprites;
@@ -32,9 +32,31 @@ public class BlockSpawnManager : MonoBehaviour
     public float defaultMoveSpeed = 3f;
     [Tooltip("목표점 근처에서 도착 판정(제곱거리)")]
     public float arriveThreshold = 0.02f;
-    [Tooltip("화면 밖에서 얼마나 더 바깥에서 시작할지 여유")]
+    [Tooltip("OffscreenBiased 모드일 때 화면 바깥 여유")]
     public float offscreenMargin = 1.0f;
 
+    // ── 스폰 X 설정 ─────────────────────────────────────────────
+    [Header("스폰 X 설정")]
+    [Tooltip("스폰 X 계산 방식을 선택합니다.")]
+    public SpawnXMode spawnXMode = SpawnXMode.OffscreenBiased;
+
+    [Tooltip("ManualAbsolute 모드에서 사용할 절대 X 좌표(월드 좌표)")]
+    public float manualSpawnX = -5f;
+
+    [Tooltip("ManualRange 모드에서 사용할 [최소, 최대] X 범위(월드 좌표)")]
+    public Vector2 manualSpawnXRange = new Vector2(-6f, -2f);
+
+    [Header("OffscreenBiased 모드 옵션")]
+    [Tooltip("0=화면 엣지 바깥, 1=목표 X=0 바로 위. 클수록 중앙 쪽에서 시작")]
+    [Range(0f, 1f)] public float spawnCenterBias = 0.35f;
+
+    [Tooltip("true면 편향을 주더라도 최소한 화면 밖에서 시작하도록 강제")]
+    public bool keepOffscreenAtStart = true;
+
+    [Tooltip("화면 밖 유지 시 필요한 최소 여유(월드 단위)")]
+    public float minOffscreenMargin = 0.2f;
+
+    // ── 카메라(옵션) ────────────────────────────────────────────
     [Header("카메라(옵션)")]
     public Transform cameraTarget;
     public bool cameraPunchyEnabled = true;
@@ -48,7 +70,7 @@ public class BlockSpawnManager : MonoBehaviour
     System.Random rng = new System.Random();
     int spawned = 0;
     int remaining = 0;
-    int cameraStepCount = 0;   // 착지에 의해 실행된 스텝 횟수
+    int cameraStepCount = 0;
     Coroutine camCo;
 
     void Start()
@@ -64,8 +86,11 @@ public class BlockSpawnManager : MonoBehaviour
         while (remaining > 0)
         {
             float y = (spawned == 0) ? firstBlockY : startYAfterFirst + (spawned - 1) * stepY;
-            bool left = rng.NextDouble() < 0.5;
-            float spawnX = GetOffscreenX(left);
+
+            // 스폰 X 결정 (좌/우 랜덤은 OffscreenBiased에서만 의미, 그러나 실제 좌우는 spawnX 부호로 확정)
+            float spawnX = ComputeSpawnX(rng.NextDouble() < 0.5);
+            bool fromLeft = spawnX < 0f;
+            float activationX = fromLeft ? -0.5f : 0.5f; // ← 태그 전환 지점
 
             Vector3 from = new Vector3(spawnX, y, 0f);
             Vector3 to = new Vector3(0f, y, 0f);
@@ -74,32 +99,116 @@ public class BlockSpawnManager : MonoBehaviour
             ApplyRandomSpriteOrGray(go);
             go.tag = "NoBlock"; // 이동 중
 
-            // ★ 블록별 속도 선택
             float speed = PickMoveSpeed();
 
             spawned++; remaining--;
 
-            // 이동 및 도착 처리(블록별 속도를 인자로 전달)
-            yield return StartCoroutine(MoveBlock(go.transform, to, speed));
+            // 임계 X 통과 시점에 태그 전환
+            yield return StartCoroutine(MoveBlock(go.transform, to, speed, go, activationX, fromLeft));
 
-            // 도착
+            // 안전 보증(이미 Block일 것이지만 한 번 더 보정 가능)
             go.transform.position = to;
-            go.tag = "Block";
-
-            // 카메라 스텝은 여기서 호출하지 않습니다. (플레이어가 착지할 때 TriggerCameraStep 호출)
+            if (go.tag != "Block") go.tag = "Block";
 
             if (postArrivalDelay > 0f) yield return new WaitForSeconds(postArrivalDelay);
         }
     }
 
-    // 블록별 속도 선택 로직
+    // ── 스폰 X 계산 ─────────────────────────────────────────────
+    float ComputeSpawnX(bool leftSideHint)
+    {
+        switch (spawnXMode)
+        {
+            case SpawnXMode.ManualAbsolute:
+                return manualSpawnX;
+
+            case SpawnXMode.ManualRange:
+                {
+                    float min = Mathf.Min(manualSpawnXRange.x, manualSpawnXRange.y);
+                    float max = Mathf.Max(manualSpawnXRange.x, manualSpawnXRange.y);
+                    return Random.Range(min, max);
+                }
+
+            case SpawnXMode.OffscreenBiased:
+            default:
+                return GetOffscreenBiasedX(leftSideHint);
+        }
+    }
+
+    // 기존 + 중앙 편향 + 오프스크린 강제
+    float GetOffscreenBiasedX(bool leftSide)
+    {
+        var cam = Camera.main;
+        float half = cam.orthographicSize * cam.aspect; // 화면 반폭(월드)
+        float camX = cam.transform.position.x;
+
+        // 1) 엣지 바깥 기준점
+        float edge = camX + (leftSide ? -half : +half);
+        float spawnEdgeX = edge + (leftSide ? -offscreenMargin : +offscreenMargin);
+
+        // 2) 목표점은 X=0
+        float targetX = 0f;
+
+        // 3) 편향 적용: 엣지 바깥에서 목표쪽으로 보간
+        float biasedX = Mathf.Lerp(spawnEdgeX, targetX, Mathf.Clamp01(spawnCenterBias));
+
+        // 4) 필요 시 "그래도 화면 밖" 유지
+        if (keepOffscreenAtStart)
+        {
+            float minOutside = edge + (leftSide ? -minOffscreenMargin : +minOffscreenMargin);
+            if (leftSide) biasedX = Mathf.Min(biasedX, minOutside);
+            else biasedX = Mathf.Max(biasedX, minOutside);
+        }
+
+        return biasedX;
+    }
+
+    // ── 이동: 임계 X 통과 시 태그 전환 ─────────────────────────
+    IEnumerator MoveBlock(Transform tr, Vector3 target, float speed, GameObject go, float activationX, bool fromLeft)
+    {
+        Vector3 p = tr.position; p.z = 0f; tr.position = p; target.z = 0f;
+        float thrSqr = arriveThreshold * arriveThreshold;
+
+        // 스폰 순간부터 이미 임계 X 안쪽일 수 있어 선제 체크
+        if (go.tag != "Block")
+        {
+            float x0 = tr.position.x;
+            if ((fromLeft && x0 >= activationX) ||
+                (!fromLeft && x0 <= activationX))
+            {
+                go.tag = "Block";
+            }
+        }
+
+        while ((tr.position - target).sqrMagnitude > thrSqr)
+        {
+            tr.position = Vector3.MoveTowards(tr.position, target, speed * Time.deltaTime);
+
+            // 임계 X 통과 체크(통과 순간 1회만 전환)
+            if (go.tag != "Block")
+            {
+                float x = tr.position.x;
+                if ((fromLeft && x >= activationX) ||
+                    (!fromLeft && x <= activationX))
+                {
+                    go.tag = "Block";
+                }
+            }
+
+            // Z 클램프
+            if (Mathf.Abs(tr.position.z) > 0.0001f)
+            { var fix = tr.position; fix.z = 0f; tr.position = fix; }
+
+            yield return null;
+        }
+    }
+
+    // ── 속도/연출/유틸 ──────────────────────────────────────────
     float PickMoveSpeed()
     {
-        // moveSpeeds가 비었거나 모두 0 이하라면 기본 속도 사용
         if (moveSpeeds == null || moveSpeeds.Length == 0)
             return Mathf.Max(0.01f, defaultMoveSpeed);
 
-        // 유효(>0)한 후보만 모으고 랜덤 선택
         int tries = 0;
         while (tries < 8)
         {
@@ -107,22 +216,7 @@ public class BlockSpawnManager : MonoBehaviour
             if (pick > 0f) return pick;
             tries++;
         }
-        // 전부 0 이거나 음수면 기본 속도
         return Mathf.Max(0.01f, defaultMoveSpeed);
-    }
-
-    IEnumerator MoveBlock(Transform tr, Vector3 target, float speed)
-    {
-        Vector3 p = tr.position; p.z = 0f; tr.position = p; target.z = 0f;
-        float thrSqr = arriveThreshold * arriveThreshold;
-
-        while ((tr.position - target).sqrMagnitude > thrSqr)
-        {
-            tr.position = Vector3.MoveTowards(tr.position, target, speed * Time.deltaTime);
-            if (Mathf.Abs(tr.position.z) > 0.0001f)
-            { var fix = tr.position; fix.z = 0f; tr.position = fix; }
-            yield return null;
-        }
     }
 
     void ApplyRandomSpriteOrGray(GameObject go)
@@ -142,18 +236,10 @@ public class BlockSpawnManager : MonoBehaviour
         }
     }
 
-    float GetOffscreenX(bool leftSide)
-    {
-        var cam = Camera.main;
-        float half = cam.orthographicSize * cam.aspect;
-        float edge = cam.transform.position.x + (leftSide ? -half : +half);
-        return edge + (leftSide ? -offscreenMargin : +offscreenMargin);
-    }
-
     // ───── 외부(플레이어 착지)에서 호출할 카메라 스텝 ─────
     public void TriggerCameraStep()
     {
-        if (!cameraTarget) return;
+        if (!cameraTarget || !cameraPunchyEnabled) return;
 
         float step = (cameraStepCount == 0) ? cameraFirstStep : cameraNextStep;
         cameraStepCount++;
@@ -161,7 +247,6 @@ public class BlockSpawnManager : MonoBehaviour
         StepCameraPunchy(step);
     }
 
-    // ───── 카메라 펀치 ─────
     void StepCameraPunchy(float step)
     {
         if (!cameraTarget || Mathf.Approximately(step, 0f)) return;
@@ -243,10 +328,16 @@ public class BlockSpawnManager : MonoBehaviour
         if (moveSpeeds != null)
         {
             for (int i = 0; i < moveSpeeds.Length; i++)
-                moveSpeeds[i] = Mathf.Max(0f, moveSpeeds[i]); // 음수 방지
+                moveSpeeds[i] = Mathf.Max(0f, moveSpeeds[i]);
         }
         arriveThreshold = Mathf.Max(0.0001f, arriveThreshold);
         offscreenMargin = Mathf.Max(0f, offscreenMargin);
+
+        spawnCenterBias = Mathf.Clamp01(spawnCenterBias);
+        minOffscreenMargin = Mathf.Max(0f, minOffscreenMargin);
+
+        if (spawnXMode == SpawnXMode.ManualRange && manualSpawnXRange.x > manualSpawnXRange.y)
+            manualSpawnXRange = new Vector2(manualSpawnXRange.y, manualSpawnXRange.x);
     }
 #endif
 }
