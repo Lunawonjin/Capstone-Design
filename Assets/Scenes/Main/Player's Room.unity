@@ -2669,6 +2669,7 @@ MonoBehaviour:
     HasSavedPosition: 0
     Scene: 
     Weekday: 1
+    Language: ko
   path: 
   nowSlot: 0
   coinText: {fileID: 5275168382524905245}
@@ -2683,7 +2684,9 @@ MonoBehaviour:
   levelObjectName: Text_Level
   dayObjectName: Text_Day
   nameObjectName: Text_Name
-  dayFormat: "{0}\uC77C {1}\uC694\uC77C"
+  dayFormatKo: "{0}\uC77C {1}\uC694\uC77C"
+  dayFormatEn: Day {0} ({1})
+  dayFormatJp: "{0}\u65E5\uFF08{1}\uFF09"
   coinFormat: '{0}'
   levelFormat: Lv. {0}
   nameFormat: '{0}'
@@ -3786,6 +3789,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: UI
       objectReference: {fileID: 0}
+    - target: {fileID: 5698441851980627173, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_fontSize
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698441851980627173, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 45
+      objectReference: {fileID: 0}
     - target: {fileID: 5842181001027929463, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0.5
@@ -3812,7 +3823,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6393498565044971116, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8214699285864704912, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: csvTextAsset
@@ -3820,7 +3831,7 @@ PrefabInstance:
       objectReference: {fileID: 4900000, guid: ded5dd89f0eed6c4ea813a74cc218620, type: 3}
     - target: {fileID: 9104199202320153472, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

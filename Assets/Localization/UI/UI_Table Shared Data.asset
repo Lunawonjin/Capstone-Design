@@ -64,7 +64,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17469469560832
-    m_Key: UI_Notification_Detail
+    m_Key: UI_Notification_Detail_1
     m_Metadata:
       m_Items: []
   - m_Id: 17704916815872
@@ -73,6 +73,66 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17758872342528
     m_Key: UI_Stay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51175966052352
+    m_Key: UI_Records
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51298590724096
+    m_Key: UI_Friendship
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52482374307840
+    m_Key: UI_SketchDiary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51300549464064
+    m_Key: UI_CloseBook
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53232341028864
+    m_Key: UI_Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53536197382144
+    m_Key: UI_RecordsPage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53774203162624
+    m_Key: UI_Save_QA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54408860078080
+    m_Key: UI_Alright
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54448844378112
+    m_Key: UI_No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55181803196416
+    m_Key: UI_FriendshipPage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55340524048384
+    m_Key: UI_SketchDiaryPage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56308330336256
+    m_Key: UI_Village
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56409190764544
+    m_Key: UI_ShoppingDistric
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56424449642496
+    m_Key: UI_Starest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57630458843136
+    m_Key: UI_Notification_Detail_2
     m_Metadata:
       m_Items: []
   m_Metadata:

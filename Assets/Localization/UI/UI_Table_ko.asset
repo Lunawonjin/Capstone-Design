@@ -81,6 +81,69 @@ MonoBehaviour:
     m_Localized: "\uB0A8\uB294\uB2E4"
     m_Metadata:
       m_Items: []
+  - m_Id: 51175966052352
+    m_Localized: "\uAE30\uB85D"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51298590724096
+    m_Localized: "\uD638\uAC10\uB3C4"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51300549464064
+    m_Localized: "\uCC45 \uB36E\uAE30"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52482374307840
+    m_Localized: "\uADF8\uB9BC \uC77C\uAE30"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53232341028864
+    m_Localized: "\uC800\uC7A5"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53536197382144
+    m_Localized: "\uAE30\uB85D \uD398\uC774\uC9C0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53774203162624
+    m_Localized: "\uC9C0\uAE08\uAE4C\uC9C0\uC758 \uC774\uC57C\uAE30\uB97C \n\uC77C\uAE30\uB97C
+      \uC800\uC7A5\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54408860078080
+    m_Localized: "\uC88B\uC544!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54448844378112
+    m_Localized: "\uC548\uB3FC!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55181803196416
+    m_Localized: "\uD638\uAC10\uB3C4 \uD398\uC774\uC9C0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55340524048384
+    m_Localized: "\uADF8\uB9BC\uC77C\uAE30 \uD398\uC774\uC9C0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56308330336256
+    m_Localized: "\uB9C8\uC744"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56409190764544
+    m_Localized: "\uC0C1\uC810\uAC00"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56424449642496
+    m_Localized: "\uBCC4\uBB34\uB9AC\uD130"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57630458843136
+    m_Localized: "\uC0C1\uC810\uAC00\uB294 \uB9E4\uC8FC \uD1A0\uC694\uC77C\xB7\uC77C\uC694\uC77C\uC5D0\uB9CC\n\uBB38\uC744
+      \uD65C\uC9DD \uC5FD\uB2C8\uB2E4.\n\n\uB2E4\uC74C \uC8FC\uB9D0\uC5D0 \uB2E4\uC2DC
+      \uCC3E\uC544\uC640 \uC8FC\uC138\uC694."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

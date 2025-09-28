@@ -5137,8 +5137,10 @@ MonoBehaviour:
   - {fileID: 1933847031}
   - {fileID: 1044956605}
   - {fileID: 1927431254}
-  newPlayerName: {fileID: 1298580848}
+  newPlayerInput: {fileID: 382194438}
+  newPlayerPreview: {fileID: 0}
   startSceneName: Player's Room
+  leaveEmptySlotTextUntouched: 1
 --- !u!114 &1425800730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7669,7 +7671,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2123260697
 RectTransform:
   m_ObjectHideFlags: 0
