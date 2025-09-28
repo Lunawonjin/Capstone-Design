@@ -107,7 +107,7 @@ public class CharacterJumpOnEnd : MonoBehaviour
         isRunning = true;
 
         // 점프 연출 동안 물리 간섭(충돌/중력)을 비활성화
-        if (hadRb) { rb.isKinematic = true; rb.velocity = Vector2.zero; }
+        if (hadRb) { rb.isKinematic = true; rb.linearVelocity = Vector2.zero; }
 
         Vector3 cur = transform.position;
 
