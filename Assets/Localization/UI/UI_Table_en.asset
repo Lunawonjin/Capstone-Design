@@ -169,6 +169,30 @@ MonoBehaviour:
       to exit?'
     m_Metadata:
       m_Items: []
+  - m_Id: 257256197189632
+    m_Localized: Turn in for the day?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 257352477437952
+    m_Localized: Go to bed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 257364242460672
+    m_Localized: Not yet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 266584237010944
+    m_Localized: Return to Title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267442081230848
+    m_Localized: 'Any unsaved progress will be reset.
+
+
+      Do you really want
+      to return to the title screen?'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

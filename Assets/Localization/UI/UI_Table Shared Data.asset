@@ -144,7 +144,27 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 62729956560896
-    m_Key: UI_Warning_Text
+    m_Key: UI_ExitWarning_Text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 267442081230848
+    m_Key: UI_MainWarning_Text
+    m_Metadata:
+      m_Items: []
+  - m_Id: 257256197189632
+    m_Key: UI_GoodNight
+    m_Metadata:
+      m_Items: []
+  - m_Id: 257352477437952
+    m_Key: UI_GoodNight_Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 257364242460672
+    m_Key: UI_GoodNight_No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 266584237010944
+    m_Key: UI_GoMain
     m_Metadata:
       m_Items: []
   m_Metadata:

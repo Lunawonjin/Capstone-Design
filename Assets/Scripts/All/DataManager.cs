@@ -67,7 +67,7 @@ public class DataManager : MonoBehaviour
 
     [Header("표기 형식(언어별)")]
     // {0}=일차(숫자), {1}=요일명
-    [SerializeField] private string dayFormatKo = "{0}일 {1}요일";
+    [SerializeField] private string dayFormatKo = "{0}일 ({1})";
     [SerializeField] private string dayFormatEn = "Day {0} ({1})";
     [SerializeField] private string dayFormatJp = "{0}日（{1}）";
 
@@ -92,6 +92,15 @@ public class DataManager : MonoBehaviour
     private static readonly string[] WEEK_KO = { "", "월", "화", "수", "목", "금", "토", "일" };
     private static readonly string[] WEEK_EN = { "", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
     private static readonly string[] WEEK_JP = { "", "月", "火", "水", "木", "金", "土", "日" };
+
+    [Header("Day 텍스트 폰트/사이즈(언어별)")]
+    [SerializeField] private TMP_FontAsset fontKo;
+    [SerializeField] private TMP_FontAsset fontEn;
+    [SerializeField] private TMP_FontAsset fontJp;
+
+    [SerializeField] private int dayFontSizeKo = 45;
+    [SerializeField] private int dayFontSizeEn = 35;
+    [SerializeField] private int dayFontSizeJp = 35;
 
     // 변경 감지 스냅샷
     int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue, _lastWeekday = int.MinValue;
@@ -158,7 +167,6 @@ public class DataManager : MonoBehaviour
 
     // === 저장/로드/삭제 ===
 
-    // 외부에서도 동일 경로를 쓰도록 공개 메서드
     public string GetSlotFullPath(int slot)
     {
         if (!Directory.Exists(path)) Directory.CreateDirectory(path);
@@ -388,7 +396,6 @@ public class DataManager : MonoBehaviour
 
     // === 요일/날짜 로컬라이즈 유틸 ===
 
-    /// <summary>언어 코드에 맞는 요일명 반환</summary>
     public string GetWeekdayNameLocalized(string langCode = null)
     {
         int w = GetWeekday(); // 1~7
@@ -401,7 +408,6 @@ public class DataManager : MonoBehaviour
         };
     }
 
-    /// <summary>언어 코드에 맞는 '일차+요일' 문자열</summary>
     public string FormatDayAndWeekLocalized(int day, int weekday, string langCode = null)
     {
         string code = NormalizeLang(langCode ?? CurrentLang());
@@ -438,7 +444,6 @@ public class DataManager : MonoBehaviour
 
     public string GetWeekdayName()
     {
-        // 기존 메서드도 로컬라이즈되도록 위임
         return GetWeekdayNameLocalized(CurrentLang());
     }
 
@@ -541,16 +546,43 @@ public class DataManager : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void NotifyChanged() => UpdateHUD();
 
+    private void ApplyDayStylePerLanguage(string langCode)
+    {
+        if (!dayText) return;
+
+        switch (NormalizeLang(langCode))
+        {
+            case "ko":
+                if (fontKo) dayText.font = fontKo;
+                dayText.fontSize = dayFontSizeKo;
+                break;
+
+            case "jp": // ja 매핑됨 → jp
+                if (fontJp) dayText.font = fontJp;
+                dayText.fontSize = dayFontSizeJp;
+                break;
+
+            default:   // en
+                if (fontEn) dayText.font = fontEn;
+                dayText.fontSize = dayFontSizeEn;
+                break;
+        }
+
+        dayText.ForceMeshUpdate();
+    }
+
     void UpdateHUD()
     {
         if (coinText) coinText.text = string.Format(coinFormat, nowPlayer.Coin);
         if (levelText) levelText.text = string.Format(levelFormat, nowPlayer.Level);
 
-        // Day + 요일 (언어 로컬라이즈 적용)
+        // Day + 요일 (언어 로컬라이즈 + 폰트/사이즈 적용)
         if (dayText)
         {
             int wd = GetWeekday();
-            dayText.text = FormatDayAndWeekLocalized(nowPlayer.Day, wd, CurrentLang());
+            string lang = CurrentLang();
+            dayText.text = FormatDayAndWeekLocalized(nowPlayer.Day, wd, lang);
+            ApplyDayStylePerLanguage(lang);
         }
 
         if (nameText)
