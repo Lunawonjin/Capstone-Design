@@ -323,7 +323,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -911,7 +911,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -1135,7 +1135,7 @@ MonoBehaviour:
   m_CaretWidth: 1
   m_ReadOnly: 0
   m_RichText: 1
-  m_GlobalFontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_GlobalFontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_OnFocusSelectAll: 1
   m_ResetOnDeActivation: 1
   m_KeepTextSelectionVisible: 0
@@ -1538,7 +1538,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -2104,7 +2104,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: GoGame
         m_Mode: 1
@@ -2664,7 +2664,7 @@ GameObject:
   - component: {fileID: 802761139}
   - component: {fileID: 802761141}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2691,7 +2691,6 @@ MonoBehaviour:
   newPlayerPreview: {fileID: 0}
   startSceneName: Player's Room
   leaveEmptySlotTextUntouched: 1
-  dataManagerPrefab: {fileID: 1425800727}
 --- !u!4 &802761140
 Transform:
   m_ObjectHideFlags: 0
@@ -3209,7 +3208,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -4275,7 +4274,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -4682,8 +4681,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
-  m_sharedMaterial: {fileID: -3050571709569891352, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
+  m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5126,7 +5125,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1425800728}
   - component: {fileID: 1425800727}
-  - component: {fileID: 1425800729}
   m_Layer: 0
   m_Name: DataManager
   m_TagString: Untagged
@@ -5163,6 +5161,8 @@ MonoBehaviour:
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
     White_First_Meet: 0
+    ActiveSceneName: 
+    ActiveObjects: []
   path: 
   nowSlot: 0
   coinText: {fileID: 0}
@@ -5195,6 +5195,13 @@ MonoBehaviour:
   dayFontSizeKo: 45
   dayFontSizeEn: 35
   dayFontSizeJp: 35
+  captureActiveObjectsOnSave: 1
+  excludeTagsForActiveObjects:
+  - HUD
+  excludeNamesForActiveObjects: []
+  autoRestoreActiveObjectsOnSceneLoaded: 1
+  activeRestoreMode: 0
+  logRestoreDetails: 1
 --- !u!4 &1425800728
 Transform:
   m_ObjectHideFlags: 0
@@ -5210,28 +5217,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1425800729
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425800726}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8e02ad2fbfd58dc4db4fd2082350e534, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  creat: {fileID: 103113879}
-  slotText:
-  - {fileID: 1933847031}
-  - {fileID: 1044956605}
-  - {fileID: 1927431254}
-  newPlayerInput: {fileID: 382194438}
-  newPlayerPreview: {fileID: 0}
-  startSceneName: Player's Room
-  leaveEmptySlotTextUntouched: 1
-  dataManagerPrefab: {fileID: 0}
 --- !u!1 &1511384831
 GameObject:
   m_ObjectHideFlags: 0
@@ -5316,7 +5301,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -7828,5 +7813,5 @@ SceneRoots:
   - {fileID: 362828471}
   - {fileID: 1677075837}
   - {fileID: 1569774069}
-  - {fileID: 1425800728}
   - {fileID: 802761140}
+  - {fileID: 1425800728}

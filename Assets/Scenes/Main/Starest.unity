@@ -1137,6 +1137,8 @@ MonoBehaviour:
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
     White_First_Meet: 0
+    ActiveSceneName: 
+    ActiveObjects: []
   dataManager: {fileID: 1335903510}
   saveAfterWrite: 1
   saveMethodCandidates:
@@ -1145,6 +1147,14 @@ MonoBehaviour:
   - Persist
   - Write
   - Flush
+  uiCanvasesToDisable:
+  - {fileID: 1458940370}
+  playerControlToggle: {fileID: 1405067365}
+  playerTransform: {fileID: 1405067363}
+  preferRigidbodyMove: 1
+  fadeCanvasGroup: {fileID: 0}
+  fadeOutDuration: 0.25
+  fadeInDuration: 0.25
   logWhenRun: 1
   logWhenSkip: 1
   verboseLog: 1
@@ -1871,6 +1881,8 @@ MonoBehaviour:
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
     White_First_Meet: 0
+    ActiveSceneName: 
+    ActiveObjects: []
   path: 
   nowSlot: -1
   coinText: {fileID: 0}
@@ -1903,6 +1915,15 @@ MonoBehaviour:
   dayFontSizeKo: 45
   dayFontSizeEn: 35
   dayFontSizeJp: 35
+  captureActiveObjectsOnSave: 1
+  excludeTagsForActiveObjects:
+  - HUD
+  - UIPanel
+  excludeNamesForActiveObjects:
+  - UIPanel
+  autoRestoreActiveObjectsOnSceneLoaded: 1
+  activeRestoreMode: 0
+  logRestoreDetails: 0
 --- !u!4 &1335903511
 Transform:
   m_ObjectHideFlags: 0
@@ -2085,6 +2106,11 @@ MonoBehaviour:
   doorReturnKey: 115
   useRigidbodySnap: 1
   verboseLog: 0
+--- !u!1 &1458940370 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4051993470011338799, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+  m_PrefabInstance: {fileID: 1875851538}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1518603143
 GameObject:
   m_ObjectHideFlags: 0
@@ -2517,7 +2543,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4051993470011338799, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_Name
-      value: UI
+      value: UIPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 6393498565044971116, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9104199202320153472, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive

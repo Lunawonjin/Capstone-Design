@@ -280,7 +280,7 @@ GameObject:
   - component: {fileID: 8244061733248182113}
   m_Layer: 5
   m_Name: Save_BT
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -566,7 +566,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "  1\u65E5\uFF08\u6708\uFF09"
+  m_text: "1\uC77C (\uC6D4)"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -593,8 +593,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 45
+  m_fontSizeBase: 45
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1189,7 +1189,7 @@ GameObject:
   - component: {fileID: 6643102604427248307}
   m_Layer: 5
   m_Name: DiaryPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3104,7 +3104,7 @@ GameObject:
   - component: {fileID: 2754134606688727502}
   m_Layer: 5
   m_Name: "\uC81C\uBAA9_\uD14D\uC2A4\uD2B8"
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3746,7 +3746,7 @@ GameObject:
   - component: {fileID: 9151090723540835594}
   m_Layer: 5
   m_Name: 'PictureDiaryPanel '
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3785,7 +3785,7 @@ GameObject:
   - component: {fileID: 8323491880200943747}
   m_Layer: 5
   m_Name: Save
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3903,7 +3903,7 @@ GameObject:
   - component: {fileID: 6238983215209551809}
   m_Layer: 5
   m_Name: SavePanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4240,7 +4240,7 @@ GameObject:
   - component: {fileID: 5443081100118739807}
   m_Layer: 5
   m_Name: SaveQA
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5069,8 +5069,8 @@ GameObject:
   - component: {fileID: 1030875841315000153}
   - component: {fileID: 3948072035303103468}
   m_Layer: 5
-  m_Name: UI
-  m_TagString: Untagged
+  m_Name: UIPanel
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5340,7 +5340,7 @@ GameObject:
   - component: {fileID: 3750747632702830210}
   m_Layer: 5
   m_Name: Exit
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6350,7 +6350,7 @@ GameObject:
   - component: {fileID: 8591688070842308524}
   m_Layer: 5
   m_Name: DiaryAssets
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7619,7 +7619,7 @@ GameObject:
   - component: {fileID: 4761226008630813377}
   m_Layer: 5
   m_Name: Likeability
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9851,7 +9851,7 @@ GameObject:
   - component: {fileID: 1226743528516430461}
   m_Layer: 5
   m_Name: Diary
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10729,7 +10729,7 @@ GameObject:
   - component: {fileID: 6631446849129102365}
   m_Layer: 5
   m_Name: Picture Diary
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12202,7 +12202,7 @@ GameObject:
   - component: {fileID: 4734990363744437259}
   m_Layer: 5
   m_Name: LikeabilityPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

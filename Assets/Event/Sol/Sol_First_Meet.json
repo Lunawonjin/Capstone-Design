@@ -1,1 +1,10 @@
-성공했도다 ㅋ
+{
+  "defaultStepDuration": 0.5,
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+  "steps": [
+    {"axis":"y", "delta": 3},   // Y +3
+    {"axis":"x", "delta":-2},   // X -2
+    {"dx": 0, "dy": -1, "duration": 0.25} // 직접 dx,dy와 개별 duration도 가능
+  ]
+}

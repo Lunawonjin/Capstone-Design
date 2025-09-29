@@ -1553,7 +1553,7 @@ PrefabInstance:
       objectReference: {fileID: 21300000, guid: 1e49797e1d228634d9dcecb56c1deba4, type: 3}
     - target: {fileID: 4051993470011338799, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_Name
-      value: UI
+      value: UIPanel
       objectReference: {fileID: 0}
     - target: {fileID: 4714709473673795777, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
