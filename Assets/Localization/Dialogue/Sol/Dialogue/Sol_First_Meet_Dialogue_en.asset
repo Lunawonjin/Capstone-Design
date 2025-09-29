@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Sol_First_Meet_Dialogue_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 3d4d168b851240847bf1d6a09ef8f32d, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5172039680
+    m_Localized: "Hi, Sol. This is {playerName}. From now on, they\u2019ll be looking
+      after you."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: "Oh, hello! I\u2019m Sol\u2026!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 667238731776
+    m_Localized: "Hi, I\u2019m {playerName}. "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 679607734272
+    m_Localized: "Sol? That\u2019s a cute name!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 940057235456
+    m_Localized: "I\u2019ll get going now. Have a good chat with Sol!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 942737395712
+    m_Localized: "What\u2019s Sol sick with? I saw her getting injections."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8863063937024
+    m_Localized: "Me\u2026 I have leukemia. They say I\u2019ve had it since I was
+      little!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8992483381248
+    m_Localized: "That must have hurt a lot\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9147165118464
+    m_Localized: "Gosh\u2026 I see."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9420180754432
+    m_Localized: "Grown-ups always react like that! Heh-heh! \nBut I\u2019m fine
+      now, so I\u2019m happy!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9567400824832
+    m_Localized: You seem awfully mature for your age.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20500135219200
+    m_Localized: Why do you act so cheerful?
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

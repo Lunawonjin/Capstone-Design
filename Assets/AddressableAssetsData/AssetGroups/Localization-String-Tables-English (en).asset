@@ -22,13 +22,26 @@ MonoBehaviour:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 349dae0b4ebdf7f419d56c99eabab65a
-    m_Address: Dialogue_en
+    m_Address: Test_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 467ced898d0e01e489f431c31bf81efc
+    m_Address: Sol_First_Meet_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7ac187403d8283e46bafe87105fe143e
     m_Address: Dialogue Table_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    - Preload
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 937ad5e1abf68b94cbdd154ad558fdb1
+    m_Address: Sol_First_Meet_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

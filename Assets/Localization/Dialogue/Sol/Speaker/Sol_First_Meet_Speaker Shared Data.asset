@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Sol_First_Meet_Speaker Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Sol_First_Meet_Speaker
+  m_TableCollectionNameGuidString: 4c59ec5375f8cb3449f72b10a779e3ce
+  m_Entries:
+  - m_Id: 5172039680
+    m_Key: Dialogue_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Key: Dialogue_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 667238731776
+    m_Key: Dialogue_Choice1_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 679607734272
+    m_Key: Dialogue_Choice1_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 940057235456
+    m_Key: Dialogue_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 942737395712
+    m_Key: Dialogue_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8863063937024
+    m_Key: Dialogue_005
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8992483381248
+    m_Key: Dialogue_Choice2_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9147165118464
+    m_Key: Dialogue_Choice2_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9420180754432
+    m_Key: Dialogue_006
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9567400824832
+    m_Key: Dialogue_Choice3_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20500135219200
+    m_Key: Dialogue_Choice3_S2_001
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 8315386108424749137
+  references:
+    version: 2
+    RefIds:
+    - rid: 8315386108424749137
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1759157399083

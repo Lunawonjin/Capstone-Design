@@ -323,7 +323,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -911,7 +911,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -1538,7 +1538,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -2104,7 +2104,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: GoGame
         m_Mode: 1
@@ -2652,6 +2652,85 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &802761138
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 802761140}
+  - component: {fileID: 802761139}
+  - component: {fileID: 802761141}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &802761139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e02ad2fbfd58dc4db4fd2082350e534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Select
+  creat: {fileID: 103113879}
+  slotText:
+  - {fileID: 1933847031}
+  - {fileID: 1044956605}
+  - {fileID: 1927431254}
+  newPlayerInput: {fileID: 382194438}
+  newPlayerPreview: {fileID: 0}
+  startSceneName: Player's Room
+  leaveEmptySlotTextUntouched: 1
+  dataManagerPrefab: {fileID: 1425800727}
+--- !u!4 &802761140
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.46955, y: 3.58185, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &802761141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 338e18a6f425f80408939ab7d6ef4c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  newGameButton: {fileID: 1050906262}
+  settingButton: {fileID: 2028002115}
+  loadGameButton: {fileID: 1911289360}
+  exitButton: {fileID: 1757702349}
+  newGamePanel: {fileID: 2123260696}
+  settingPanel: {fileID: 914168132}
+  endPanel: {fileID: 1830876836}
+  endYesButton: {fileID: 1224945722}
+  endNoButton: {fileID: 2119683334}
+  useCancelAxis: 1
+  gameSceneName: Player's Room
+  slotCount: 3
 --- !u!1 &877180044
 GameObject:
   m_ObjectHideFlags: 0
@@ -3130,7 +3209,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -4196,7 +4275,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -5048,7 +5127,6 @@ GameObject:
   - component: {fileID: 1425800728}
   - component: {fileID: 1425800727}
   - component: {fileID: 1425800729}
-  - component: {fileID: 1425800730}
   m_Layer: 0
   m_Name: DataManager
   m_TagString: Untagged
@@ -5081,6 +5159,10 @@ MonoBehaviour:
     Scene: 
     Weekday: 1
     Language: ko
+    Sol_First_Meet: 0
+    Salt_First_Meet: 0
+    Ryu_First_Meet: 0
+    White_First_Meet: 0
   path: 
   nowSlot: 0
   coinText: {fileID: 0}
@@ -5095,7 +5177,9 @@ MonoBehaviour:
   levelObjectName: Text_Level
   dayObjectName: Text_Day
   nameObjectName: Text_Name
-  dayFormat: "{0}\uC77C ({1})"
+  dayFormatKo: "{0}\uC77C ({1})"
+  dayFormatEn: Day {0} ({1})
+  dayFormatJp: "{0}\u65E5\uFF08{1}\uFF09"
   coinFormat: '{0}'
   levelFormat: Lv. {0}
   nameFormat: '{0}'
@@ -5105,6 +5189,12 @@ MonoBehaviour:
   playerTagForReposition: Player
   applyPosTimeoutSec: 3
   autoLoadSavedSceneOnStart: 0
+  fontKo: {fileID: 0}
+  fontEn: {fileID: 0}
+  fontJp: {fileID: 0}
+  dayFontSizeKo: 45
+  dayFontSizeEn: 35
+  dayFontSizeJp: 35
 --- !u!4 &1425800728
 Transform:
   m_ObjectHideFlags: 0
@@ -5127,7 +5217,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1425800726}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e02ad2fbfd58dc4db4fd2082350e534, type: 3}
   m_Name: 
@@ -5141,30 +5231,7 @@ MonoBehaviour:
   newPlayerPreview: {fileID: 0}
   startSceneName: Player's Room
   leaveEmptySlotTextUntouched: 1
---- !u!114 &1425800730
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425800726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 338e18a6f425f80408939ab7d6ef4c6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  newGameButton: {fileID: 1050906262}
-  settingButton: {fileID: 2028002115}
-  loadGameButton: {fileID: 1911289360}
-  exitButton: {fileID: 1757702349}
-  newGamePanel: {fileID: 2123260696}
-  settingPanel: {fileID: 914168132}
-  endPanel: {fileID: 1830876836}
-  endYesButton: {fileID: 1224945722}
-  endNoButton: {fileID: 2119683334}
-  useCancelAxis: 1
-  gameSceneName: Player's Room
-  slotCount: 3
+  dataManagerPrefab: {fileID: 0}
 --- !u!1 &1511384831
 GameObject:
   m_ObjectHideFlags: 0
@@ -5249,7 +5316,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -7762,3 +7829,4 @@ SceneRoots:
   - {fileID: 1677075837}
   - {fileID: 1569774069}
   - {fileID: 1425800728}
+  - {fileID: 802761140}

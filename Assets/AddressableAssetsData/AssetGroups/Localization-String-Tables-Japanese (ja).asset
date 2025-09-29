@@ -15,6 +15,18 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Japanese (ja)
   m_GUID: cbd97113c59d0294985385b69ee4d844
   m_SerializeEntries:
+  - m_GUID: 08f45ef4a1f1c3a46960876295292813
+    m_Address: Sol_First_Meet_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2f90516b66aad9e4a9681c5a75c6cecc
+    m_Address: Sol_First_Meet_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6dda378ab27dc3e498466e3c2cd7591b
     m_Address: UI_Table_ja
     m_ReadOnly: 1
@@ -22,7 +34,7 @@ MonoBehaviour:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8acb9da5a1ba0fd449ed8d09c561623a
-    m_Address: Dialogue_ja
+    m_Address: Test_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
@@ -32,6 +44,7 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
+    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 544fd178bf8e1be45bdb8065448f99a1, type: 2}

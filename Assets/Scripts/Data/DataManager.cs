@@ -28,6 +28,12 @@ public class PlayerData
     // 언어 코드("ko","en","jp") — 기본 "ko"
     public string Language;
 
+    // 첫 만남 플래그(스토리 트리거)
+    public bool Sol_First_Meet;
+    public bool Salt_First_Meet;
+    public bool Ryu_First_Meet;
+    public bool White_First_Meet;
+
     public PlayerData()
     {
         Level = 1;
@@ -35,6 +41,12 @@ public class PlayerData
         Scene = "";
         Weekday = 1;
         Language = "ko";
+
+        // 첫 만남 플래그 기본값
+        Sol_First_Meet = false;
+        Salt_First_Meet = false;
+        Ryu_First_Meet = false;
+        White_First_Meet = false;
     }
 }
 

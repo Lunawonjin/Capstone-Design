@@ -25,8 +25,18 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d4d168b851240847bf1d6a09ef8f32d
+    m_Address: Assets/Localization/Dialogue/sol_first_meet Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 43272742ab5ecd9488135df7397a6c95
     m_Address: Assets/Localization/Dialogue Table Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c59ec5375f8cb3449f72b10a779e3ce
+    m_Address: Assets/Localization/Dialogue/Sol_First_Meet_Name Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
