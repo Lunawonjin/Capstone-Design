@@ -20,16 +20,19 @@
   ],
 
   "afterPlayerActions": [
-    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0, "duration": 1.0 },
-    { "type": "dialogue", "owner": "Sol", "eventName": "Sol_First_Meet" },
-    { "type": "eventEnd" }
+    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0 },
+    { "type": "dialogue", "owner": "Sol", "eventName": "Sol_First_Meet" }
   ],
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_Choice1_Same_001",
+      "onKey": "Dialogue_Choice1_Same_002",
       "actions": [
-        { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": -4.0, "duration": 1.0 },
+        { "type": "dialoguePanelActive", "active": false },
+
+        { "type": "npcMove", "npcName": "Boss", "dx": -0.6,  "dy": 0.0, "duration": 1.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx":  0.0,"dy":  -3.0, "duration": 1.0 },
+
         { "type": "npcSetActive", "npcName": "Boss", "active": false }
       ]
     }

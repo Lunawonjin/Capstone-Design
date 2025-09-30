@@ -1,3 +1,12 @@
+// Unity 6 (LTS)
+// Dialogue Runner using Unity Localization StringTables
+// - Tables: "{Event}_Speaker" / "{Event}_Dialogue" (fallback: "... table")
+// - Keys:
+//   Linear: Dialogue_001, Dialogue_002, ...
+//   Choice: Dialogue_Choice{n}_S{k}_{l}, Dialogue_Choice{n}_A{k}_{l}, Dialogue_Choice{n}_Same_{l}
+// - Raises: OnKeyShown(key), OnDialogueEnded()
+// - Safe against inactive GameObject: typing coroutine only starts when active/enabled.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,10 +21,14 @@ using UnityEngine.Localization.Tables;
 [DisallowMultipleComponent]
 public class DialogueRunnerStringTables : MonoBehaviour
 {
+    // ===== 외부 알림 =====
+    public event Action<string> OnKeyShown;
+    public event Action OnDialogueEnded;
+
     // ===== UI =====
     [Header("UI")]
-    public TextMeshProUGUI speakerText;  // ← {Event}_Speaker 테이블 동일 Key
-    public TextMeshProUGUI bodyText;     // ← {Event}_Dialogue 테이블 동일 Key
+    public TextMeshProUGUI speakerText;  // {Event}_Speaker
+    public TextMeshProUGUI bodyText;     // {Event}_Dialogue
     public TextMeshProUGUI promptText;
     public GameObject nextIndicator;
     public Button choiceButtonPrefab;
@@ -38,28 +51,18 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
 
-    // ===== 커스텀 버튼 배치 =====
     [Header("Custom Choice Layouts")]
-    [Tooltip("켜면 아래 Layouts 설정에 맞춰 버튼을 직접 좌표 배치(수동)합니다. 끄면 VerticalLayoutGroup(자동 정렬) 사용")]
     public bool useCustomLayouts = true;
 
     [Serializable]
     public class ChoiceLayout
     {
-        [Tooltip("이 레이아웃이 적용될 선택지 개수(예: 2,3,4)")]
         public int optionCount = 2;
-
-        [Tooltip("버튼 개수만큼 좌표(anchoredPosition)")]
         public Vector2[] positions = Array.Empty<Vector2>();
-
-        [Tooltip("버튼 sizeDelta")]
-        public Vector2 buttonSize = new Vector2(900, 100);
-
-        [Tooltip("선택지 루트를 choiceContainerOffset 기준 중앙에 둘지")]
+        public Vector2 buttonSize = new(900, 100);
         public bool centerRoot = true;
     }
 
-    [Tooltip("개수별(2/3/4…) 프리셋")]
     public List<ChoiceLayout> layouts = new()
     {
         new ChoiceLayout {
@@ -85,13 +88,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
         },
     };
 
-    // ===== 타이핑/입력 =====
     [Header("타이핑/입력")]
     [Range(0f, 0.1f)] public float charDelay = 0.03f;
     public bool respectRichText = true;
     public KeyCode advanceKey = KeyCode.Space;
 
-    // ===== 동작 =====
     [Header("동작")]
     public bool deactivateOnEnd = true;
     public GameObject toggleDuringChoiceTarget;
@@ -100,14 +101,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public bool includeInactiveOnFind = true;
 
     [Header("선택지 입력 제어")]
-    [Tooltip("선택지 표시 중 스페이스/엔터로 버튼이 눌리는 것을 차단")]
     public bool blockSpaceSubmitOnChoices = true;
-    [Tooltip("선택지 표시 시 첫 번째 버튼을 자동 포커스(키보드/패드 네비용). 켜면 스페이스가 다시 통과될 수 있습니다.")]
     public bool autoSelectFirstChoice = false;
 
-    // ===== 이름 치환 =====
     [Header("Player Name Token")]
-    [Tooltip("플레이어 이름 치환 실패 시 쓸 기본 이름")]
     public string fallbackPlayerName = "Player";
 
     // ===== 내부 상태 =====
@@ -118,8 +115,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private readonly List<Button> _activeButtons = new();
     private readonly Stack<Button> _buttonPool = new();
 
-    private StringTable _speakerTable;   // "{EventName}_Speaker" 또는 "{EventName}_Speaker table"
-    private StringTable _dialogueTable;  // "{EventName}_Dialogue" 또는 "{EventName}_Dialogue table"
+    private StringTable _speakerTable;
+    private StringTable _dialogueTable;
 
     private Coroutine _typingRoutine;
     private bool _isTyping = false;
@@ -130,15 +127,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private enum Mode { Linear, ChoiceSelect, AnswerRun, SameRun, Done }
     private Mode _mode = Mode.Linear;
 
-    private string _eventName;           // ex) "Sol_First_Meet"
-    private int _linearIndex = 1;        // Dialogue_001부터
-    private int _choiceIndex = 1;        // Dialogue_Choice1_...부터
-    private int _answerPick = -1;        // 선택된 S{k}의 k
+    private string _eventName;
+    private int _linearIndex = 1;
+    private int _choiceIndex = 1;
+    private int _answerPick = -1;
     private int _answerLine = 1;
     private int _sameLine = 1;
 
     private string _pendingEventName;
-    private string _cachedPlayerName;    // {playerName} 치환 캐시
 
     private void Awake()
     {
@@ -160,8 +156,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 ? FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include)
                 : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
         }
-
-        _cachedPlayerName = ResolvePlayerName();
 
         if (!string.IsNullOrEmpty(_pendingEventName))
         {
@@ -185,6 +179,17 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (charDelay < 0f) charDelay = 0f;
         _wait = new WaitForSeconds(Mathf.Max(0f, charDelay));
+    }
+
+    private void OnDisable()
+    {
+        // 비활성될 때 코루틴 정리
+        if (_typingRoutine != null)
+        {
+            StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+        _isTyping = false;
     }
 
     // ===== 외부 진입 =====
@@ -233,12 +238,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _sameLine = 1;
         _mode = Mode.Linear;
 
-        _cachedPlayerName = ResolvePlayerName(); // 매번 최신화
-
         var initOp = LocalizationSettings.InitializationOperation;
         if (!initOp.IsDone) yield return initOp;
 
-        // "{Event}_Speaker" / "{Event}_Dialogue" → 실패 시 "{Event}_Speaker table" / "{Event}_Dialogue table"
+        // "{Event}_Speaker" / "{Event}_Dialogue" → fallback: "{Event}_Speaker table" / "{Event}_Dialogue table"
         StringTable sp = null, bo = null;
         yield return LoadTableMultiTry($"{_eventName}_Speaker", $"{_eventName}_Speaker table", t => sp = t);
         yield return LoadTableMultiTry($"{_eventName}_Dialogue", $"{_eventName}_Dialogue table", t => bo = t);
@@ -261,7 +264,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     // ===== 입력 =====
     private void Update()
     {
-        // 선택지 모드에서는 스페이스로 진행/완료를 막는다(버튼만으로 선택)
+        // 선택지 모드에서는 스페이스 진행 차단
         if (_waitingChoice) return;
 
         if (Input.GetKeyDown(advanceKey))
@@ -330,7 +333,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         string key = KeyLinear(_linearIndex);
         if (!HasBody(key)) return false;
-
         ShowKey(key);
         _linearIndex++;
         return true;
@@ -361,7 +363,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         {
             promptText.enableAutoSizing = false;
             promptText.fontSize = promptFontSize;
-            promptText.text = ""; // 필요 시 프롬프트 키 지정 가능
+            promptText.text = "";
             promptText.gameObject.SetActive(true);
         }
 
@@ -374,10 +376,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
         {
             var btn = GetButton();
             btn.transform.SetParent(_choiceRoot, false);
-            btn.interactable = true; // 안전망
+            btn.interactable = true;
 
             var label = btn.GetComponentInChildren<TMP_Text>(true);
-            string optKey = KeyChoiceS(n, k, 1); // 첫 줄을 버튼 라벨로 사용
+            string optKey = KeyChoiceS(n, k, 1); // 첫 줄을 버튼 라벨로
             string text = LBody(optKey);
 
             if (label)
@@ -394,7 +396,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 if (legacy) { legacy.text = text; legacy.raycastTarget = false; }
             }
 
-            // 기본 크기(자동 레이아웃 사용 시)
             var le = btn.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
             float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2f);
             le.preferredHeight = h; le.minHeight = h;
@@ -429,7 +430,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             EnableDefaultLayout(true);
         }
 
-        // ★ 스페이스/엔터 Submit 차단(선택된 UI가 없으면 Submit이 안 넘어감)
+        // 스페이스/엔터 Submit 차단
         if (blockSpaceSubmitOnChoices)
         {
             if (EventSystem.current != null)
@@ -437,14 +438,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
         else if (autoSelectFirstChoice && EventSystem.current != null && _activeButtons.Count > 0)
         {
-            // 선택지를 키보드/패드로 조작하고 싶다면 켜세요(스페이스가 버튼을 누를 수 있음)
             EventSystem.current.SetSelectedGameObject(_activeButtons[0].gameObject);
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
     }
 
-    // ===== 커스텀 레이아웃 =====
     private bool TryApplyCustomLayout(int count)
     {
         var layout = layouts.Find(l => l.optionCount == count && l.positions != null && l.positions.Length == count);
@@ -462,16 +461,13 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
             var rt = btn.GetComponent<RectTransform>() ?? btn.gameObject.AddComponent<RectTransform>();
 
-            // 앵커/피벗 중앙
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
 
-            // 지정 크기/좌표
             rt.sizeDelta = layout.buttonSize;
             rt.anchoredPosition = layout.positions[i];
 
-            // 레이아웃 엘리먼트 값 간섭 제거
             var le = btn.GetComponent<LayoutElement>();
             if (le)
             {
@@ -496,8 +492,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         Button btn = _buttonPool.Count > 0 ? _buttonPool.Pop() : Instantiate(choiceButtonPrefab);
         btn.gameObject.SetActive(true);
-        btn.interactable = true;              // 재사용 시 복구
-        btn.onClick.RemoveAllListeners();     // 이중구독 방지
+        btn.interactable = true;
+        btn.onClick.RemoveAllListeners();
         return btn;
     }
 
@@ -554,7 +550,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== 한 줄 표시(+ {System} 처리, {playerName} 치환) =====
+    // ===== 한 줄 표시(+ {System} 처리, {playerName} 치환, Key 브로드캐스트) =====
     private void ShowKey(string key)
     {
         if (promptText) promptText.gameObject.SetActive(false);
@@ -563,31 +559,51 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (bodyText) bodyText.gameObject.SetActive(true);
         if (nextIndicator) nextIndicator.SetActive(false);
 
-        // 스피커
+        // speaker 처리
         string sp = LSpeakerRaw(key).Trim();
         bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
-
         if (speakerText != null)
         {
             if (isSystem)
             {
-                // 시스템 메시지: 화자 영역 숨김
                 speakerText.text = "";
                 speakerText.gameObject.SetActive(false);
             }
             else
             {
-                // 일반 화자: 표시 + 이름 출력
                 if (!speakerText.gameObject.activeSelf) speakerText.gameObject.SetActive(true);
                 speakerText.enableAutoSizing = false;
                 speakerText.fontSize = speakerFontSize;
-                speakerText.text = sp; // ReplaceTokens 적용됨
+                speakerText.text = sp;
             }
         }
 
-        // 본문
-        string full = LBody(key); // ReplaceTokens 적용됨
-        if (_typingRoutine != null) StopCoroutine(_typingRoutine);
+        string full = LBody(key);
+
+        // Key 브로드캐스트(리액션용)
+        OnKeyShown?.Invoke(key);
+
+        // 코루틴 시작/정지 전 안전가드
+        if (_typingRoutine != null)
+        {
+            if (isActiveAndEnabled) StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+
+        if (!isActiveAndEnabled)
+        {
+            // 비활성 상태면 코루틴 대신 즉시 출력(예외 방지)
+            if (bodyText)
+            {
+                bodyText.enableAutoSizing = false;
+                bodyText.fontSize = bodyFontSize;
+                bodyText.text = full;
+            }
+            _isTyping = false;
+            if (nextIndicator) nextIndicator.SetActive(true);
+            return;
+        }
+
         _typingRoutine = StartCoroutine(TypeLine(full));
     }
 
@@ -641,7 +657,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private void CompleteTypingInstant()
     {
         if (!_isTyping) return;
-        if (_typingRoutine != null) { StopCoroutine(_typingRoutine); _typingRoutine = null; }
+        if (_typingRoutine != null && isActiveAndEnabled)
+        {
+            StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
         if (bodyText) bodyText.text = _currentFullText;
         _isTyping = false;
         if (nextIndicator) nextIndicator.SetActive(true);
@@ -687,7 +707,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         var bg = go.GetComponent<Image>();
         bg.color = choiceContainerBg;
-        bg.raycastTarget = false; // 배경이 클릭을 먹지 않도록
+        bg.raycastTarget = false;
 
         _vlg = go.AddComponent<VerticalLayoutGroup>();
         _vlg.childAlignment = TextAnchor.UpperLeft;
@@ -715,22 +735,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (string.IsNullOrEmpty(s)) return s;
 
-        // DataManager.instance에서 바로 가져옴
         string name = fallbackPlayerName;
+
+        // DataManager.instance는 프로젝트 의존. 안전하게 존재 시만 사용.
         var dm = DataManager.instance ?? FindFirstObjectByType<DataManager>(FindObjectsInactive.Include);
         if (dm != null && dm.nowPlayer != null && !string.IsNullOrEmpty(dm.nowPlayer.Name))
             name = dm.nowPlayer.Name.Trim();
 
         return s.Replace("{playerName}", name);
-    }
-
-    // 캐시 갱신용
-    private string ResolvePlayerName()
-    {
-        var dm = DataManager.instance ?? FindFirstObjectByType<DataManager>(FindObjectsInactive.Include);
-        if (dm != null && dm.nowPlayer != null && !string.IsNullOrEmpty(dm.nowPlayer.Name))
-            return dm.nowPlayer.Name.Trim();
-        return fallbackPlayerName;
     }
 
     // ===== 시작/종료 =====
@@ -742,6 +754,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private void OnDialogueEnd()
     {
         if (playerMove != null) playerMove.controlEnabled = true;
+        OnDialogueEnded?.Invoke();
     }
 
     private void EndDialogue()
