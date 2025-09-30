@@ -32,15 +32,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 940057235456
-    m_Key: Dialogue_003
+    m_Key: Dialogue_Choice1_Same_001
     m_Metadata:
       m_Items: []
   - m_Id: 942737395712
-    m_Key: Dialogue_004
+    m_Key: Dialogue_Choice1_Same_002
     m_Metadata:
       m_Items: []
   - m_Id: 8863063937024
-    m_Key: Dialogue_005
+    m_Key: Dialogue_Choice1_Same_003
     m_Metadata:
       m_Items: []
   - m_Id: 8992483381248
@@ -52,7 +52,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9420180754432
-    m_Key: Dialogue_006
+    m_Key: Dialogue_Choice2_Same_001
     m_Metadata:
       m_Items: []
   - m_Id: 9567400824832
@@ -61,6 +61,62 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 20500135219200
     m_Key: Dialogue_Choice3_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220647078752256
+    m_Key: Dialogue_Choice3_A1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220649352065024
+    m_Key: Dialogue_Choice3_A2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220657409323008
+    m_Key: Dialogue_Choice3_A2_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221271946162176
+    m_Key: Dialogue_Choice3_A2_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221799711240192
+    m_Key: Dialogue_Choice3_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221862810349568
+    m_Key: Dialogue_Choice3_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221903335714816
+    m_Key: Dialogue_Choice3_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221943181602816
+    m_Key: Dialogue_Choice3_Same_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222058420105216
+    m_Key: Dialogue_Choice4_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222098752532480
+    m_Key: Dialogue_Choice4_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222176154218496
+    m_Key: Dialogue_Choice4_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222220244742144
+    m_Key: Dialogue_Choice4_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243722453250048
+    m_Key: Dialogue_Choice4_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243804032462848
+    m_Key: Dialogue_Choice4_Same_004
     m_Metadata:
       m_Items: []
   m_Metadata:

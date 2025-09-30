@@ -69,6 +69,66 @@ MonoBehaviour:
     m_Localized: Why do you act so cheerful?
     m_Metadata:
       m_Items: []
+  - m_Id: 220647078752256
+    m_Localized: "I wish I could\u2019ve gone to school\u2026 Have you?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220649352065024
+    m_Localized: "Huh\u2026? Well\u2026 I was taught that I should\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220657409323008
+    m_Localized: '[Affinity decreased.]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221271946162176
+    m_Localized: "You\u2019ve been to school, right? I haven\u2019t, and I wish I
+      could have\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221799711240192
+    m_Localized: "I want to play with friends at school too!\nI only have Kkin\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221862810349568
+    m_Localized: "Kkin is my best friend\u2014the rabbit plushie here!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221903335714816
+    m_Localized: "Kkin was my only friend\u2026 Mom and Dad were working hard for
+      me,\nso they couldn\u2019t come often"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221943181602816
+    m_Localized: "I held Kkin\u2019s hand and toughed the pain out. That\u2019s why
+      Kkin is super precious to me!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222058420105216
+    m_Localized: I want to be your best friend, too.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222098752532480
+    m_Localized: How about we go out with Kkin sometime?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222176154218496
+    m_Localized: "\u2026!!! I\u2019d love that!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222220244742144
+    m_Localized: '[Affinity increased.]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243722453250048
+    m_Localized: "You\u2019ll come see Sol again tomorrow, right?\nI\u2019ll be waiting\u2014let\u2019s
+      play together!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243804032462848
+    m_Localized: "(Let\u2019s head home now.)"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

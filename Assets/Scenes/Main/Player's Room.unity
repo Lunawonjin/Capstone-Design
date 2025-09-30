@@ -131,6 +131,22 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 184706636061092593, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: fadeOverlay
+      value: 
+      objectReference: {fileID: 566431806}
+    - target: {fileID: 184706636061092593, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: sleepButton
+      value: 
+      objectReference: {fileID: 1358555368}
+    - target: {fileID: 184706636061092593, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: notYetButton
+      value: 
+      objectReference: {fileID: 454767812}
+    - target: {fileID: 184706636061092593, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: goodNightPanel
+      value: 
+      objectReference: {fileID: 1488357699}
     - target: {fileID: 209208982938817638, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0

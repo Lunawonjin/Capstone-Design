@@ -1,16 +1,15 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
 [DisallowMultipleComponent]
-public class PlayerMove : MonoBehaviour
+public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggle
 {
     [Header("이동 설정 / Movement")]
     [Tooltip("초당 이동 속도")]
     public float moveSpeed = 1f;
 
     [Header("컨트롤 잠금 / Control Lock")]
-    [Tooltip("끄면 입력/이동이 정지합니다(단, 외부 연출용 애니 구동은 허용 가능)")]
+    [Tooltip("끄면 입력/이동이 정지합니다(단, 외부 연출용 애니는 허용 가능)")]
     public bool controlEnabled = true;
 
     [Header("UI 잠금 연동 / UI Lock Integration")]
@@ -22,8 +21,7 @@ public class PlayerMove : MonoBehaviour
     private Animator animator;
     private Vector2 moveDirection;
 
-    // ===== 외부(연출) 애니메이션 구동 플래그 =====
-    // controlEnabled=false인 동안에도 외부에서 애니메이션만 재생하도록 허용하는 스위치
+    // 외부(연출) 애니 구동 허용 플래그
     private bool externalAnimDriving = false;
 
     void Start()
@@ -47,19 +45,21 @@ public class PlayerMove : MonoBehaviour
             _lockedByUI = shouldLock;
         }
 
-        // 컨트롤 잠금: 입력 무시
+        // 컨트롤 잠금: 입력/애니 차단(외부 구동 제외)
         if (!controlEnabled)
         {
             moveDirection = Vector2.zero;
 
-            // 외부가 애니를 구동 중이면 애니 속도를 0으로 만들지 않음
             if (!externalAnimDriving && animator != null)
+            {
+                var st = animator.GetCurrentAnimatorStateInfo(0);
+                animator.Play(st.shortNameHash, 0, 0f);
                 animator.speed = 0f;
-
+            }
             return;
         }
 
-        // 입력 처리
+        // ===== 입력 처리 =====
         float moveX = 0f, moveY = 0f;
         if (Input.GetKey(KeyCode.W)) moveY += 1f;
         if (Input.GetKey(KeyCode.S)) moveY -= 1f;
@@ -68,9 +68,9 @@ public class PlayerMove : MonoBehaviour
 
         moveDirection = new Vector2(moveX, moveY).normalized;
 
-        // 입력 기반 애니메이션
         if (animator == null) return;
 
+        // ===== 입력 기반 애니메이션 =====
         if (moveDirection != Vector2.zero)
         {
             animator.speed = 1f;
@@ -78,8 +78,8 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
-            // 정지 프레임에서 멈춤(현재 스테이트의 0프레임 유지)
-            animator.Play(animator.GetCurrentAnimatorStateInfo(0).shortNameHash, 0, 0f);
+            var st = animator.GetCurrentAnimatorStateInfo(0);
+            animator.Play(st.shortNameHash, 0, 0f);
             animator.speed = 0f;
         }
     }
@@ -98,27 +98,43 @@ public class PlayerMove : MonoBehaviour
         rb.MovePosition(rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime);
     }
 
-    // ==== 외부 제어용 유틸리티 ====
+    // ==== 외부/이벤트 제어용 유틸리티 ====
 
+    // IPlayerControlToggle 구현
     public void SetControlEnabled(bool enabled)
     {
-        controlEnabled = enabled;
-        if (!controlEnabled)
-        {
-            moveDirection = Vector2.zero;
-            if (rb != null) rb.linearVelocity = Vector2.zero;
+        if (enabled) Unfreeze(keepAnimatorState: true); // 복원 시 애니 상태 유지
+        else Freeze();
+    }
 
-            // 외부가 애니를 구동 중이면 애니 속도를 0으로 만들지 않음
-            if (animator != null && !externalAnimDriving)
-                animator.speed = 0f;
+    public void Freeze()
+    {
+        controlEnabled = false;
+        moveDirection = Vector2.zero;
+        if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
+
+        if (animator != null && !externalAnimDriving)
+        {
+            var st = animator.GetCurrentAnimatorStateInfo(0);
+            animator.Play(st.shortNameHash, 0, 0f);
+            animator.speed = 0f;
         }
     }
 
-    public void Freeze() => SetControlEnabled(false);
-    public void Unfreeze()
+    public void Unfreeze() => Unfreeze(false);
+
+    // keepAnimatorState=true면 현재 애니 상태/속도를 건드리지 않음
+    public void Unfreeze(bool keepAnimatorState)
     {
-        externalAnimDriving = false; // 외부 구동 플래그 해제
-        SetControlEnabled(true);
+        externalAnimDriving = false;
+        controlEnabled = true;
+
+        if (animator != null && !keepAnimatorState)
+        {
+            var st = animator.GetCurrentAnimatorStateInfo(0);
+            animator.Play(st.shortNameHash, 0, 0f);
+            animator.speed = 0f;
+        }
     }
 
 #if UNITY_EDITOR
@@ -127,13 +143,11 @@ public class PlayerMove : MonoBehaviour
 #endif
 
     // ====== 외부(연출) 전용 애니 훅 ======
-    // 연출 쪽에서 방향과 애니 속도를 넘기면, 입력이 잠겨 있어도 워크 애니를 재생
-    public void ExternalAnim_PlayWalk(Vector2 dir, float animSpeed = 0.75f)
+    public void ExternalAnim_PlayWalk(Vector2 dir, float animSpeed = 0.85f)
     {
         if (animator == null) return;
         externalAnimDriving = true;
 
-        // 너무 작은 값은 0으로 처리
         if (dir.sqrMagnitude < 1e-6f)
         {
             ExternalAnim_StopIdle();
@@ -144,22 +158,20 @@ public class PlayerMove : MonoBehaviour
         PlayWalkByVector(dir.normalized);
     }
 
-    // 외부 구동 종료(정지 자세로 복귀)
     public void ExternalAnim_StopIdle()
     {
         if (animator == null) return;
         externalAnimDriving = false;
 
-        // 현재 스테이트의 0프레임에서 정지
-        animator.Play(animator.GetCurrentAnimatorStateInfo(0).shortNameHash, 0, 0f);
+        var st = animator.GetCurrentAnimatorStateInfo(0);
+        animator.Play(st.shortNameHash, 0, 0f);
         animator.speed = 0f;
     }
 
     // 내부/외부 공용: 방향 벡터로 워크 애니 선택
     private void PlayWalkByVector(Vector2 dir)
     {
-        // 4방 기준: 수평이 우선이냐 수직이 우선이냐 선택 가능
-        // 여기서는 절대값이 큰 축을 우선
+        // X↓ Left_Walk, X↑ Right_Walk, Y↓ Front_Walk, Y↑ Back_Walk
         if (Mathf.Abs(dir.x) >= Mathf.Abs(dir.y))
         {
             if (dir.x < 0f) animator.Play("Left_Walk");

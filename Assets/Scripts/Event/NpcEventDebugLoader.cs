@@ -1,17 +1,12 @@
 // NpcEventDebugLoader.cs
 // Unity 6 (LTS)
-//
-// 기능 요약
-// - HouseDoorTeleporter_BiDirectional2D의 CurrentOwnerName 변화를 감지(집 진입)
-// - PlayerData의 해당 불리언(이벤트명) == false 일 때만 이벤트 실행
-// - 실행 순서:
-//   1) UI 캔버스 비활성화 + 플레이어 조작 비활성화 + 현재 위치 저장
-//   2) 이벤트 JSON 파싱(상대 이동 스텝들) → 순차 이동
-//   3) 이벤트 종료: PlayerData 불리언 true로 설정(+ 옵션 저장)
-//   4) 화면 페이드아웃(짧게) → 플레이어를 저장 위치로 스냅 → 페이드인
-//   5) UI/조작 복구
-//
-// JSON 스키마(예시는 본 파일 맨 아래 주석 참고)
+// - 집 진입 시 PlayerData의 bool 플래그가 false인 이벤트만 1회 실행
+// - JSON(Event/{owner}/{event}.json) 컷신 스크립트 로드
+// - npcSpawns / steps / afterPlayerActions(npcMove, log, dialogue, eventEnd)
+// - dialogue: Resources/Dialogue/{Owner}/{Event}.csv 우선, 없으면 Assets/Dialogue/{Owner}/{Event}.csv 또는 .CSV
+// - 추가: "대화창 - {Owner}.csv" 같은 파일명도 후보로 지원(둘 중 존재하는 첫 파일 사용)
+// - 파일/리소스 경로는 인스펙터에 입력한 대소문자 그대로 사용(I/O), 비교는 대소문자 무시
+// - 이벤트 중: UI/입력 잠금, 물리/애니 백업, 페이드, 복귀, 임시 스폰 NPC 정리, 지형 NPC 원복
 
 using System;
 using System.IO;
@@ -19,18 +14,20 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Collections;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 public class NpcEventDebugLoader : MonoBehaviour
 {
+    public interface IPlayerControlToggle { void SetControlEnabled(bool enabled); }
+
+    // ───────────── 스키마 ─────────────
     [Serializable]
     public class OwnerEvents
     {
-        [Tooltip("오너 이름(예: Sol). 텔레포터 ownerNames[]와 동일 철자 권장")]
         public string ownerName = "Sol";
-
-        [Tooltip("확장자 제외 이벤트 파일명들(예: Sol_First_Meet, Sol_ClinicIntro)")]
         public string[] eventNames = Array.Empty<string>();
     }
 
@@ -43,104 +40,209 @@ public class NpcEventDebugLoader : MonoBehaviour
         public string json;
     }
 
-    // ── 이벤트 JSON 스키마 ─────────────────────────────────────────────
     [Serializable]
     public class EventScript
     {
         public EventStep[] steps = Array.Empty<EventStep>();
-        public float defaultStepDuration = 0.5f;   // 개별 step에 duration이 없을 때 사용
-        public bool useWorldSpace = true;          // true=월드 좌표, false=로컬
-        public bool useRigidbodyMove = true;       // Rigidbody2D가 있으면 MovePosition 사용
+        public float defaultStepDuration = 0.5f;
+        public bool useWorldSpace = true;
+        public bool useRigidbodyMove = true;
+
+        public NpcSpawnCmd[] npcSpawns = Array.Empty<NpcSpawnCmd>();
+        public PlayerSection player = null;
+        public EventPostAction[] afterPlayerActions = Array.Empty<EventPostAction>();
+    }
+
+    [Serializable]
+    public class PlayerSection
+    {
+        public bool forceUsePlayerMoveSpeed = false;
+        public float moveSpeed = 1.0f;
     }
 
     [Serializable]
     public class EventStep
     {
-        // 방법 1) axis+delta : axis="x"|"y", delta=±거리
-        public string axis = "";       // "x" 또는 "y" (대소문자 무시)
+        public string axis = ""; // "x"/"y"
         public float delta = 0f;
-
-        // 방법 2) dx,dy를 직접 사용(둘 중 하나 방식만 써도 됨)
         public float dx = 0f;
         public float dy = 0f;
-
-        // 선택: 이 스텝만의 개별 지속시간(없으면 defaultStepDuration 사용)
-        public float duration = -1f;
+        public float duration = -1f; // 미지정 시 defaultStepDuration
     }
-    // ──────────────────────────────────────────────────────────────────
 
+    [Serializable]
+    public class NpcSpawnCmd
+    {
+        public string npcName = "";
+        public float x = 0f, y = 0f, z = 0f;
+        public bool deactivateExisting = true;
+        public bool relativeToPlayer = false;
+    }
+
+    [Serializable]
+    public class EventPostAction
+    {
+        public string type = "";        // "npcMove" | "log" | "dialogue" | "eventEnd"
+        public string npcName = "";
+        public float dx = 0f, dy = 0f;
+        public float duration = 1f;
+        public string message = "";
+
+        // dialogue 전용(선택). 비우면 현재 실행 중 owner/event 사용
+        public string owner = "";
+        public string eventName = "";
+    }
+
+    // ───────────── NPC 카탈로그 ─────────────
+    [Serializable]
+    public class NpcSpec
+    {
+        [Header("기본")]
+        public string ownerName = "Sol";
+        public string npcName = "Sol_Npc";
+        public GameObject prefab;
+
+        public bool spawnOnHouseEnter = true;
+        public Vector3 spawnOffset = Vector3.zero;
+        public Transform parent;
+
+        public bool reuseIfAlreadySpawned = true;
+        public bool deactivateOnExitHouse = true;
+        public bool destroyOnExitHouse = false;
+
+        [Header("애니메이터(선택)")]
+        public RuntimeAnimatorController animatorController;
+        public bool addAnimatorIfMissing = true;
+
+        [Header("애니메이션 설정(선택)")]
+        public bool overrideWalkStates = false;
+        public string stateFront = "Front_Walk";
+        public string stateBack = "Back_Walk";
+        public string stateLeft = "Left_Walk";
+        public string stateRight = "Right_Walk";
+        public float animSpeedScale = 1f;
+    }
+
+    // ───────────── 인스펙터 ─────────────
     [Header("텔레포터 연동")]
     [SerializeField] private HouseDoorTeleporter_BiDirectional2D teleporter;
 
-    [Header("이벤트 폴더")]
-    [Tooltip("Event/{owner}/{eventName}.json 형태로 탐색")]
+    [Header("이벤트 폴더 (Event/{owner}/{event}.json)")]
     [SerializeField] private string eventFolderName = "Event";
 
     [Header("오너/이벤트 구성")]
     [SerializeField] private OwnerEvents[] owners = Array.Empty<OwnerEvents>();
 
     [Header("자동 실행 트리거")]
-    [Tooltip("집에 들어섰을 때(오너 변경 감지)만 검사/실행")]
     [SerializeField] private bool autoRunOnHouseEnter = true;
 
     [Header("DataManager/PlayerData 연결")]
-    [Tooltip("직접 PlayerData를 지정(없으면 dataManager에서 자동 탐색)")]
     [SerializeField] private PlayerData playerData;
-    [Tooltip("팀의 DataManager(MonoBehaviour). 내부 public 필드/프로퍼티 중 PlayerData 타입을 자동 탐색")]
     [SerializeField] private MonoBehaviour dataManager;
 
     [Header("저장 호출 옵션")]
-    [Tooltip("쓰기 후 DataManager 저장 메서드 호출")]
     [SerializeField] private bool saveAfterWrite = true;
-    [Tooltip("저장 메서드 후보. 비우면 기본 후보 사용")]
     [SerializeField] private string[] saveMethodCandidates = new[] { "Save", "Commit", "Persist", "Write", "Flush" };
 
-    [Header("연출 제어(이벤트 중)")]
-    [Tooltip("이벤트 중 비활성화할 UI Canvas 루트(여러 개 가능)")]
-    [SerializeField] private GameObject[] uiCanvasesToDisable = Array.Empty<GameObject>();
-
-    [Tooltip("조작 비활성화를 담당할 컴포넌트(없으면 playerTransform에서 자동 탐색 시도)")]
-    [SerializeField] private MonoBehaviour playerControlToggle; // IPlayerControlToggle 구현체 권장(아래 인터페이스 참고)
-
-    [Tooltip("플레이어 Transform(비우면 본 오브젝트 Transform)")]
+    [Header("플레이어/애니 연동")]
     [SerializeField] private Transform playerTransform;
+    [SerializeField] private PlayerMove playerMove;
+    private Rigidbody2D _playerRb2D;
+    private Animator _anim;
+    private SpriteRenderer _sr;
 
-    [Tooltip("플레이어 이동 시 Rigidbody2D 사용(있다면)")]
+    [Header("이벤트 중 끌 것들")]
+    [SerializeField] private GameObject[] uiCanvasesToDisable = Array.Empty<GameObject>();
+    [SerializeField] private MonoBehaviour[] inputComponents = Array.Empty<MonoBehaviour>();
+    [SerializeField] private bool freezePhysicsDuringEvent = true;
     [SerializeField] private bool preferRigidbodyMove = true;
 
     [Header("페이드(어둡게했다가 복귀)")]
-    [Tooltip("검은 화면용 CanvasGroup(알파 0~1)")]
     [SerializeField] private CanvasGroup fadeCanvasGroup;
     [SerializeField] private float fadeOutDuration = 0.25f;
     [SerializeField] private float fadeInDuration = 0.25f;
+
+    [Header("NPC 카탈로그(오너별 다수 등록 가능)")]
+    [SerializeField] private NpcSpec[] npcCatalog = Array.Empty<NpcSpec>();
+
+    [Header("NPC 스폰 정책")]
+    [Tooltip("집 들어갈 때, 해당 오너가 아닌 다른 오너의 NPC를 먼저 끄거나 파괴")]
+    [SerializeField] private bool deactivateOtherOwnersNpcsOnEnter = true;
+
+    [Header("Dialogue 연동")]
+    [SerializeField] private GameObject dialoguePanel;
+    [SerializeField] private DialogueRunnerStringTables dialogueManager; // ← 타입 변경
+    [SerializeField] private bool autoFindDialogueManager = true;
 
     [Header("로그")]
     [SerializeField] private bool logWhenRun = true;
     [SerializeField] private bool logWhenSkip = true;
     [SerializeField] private bool verboseLog = true;
+    [SerializeField] private bool logSanitizedJsonOnError = true;
 
-    // 런타임 상태
+    // ───────────── 런타임 상태 ─────────────
     private readonly Dictionary<string, Dictionary<string, LoadedEvent>> _loaded =
         new(StringComparer.OrdinalIgnoreCase);
     private int _lastTeleporterOwnerIndex = int.MinValue;
+    private bool _eventRunning;
+    private Vector3 _savedPlayerPosition;
 
-    // 리플렉션 캐시
     private PlayerData _cachedPlayer;
     private MemberInfo _cachedSaveMember;
     private readonly BindingFlags _bf = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
-    // 내부
-    private Vector3 _savedPlayerPosition;
-    private Rigidbody2D _playerRb2D;
-    private IPlayerControlToggle _control; // 아래 인터페이스
-
-    // ── 플레이어 조작 토글용 인터페이스(게임 쪽 구현 권장) ─────────────
-    public interface IPlayerControlToggle
+    private struct PhysicsBackup
     {
-        void SetControlEnabled(bool enabled);
+        public bool hasRb;
+        public bool simulated;
+        public RigidbodyType2D bodyType;
+        public RigidbodyConstraints2D constraints;
+        public Vector2 linearVelocity;
+        public float angularVelocity;
     }
-    // ─────────────────────────────────────────────────────────────────
+    private PhysicsBackup _rbBackup;
 
+    private struct InputBackup { public MonoBehaviour comp; public bool wasEnabled; }
+    private readonly List<InputBackup> _inputBackup = new();
+    private struct UIBak { public GameObject go; public bool wasActive; }
+    private readonly List<UIBak> _uiBackup = new();
+
+    private struct AnimSpriteBackup
+    {
+        public bool hasAnimator;
+        public int stateHash;
+        public float normalizedTime;
+        public float speed;
+
+        public bool hasSpriteRenderer;
+        public Sprite sprite;
+        public bool flipX;
+        public bool flipY;
+    }
+    private AnimSpriteBackup _animBak;
+
+    private readonly Dictionary<string, List<NpcSpec>> _npcSpecsByKey =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Dictionary<string, GameObject>> _spawnedNpcByKey =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly Dictionary<string, NpcSpec> _npcSpecByName =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, GameObject> _spawnedNpcByName =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly List<GameObject> _tempDeactivatedMapNpcs = new();
+
+    private class OwnerDeactivateSnapshot
+    {
+        public string key;
+        public List<GameObject> deactivated = new();
+    }
+    private readonly List<OwnerDeactivateSnapshot> _ownersDeactivatedOnEnter = new();
+
+    private readonly List<GameObject> _spawnedDuringEvent = new();
+
+    // ───────────── Unity 수명주기 ─────────────
     private void Reset()
     {
         if (!playerTransform) playerTransform = transform;
@@ -149,19 +251,19 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void Awake()
     {
         if (!playerTransform) playerTransform = transform;
-        _playerRb2D = playerTransform.GetComponent<Rigidbody2D>();
 
-        // PlayerData/Save 메서드 캐시
+        _playerRb2D = playerTransform.GetComponent<Rigidbody2D>();
+        _anim = playerTransform.GetComponent<Animator>();
+        _sr = playerTransform.GetComponent<SpriteRenderer>();
+        if (playerMove == null) playerMove = playerTransform.GetComponent<PlayerMove>();
+
         _cachedPlayer = ResolvePlayerData();
         if (_cachedPlayer == null)
             Debug.LogWarning("[NpcEventDebugLoader] PlayerData를 찾지 못했습니다. playerData 또는 dataManager 연결을 확인하십시오.");
         if (saveAfterWrite)
             _cachedSaveMember = ResolveSaveMember();
 
-        // 조작 토글 소스
-        _control = playerControlToggle as IPlayerControlToggle;
-        if (_control == null && playerTransform)
-            _control = playerTransform.GetComponent<IPlayerControlToggle>();
+        IndexNpcCatalog();
     }
 
     private void Start()
@@ -178,19 +280,30 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (now != _lastTeleporterOwnerIndex && now >= 0)
         {
             _lastTeleporterOwnerIndex = now;
-            string owner = Canon(teleporter.CurrentOwnerName);
-            if (!string.IsNullOrEmpty(owner))
-                RunBundleIfNeeded(owner);
+
+            // 비교는 대소문자 무시, I/O용 원본 명칭은 보존
+            string ownerInput = teleporter.CurrentOwnerName;
+            var cfg = FindOwnerCI(ownerInput, out string ownerForIO);
+            if (cfg != null && !string.IsNullOrEmpty(ownerForIO))
+            {
+                SpawnNpcsForOwnerOnEnter(ownerForIO);
+                RunBundleIfNeeded(cfg, ownerForIO);
+            }
+            else if (verboseLog)
+            {
+                Debug.LogWarning($"[NpcEventDebugLoader] Owner 매칭 실패: '{ownerInput}'");
+            }
         }
     }
 
-    // ── 실행 진입점 ────────────────────────────────────────────────
-    private void RunBundleIfNeeded(string ownerCanonical)
+    // ───────────── 오너 이벤트 실행 ─────────────
+    private void RunBundleIfNeeded(OwnerEvents cfg, string ownerForIO)
     {
-        var cfg = FindOwner(ownerCanonical);
+        if (_eventRunning) return;
+
         if (cfg == null || cfg.eventNames == null || cfg.eventNames.Length == 0)
         {
-            if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] 설정 없음: owner='{ownerCanonical}'");
+            if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] 설정 없음: owner='{ownerForIO}'");
             return;
         }
 
@@ -201,79 +314,82 @@ public class NpcEventDebugLoader : MonoBehaviour
             return;
         }
 
-        foreach (var raw in cfg.eventNames)
+        foreach (var evRaw in cfg.eventNames)
         {
-            var ev = Canon(raw);
-            if (string.IsNullOrEmpty(ev)) continue;
+            string eventForIO = evRaw?.Trim();
+            if (string.IsNullOrEmpty(eventForIO)) continue;
 
-            // PlayerData bool 바인딩
-            if (!TryBindBool(pd, ev, out Func<bool> getter, out Action<bool> setter))
+            if (!TryBindBool(pd, eventForIO, out Func<bool> getter, out Action<bool> setter))
             {
                 if (verboseLog)
-                    Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 '{ev}'(bool)을 찾지 못했습니다. 이벤트명을 PlayerData 필드와 맞추십시오.");
+                    Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 '{eventForIO}'(bool)을 찾지 못했습니다.");
                 continue;
             }
 
-            bool done = getter();
-            if (done)
+            if (getter())
             {
-                if (logWhenSkip)
-                    Debug.Log($"[NpcEventDebugLoader] 건너뜀(이미 true): owner='{ownerCanonical}', event='{ev}'");
+                if (logWhenSkip) Debug.Log($"[NpcEventDebugLoader] 건너뜀(이미 true): {ownerForIO}/{eventForIO}");
                 continue;
             }
 
-            // 아직 false → JSON 로드 → 이벤트 코루틴 실행
-            if (TryLoadSingle(ownerCanonical, ev, out var le))
+            if (TryLoadSingle(ownerForIO, eventForIO, out var le))
             {
                 Cache(le);
                 if (logWhenRun) LogLoaded(le);
 
-                // 실제 연출 실행: 끝나면 true 세팅
-                StartCoroutine(RunEventCoroutine(ownerCanonical, ev, le.json, onComplete: () =>
+                StartCoroutine(RunEventCoroutine(ownerForIO, eventForIO, le.json, () =>
                 {
                     setter(true);
                     if (saveAfterWrite) InvokeSave();
-                    if (verboseLog)
-                        Debug.Log($"[NpcEventDebugLoader] 이벤트 종료 → '{ev}' = true");
                 }));
+                break; // 한 번에 하나만 실행
             }
             else
             {
-                Debug.LogError($"[NpcEventDebugLoader] 로드 실패: owner='{ownerCanonical}', event='{ev}'");
+                Debug.LogError($"[NpcEventDebugLoader] 로드 실패: {ownerForIO}/{eventForIO}");
             }
         }
     }
 
-    // ── 이벤트 코루틴(연출 본체) ──────────────────────────────────
-    private IEnumerator RunEventCoroutine(string owner, string eventName, string json, Action onComplete)
+    private IEnumerator RunEventCoroutine(string ownerForIO, string eventForIO, string rawJson, Action onComplete)
     {
-        // 1) UI/조작 OFF + 현재 위치 저장
-        ToggleUICanvases(false);
-        SetPlayerControl(false);
-        _savedPlayerPosition = playerTransform.position;
+        if (_eventRunning) yield break;
+        _eventRunning = true;
 
-        // 2) JSON 파싱
-        EventScript script = null;
-        try { script = JsonUtility.FromJson<EventScript>(json); }
-        catch (Exception e)
+        _spawnedDuringEvent.Clear();
+
+        EnterEventGuard();
+
+        if (!TryParseEventScript(rawJson, out EventScript script, logSanitizedJsonOnError))
         {
-            Debug.LogError($"[NpcEventDebugLoader] JSON 파싱 실패: owner='{owner}', event='{eventName}', err={e}");
-        }
-        if (script == null)
-        {
-            Debug.LogWarning($"[NpcEventDebugLoader] 유효하지 않은 JSON. 이벤트를 즉시 종료합니다: {owner}/{eventName}");
+            Debug.LogWarning($"[NpcEventDebugLoader] JSON 무효. 즉시 종료: {ownerForIO}/{eventForIO}");
             yield return StartCoroutine(FadeOutInAndReturn());
-            SetPlayerControl(true);
-            ToggleUICanvases(true);
+            ExitEventGuard();
             onComplete?.Invoke();
+            _eventRunning = false;
             yield break;
         }
 
-        // 3) 이동 스텝 실행
-        foreach (var step in script.steps ?? Array.Empty<EventStep>())
+        // 스폰 명령
+        HandleNpcSpawnCommands(script);
+
+        // 플레이어 이동 스텝
+        for (int i = 0; i < (script.steps?.Length ?? 0); i++)
         {
+            var step = script.steps[i];
             var (dx, dy) = NormalizeStep(step);
             float dur = step.duration > 0f ? step.duration : Mathf.Max(0f, script.defaultStepDuration);
+            Vector2 dir = new Vector2(dx, dy);
+
+            if (dir.sqrMagnitude > 1e-6f && playerMove != null)
+            {
+                float animSpeed = dur > 1e-4f ? Mathf.Clamp01(dir.magnitude / Mathf.Max(dur, 1e-4f)) : 1f;
+                playerMove.ExternalAnim_PlayWalk(dir, Mathf.Lerp(0.7f, 1.1f, animSpeed));
+            }
+            else if (playerMove != null)
+            {
+                playerMove.ExternalAnim_StopIdle();
+            }
 
             if (Mathf.Approximately(dx, 0f) && Mathf.Approximately(dy, 0f))
             {
@@ -281,24 +397,280 @@ public class NpcEventDebugLoader : MonoBehaviour
                 continue;
             }
 
-            // 월드/로컬 기준 결정
             if (script.useWorldSpace)
                 yield return MoveByWorld(new Vector2(dx, dy), dur, script.useRigidbodyMove);
             else
                 yield return MoveByLocal(new Vector2(dx, dy), dur, script.useRigidbodyMove);
+
+            if (playerMove != null)
+            {
+                bool nextIsZero =
+                    (i == (script.steps.Length - 1)) ||
+                    (
+                        Mathf.Approximately(script.steps[i + 1].dx, 0f) &&
+                        Mathf.Approximately(script.steps[i + 1].dy, 0f) &&
+                        string.IsNullOrEmpty(script.steps[i + 1].axis)
+                    );
+                if (nextIsZero) playerMove.ExternalAnim_StopIdle();
+            }
         }
 
-        // 4) 페이드아웃 → 원위치로 복귀 → 페이드인
+        // afterPlayerActions
+        if (script.afterPlayerActions != null && script.afterPlayerActions.Length > 0)
+        {
+            foreach (var act in script.afterPlayerActions)
+            {
+                if (act == null) continue;
+                string type = (act.type ?? "").Trim().ToLowerInvariant();
+
+                if (type == "npcmove")
+                {
+                    GameObject targetNpc = null;
+                    if (!string.IsNullOrWhiteSpace(act.npcName))
+                    {
+                        if (!_spawnedNpcByName.TryGetValue(act.npcName.Trim(), out targetNpc) || !targetNpc)
+                        {
+                            var found = FindSceneNpcsByName(act.npcName.Trim());
+                            if (found.Count > 0) targetNpc = found[0];
+                        }
+                    }
+
+                    if (!targetNpc)
+                    {
+                        Debug.LogWarning($"[NpcEventDebugLoader] npcMove 대상 '{act.npcName}'을(를) 찾을 수 없습니다.");
+                    }
+                    else
+                    {
+                        _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
+                        float dur = (act.duration > 0f) ? act.duration : 1f;
+                        yield return StartCoroutine(NpcMoveByWorld(targetNpc, new Vector2(act.dx, act.dy), dur, specForNpc));
+                    }
+                }
+                else if (type == "log")
+                {
+                    Debug.Log(string.IsNullOrEmpty(act.message) ? "[NpcEventDebugLoader] (log)" : act.message);
+                }
+                else if (type == "dialogue")
+                {
+                    string dlgOwner = string.IsNullOrWhiteSpace(act.owner) ? ownerForIO : act.owner.Trim();
+                    string dlgEvent = string.IsNullOrWhiteSpace(act.eventName) ? eventForIO : act.eventName.Trim();
+                    yield return StartCoroutine(RunDialogueSequence(dlgOwner, dlgEvent));
+                    break; // dialogue 끝나면 종료
+                }
+                else if (type == "eventend")
+                {
+                    break;
+                }
+            }
+        }
+
+        // 종료 처리
         yield return StartCoroutine(FadeOutInAndReturn());
-
-        // 5) UI/조작 ON
-        SetPlayerControl(true);
-        ToggleUICanvases(true);
-
-        // 6) 완료 콜백(불리언 True 설정)
+        ExitEventGuard();
         onComplete?.Invoke();
+        _eventRunning = false;
+        yield break;
     }
 
+    // ───────────── Dialogue 실행(후보 지원) ─────────────
+
+    private IEnumerable<string> BuildDialogueCandidates(string ownerForIO, string eventForIO)
+    {
+        // 1순위: 이벤트명
+        yield return eventForIO;
+        // 2순위: "대화창 - {Owner}"
+        yield return $"대화창 - {ownerForIO}";
+    }
+
+    // 대화 실행 루틴을 다음으로 교체
+    private IEnumerator RunDialogueSequence(string ownerForIO, string eventForIO)
+    {
+        if (autoFindDialogueManager && dialogueManager == null)
+            dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+
+        if (dialogueManager == null)
+        {
+            Debug.LogWarning("[NpcEventDebugLoader] DialogueManager(StringTables)를 찾지 못해 스킵합니다.");
+            yield break;
+        }
+
+        // 패널 on
+        if (dialoguePanel) dialoguePanel.SetActive(true);
+
+        // 비활성 상태에서도 BeginWithEventName이 안전하게 지연시작함
+        dialogueManager.BeginWithEventName(eventForIO);
+
+        // 다이얼로그가 꺼질 때까지 대기
+        while (dialogueManager != null && dialogueManager.gameObject.activeInHierarchy)
+            yield return null;
+
+        if (dialoguePanel) dialoguePanel.SetActive(false);
+    }
+
+
+    private bool TryLoadDialogueFromAssetsFolder_ByName(string ownerForIO, string fileNameNoExt, out string csvText, out string usedPath)
+    {
+        csvText = null; usedPath = null;
+
+        string pCsvLower = Path.Combine(Application.dataPath, "Dialogue", ownerForIO, fileNameNoExt + ".csv");
+        if (File.Exists(pCsvLower))
+        {
+            using (var sr = new StreamReader(pCsvLower, Encoding.UTF8, true))
+                csvText = sr.ReadToEnd();
+            usedPath = pCsvLower;
+            return true;
+        }
+
+        string pCsvUpper = Path.Combine(Application.dataPath, "Dialogue", ownerForIO, fileNameNoExt + ".CSV");
+        if (File.Exists(pCsvUpper))
+        {
+            using (var sr = new StreamReader(pCsvUpper, Encoding.UTF8, true))
+                csvText = sr.ReadToEnd();
+            usedPath = pCsvUpper;
+            return true;
+        }
+        return false;
+    }
+
+    // ───────────── 가드/복구 ─────────────
+    private void EnterEventGuard()
+    {
+        // UI 잠금
+        _uiBackup.Clear();
+        foreach (var go in uiCanvasesToDisable)
+        {
+            if (!go) continue;
+            _uiBackup.Add(new UIBak { go = go, wasActive = go.activeSelf });
+            go.SetActive(false);
+        }
+
+        _inputBackup.Clear();
+        foreach (var comp in inputComponents)
+        {
+            if (!comp) continue;
+            _inputBackup.Add(new InputBackup { comp = comp, wasEnabled = comp.enabled });
+            comp.enabled = false;
+        }
+
+        if (playerMove != null) playerMove.Freeze();
+
+        _savedPlayerPosition = playerTransform.position;
+
+        _animBak = new AnimSpriteBackup();
+        if (_anim)
+        {
+            var st = _anim.GetCurrentAnimatorStateInfo(0);
+            _animBak.hasAnimator = true;
+            _animBak.stateHash = st.shortNameHash;
+            _animBak.normalizedTime = st.normalizedTime;
+            _animBak.speed = _anim.speed;
+        }
+        if (_sr)
+        {
+            _animBak.hasSpriteRenderer = true;
+            _animBak.sprite = _sr.sprite;
+            _animBak.flipX = _sr.flipX;
+            _animBak.flipY = _sr.flipY;
+        }
+
+        _rbBackup = new PhysicsBackup { hasRb = _playerRb2D != null };
+        if (_playerRb2D)
+        {
+            _rbBackup.simulated = _playerRb2D.simulated;
+            _rbBackup.bodyType = _playerRb2D.bodyType;
+            _rbBackup.constraints = _playerRb2D.constraints;
+            _rbBackup.linearVelocity = _playerRb2D.linearVelocity;
+            _rbBackup.angularVelocity = _playerRb2D.angularVelocity;
+
+            _playerRb2D.linearVelocity = Vector2.zero;
+            _playerRb2D.angularVelocity = 0f;
+
+            if (freezePhysicsDuringEvent)
+                _playerRb2D.simulated = false;
+            else
+            {
+                _playerRb2D.bodyType = RigidbodyType2D.Kinematic;
+                _playerRb2D.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation;
+            }
+        }
+    }
+
+    private void ExitEventGuard()
+    {
+        if (_rbBackup.hasRb && _playerRb2D)
+        {
+            _playerRb2D.simulated = _rbBackup.simulated;
+            _playerRb2D.bodyType = _rbBackup.bodyType;
+            _playerRb2D.constraints = _rbBackup.constraints;
+            _playerRb2D.linearVelocity = _rbBackup.linearVelocity;
+            _playerRb2D.angularVelocity = _rbBackup.angularVelocity;
+        }
+
+        if (playerMove != null) playerMove.ExternalAnim_StopIdle();
+
+        if (_animBak.hasAnimator && _anim)
+        {
+            _anim.Play(_animBak.stateHash, 0, Mathf.Repeat(_animBak.normalizedTime, 1f));
+            _anim.speed = _animBak.speed;
+        }
+        if (_animBak.hasSpriteRenderer && _sr && !_anim)
+        {
+            _sr.sprite = _animBak.sprite;
+            _sr.flipX = _animBak.flipX;
+            _sr.flipY = _animBak.flipY;
+        }
+
+        foreach (var bak in _inputBackup) if (bak.comp) bak.comp.enabled = bak.wasEnabled;
+        foreach (var bak in _uiBackup) if (bak.go) bak.go.SetActive(bak.wasActive);
+
+        if (playerMove != null) playerMove.Unfreeze();
+
+        for (int i = 0; i < _tempDeactivatedMapNpcs.Count; i++)
+        {
+            var go = _tempDeactivatedMapNpcs[i];
+            if (go) go.SetActive(true);
+        }
+        _tempDeactivatedMapNpcs.Clear();
+
+        DestroyEventSpawnedNpcs();
+
+        ReactivateOwnersDeactivatedOnEnter();
+    }
+
+    private IEnumerator FadeOutInAndReturn()
+    {
+        yield return FadeTo(1f, fadeOutDuration);
+        SnapPlayerWorld(_savedPlayerPosition, useRbIntent: false);
+        yield return FadeTo(0f, fadeInDuration);
+    }
+
+    private IEnumerator FadeTo(float targetAlpha, float duration)
+    {
+        if (!fadeCanvasGroup) yield break;
+
+        if (duration <= 0f)
+        {
+            fadeCanvasGroup.alpha = targetAlpha;
+            fadeCanvasGroup.blocksRaycasts = targetAlpha > 0.99f;
+            yield break;
+        }
+
+        float start = fadeCanvasGroup.alpha;
+        float t = 0f;
+        fadeCanvasGroup.blocksRaycasts = targetAlpha > 0.99f;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            fadeCanvasGroup.alpha = Mathf.Lerp(start, targetAlpha, Mathf.Clamp01(t / duration));
+            yield return null;
+        }
+
+        fadeCanvasGroup.alpha = targetAlpha;
+        fadeCanvasGroup.blocksRaycasts = targetAlpha > 0.99f;
+    }
+
+    // ───────────── 이동 ─────────────
     private (float dx, float dy) NormalizeStep(EventStep s)
     {
         float dx = s.dx, dy = s.dy;
@@ -311,14 +683,14 @@ public class NpcEventDebugLoader : MonoBehaviour
         return (dx, dy);
     }
 
-    private IEnumerator MoveByWorld(Vector2 delta, float duration, bool useRb)
+    private IEnumerator MoveByWorld(Vector2 delta, float duration, bool useRbIntent)
     {
         Vector3 start = playerTransform.position;
         Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
 
         if (duration <= 0f)
         {
-            SnapPlayer(target, useRb);
+            SnapPlayerWorld(target, useRbIntent);
             yield break;
         }
 
@@ -327,21 +699,20 @@ public class NpcEventDebugLoader : MonoBehaviour
         {
             t += Time.deltaTime;
             Vector3 pos = Vector3.Lerp(start, target, Mathf.Clamp01(t / duration));
-            SnapPlayer(pos, useRb);
+            SnapPlayerWorld(pos, useRbIntent);
             yield return null;
         }
-        SnapPlayer(target, useRb);
+        SnapPlayerWorld(target, useRbIntent);
     }
 
-    private IEnumerator MoveByLocal(Vector2 delta, float duration, bool useRb)
+    private IEnumerator MoveByLocal(Vector2 delta, float duration, bool useRbIntent)
     {
         Vector3 start = playerTransform.localPosition;
         Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
 
         if (duration <= 0f)
         {
-            if (useRb && _playerRb2D) _playerRb2D.position = playerTransform.parent.TransformPoint(target);
-            playerTransform.localPosition = target;
+            SnapPlayerLocal(target, useRbIntent);
             yield break;
         }
 
@@ -350,19 +721,23 @@ public class NpcEventDebugLoader : MonoBehaviour
         {
             t += Time.deltaTime;
             Vector3 lp = Vector3.Lerp(start, target, Mathf.Clamp01(t / duration));
-            if (useRb && _playerRb2D) _playerRb2D.position = playerTransform.parent.TransformPoint(lp);
-            playerTransform.localPosition = lp;
+            SnapPlayerLocal(lp, useRbIntent);
             yield return null;
         }
-        if (useRb && _playerRb2D) _playerRb2D.position = playerTransform.parent.TransformPoint(target);
-        playerTransform.localPosition = target;
+        SnapPlayerLocal(target, useRbIntent);
     }
 
-    private void SnapPlayer(Vector3 worldTarget, bool useRb)
+    private void SnapPlayerWorld(Vector3 worldTarget, bool useRbIntent)
     {
-        if (preferRigidbodyMove && useRb && _playerRb2D)
+        if (freezePhysicsDuringEvent && _playerRb2D && !_playerRb2D.simulated)
         {
-            _playerRb2D.linearVelocity = Vector2.zero;  // <- 변경
+            playerTransform.position = worldTarget;
+            return;
+        }
+
+        if (preferRigidbodyMove && useRbIntent && _playerRb2D)
+        {
+            _playerRb2D.linearVelocity = Vector2.zero;
             _playerRb2D.angularVelocity = 0f;
             _playerRb2D.MovePosition(new Vector2(worldTarget.x, worldTarget.y));
         }
@@ -372,72 +747,34 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
     }
 
-
-    private IEnumerator FadeOutInAndReturn()
+    private void SnapPlayerLocal(Vector3 localTarget, bool useRbIntent)
     {
-        // 페이드아웃
-        yield return FadeTo(1f, fadeOutDuration);
-
-        // 어두울 때 원위치 스냅
-        SnapPlayer(_savedPlayerPosition, useRb: true);
-
-        // 페이드인
-        yield return FadeTo(0f, fadeInDuration);
-    }
-
-    private IEnumerator FadeTo(float targetAlpha, float duration)
-    {
-        if (!fadeCanvasGroup || duration <= 0f)
+        if (freezePhysicsDuringEvent && _playerRb2D && !_playerRb2D.simulated)
         {
-            if (fadeCanvasGroup) fadeCanvasGroup.alpha = targetAlpha;
-            yield break;
-        }
-        fadeCanvasGroup.blocksRaycasts = targetAlpha > 0.99f;
-
-        float start = fadeCanvasGroup.alpha;
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.deltaTime;
-            fadeCanvasGroup.alpha = Mathf.Lerp(start, targetAlpha, Mathf.Clamp01(t / duration));
-            yield return null;
-        }
-        fadeCanvasGroup.alpha = targetAlpha;
-        fadeCanvasGroup.blocksRaycasts = targetAlpha > 0.99f;
-    }
-
-    private void ToggleUICanvases(bool enabled)
-    {
-        if (uiCanvasesToDisable == null) return;
-        foreach (var go in uiCanvasesToDisable)
-            if (go) go.SetActive(enabled);
-    }
-
-    private void SetPlayerControl(bool enabled)
-    {
-        // 우선 인터페이스로 토글
-        if (_control != null)
-        {
-            _control.SetControlEnabled(enabled);
+            playerTransform.localPosition = localTarget;
             return;
         }
 
-        // 없으면 최소한 물리 제동
-        if (!enabled && _playerRb2D)
+        if (preferRigidbodyMove && useRbIntent && _playerRb2D)
         {
-            _playerRb2D.linearVelocity = Vector2.zero;  // <- 변경
+            Vector3 world = playerTransform.parent ? playerTransform.parent.TransformPoint(localTarget) : localTarget;
+            _playerRb2D.linearVelocity = Vector2.zero;
             _playerRb2D.angularVelocity = 0f;
+            _playerRb2D.MovePosition(new Vector2(world.x, world.y));
+        }
+        else
+        {
+            playerTransform.localPosition = localTarget;
         }
     }
 
-
-    // ── 파일 로드/캐시/로그 ────────────────────────────────────────
-    private bool TryLoadSingle(string ownerCanonical, string eventCanonical, out LoadedEvent loaded)
+    // ───────────── 파일 로드/캐시/유틸 ─────────────
+    private bool TryLoadSingle(string ownerForIO, string eventForIO, out LoadedEvent loaded)
     {
         loaded = null;
-        string file = eventCanonical + ".json";
-        string p1 = Path.Combine(Application.streamingAssetsPath, eventFolderName, ownerCanonical, file);
-        string p2 = Path.Combine(Application.dataPath, eventFolderName, ownerCanonical, file);
+        string file = eventForIO + ".json";
+        string p1 = Path.Combine(Application.streamingAssetsPath, eventFolderName, ownerForIO, file);
+        string p2 = Path.Combine(Application.dataPath, eventFolderName, ownerForIO, file);
 
         string chosen = null;
         string json = null;
@@ -449,13 +786,13 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogError($"[NpcEventDebugLoader] JSON 예외: owner='{ownerCanonical}', event='{eventCanonical}', err={e}");
+            Debug.LogError($"[NpcEventDebugLoader] JSON 예외: {ownerForIO}/{eventForIO}, err={e}");
             return false;
         }
 
         if (string.IsNullOrEmpty(chosen) || string.IsNullOrEmpty(json)) return false;
 
-        loaded = new LoadedEvent { ownerName = ownerCanonical, eventName = eventCanonical, path = chosen, json = json };
+        loaded = new LoadedEvent { ownerName = ownerForIO, eventName = eventForIO, path = chosen, json = json };
         return true;
     }
 
@@ -474,7 +811,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         Debug.Log($"[NpcEventDebugLoader] 로드/실행\nowner: {le.ownerName}\nevent: {le.eventName}\n경로: {le.path}\n내용:\n{le.json}");
     }
 
-    // ── PlayerData/Save 탐색 & 바인딩 ───────────────────────────────
     private PlayerData ResolvePlayerData()
     {
         if (playerData != null) return playerData;
@@ -496,7 +832,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (dataManager == null) return null;
 
         var t = dataManager.GetType();
-        string[] cands = (saveMethodCandidates != null && saveMethodCandidates.Length > 0)
+        var cands = (saveMethodCandidates != null && saveMethodCandidates.Length > 0)
             ? saveMethodCandidates
             : new[] { "Save", "Commit", "Persist", "Write", "Flush" };
 
@@ -513,23 +849,62 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (_cachedSaveMember is MethodInfo mi && dataManager != null)
         {
             try { mi.Invoke(dataManager, null); }
-            catch (Exception e) { Debug.LogWarning($"[NpcEventDebugLoader] 저장 메서드 호출 실패: {e}"); }
+            catch (Exception e) { Debug.LogWarning($"[NpcEventDebugLoader] 저장 호출 실패: {e}"); }
         }
     }
 
-    private static string Canon(string s)
+    private static bool TryParseEventScript(string rawJson, out EventScript script, bool logOnError)
     {
-        if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-        return s.Trim().ToLowerInvariant();
+        script = null;
+        if (string.IsNullOrWhiteSpace(rawJson)) return false;
+
+        string s = rawJson.Trim();
+
+        if (s.StartsWith("[")) s = "{\"steps\":" + s + "}";
+
+        s = Regex.Replace(s, @"//.*?$", "", RegexOptions.Multiline);
+        s = Regex.Replace(s, @"/\*.*?\*/", "", RegexOptions.Singleline);
+
+        s = Regex.Replace(s, @",\s*(\})", "$1");
+        s = Regex.Replace(s, @",\s*(\])", "$1");
+
+        s = s.Trim();
+
+        try
+        {
+            script = JsonUtility.FromJson<EventScript>(s);
+            if (script == null) return false;
+            if (script.steps == null) script.steps = Array.Empty<EventStep>();
+            if (script.defaultStepDuration < 0f) script.defaultStepDuration = 0.5f;
+            if (script.npcSpawns == null) script.npcSpawns = Array.Empty<NpcSpawnCmd>();
+            if (script.afterPlayerActions == null) script.afterPlayerActions = Array.Empty<EventPostAction>();
+            return true;
+        }
+        catch (Exception e)
+        {
+            if (logOnError)
+                Debug.LogError($"[NpcEventDebugLoader] Sanitized JSON parse 실패:\n---SANITIZED---\n{s}\n---ERR---\n{e}");
+            return false;
+        }
     }
 
-    private OwnerEvents FindOwner(string ownerCanonical)
+    // ───────────── 이름/키 유틸 ─────────────
+    private static string Key(string s) => string.IsNullOrWhiteSpace(s) ? "" : s.Trim().ToLowerInvariant();
+
+    private OwnerEvents FindOwnerCI(string ownerInput, out string ownerForIO)
     {
-        if (owners == null) return null;
+        ownerForIO = "";
+        if (owners == null || string.IsNullOrWhiteSpace(ownerInput)) return null;
+
+        string k = Key(ownerInput);
         foreach (var oe in owners)
         {
             if (oe == null) continue;
-            if (Canon(oe.ownerName) == ownerCanonical) return oe;
+            if (Key(oe.ownerName) == k)
+            {
+                ownerForIO = oe.ownerName; // I/O용: 원본 대소문자 보존
+                return oe;
+            }
         }
         return null;
     }
@@ -539,6 +914,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         getter = null; setter = null;
         var t = obj.GetType();
 
+        // 대소문자 무시
         var field = t.GetFields(_bf).FirstOrDefault(fi =>
             fi.FieldType == typeof(bool) &&
             string.Equals(fi.Name, boolName, StringComparison.OrdinalIgnoreCase));
@@ -562,4 +938,378 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         return false;
     }
+
+    // ───────────── NPC 인덱싱/스폰/정리 ─────────────
+    private void IndexNpcCatalog()
+    {
+        _npcSpecsByKey.Clear();
+        _npcSpecByName.Clear();
+
+        if (npcCatalog == null) return;
+
+        foreach (var spec in npcCatalog)
+        {
+            if (spec == null || spec.prefab == null) continue;
+
+            var key = Key(spec.ownerName);
+            if (!string.IsNullOrEmpty(key))
+            {
+                if (!_npcSpecsByKey.TryGetValue(key, out var list))
+                {
+                    list = new List<NpcSpec>();
+                    _npcSpecsByKey[key] = list;
+                }
+                list.Add(spec);
+            }
+
+            if (!string.IsNullOrWhiteSpace(spec.npcName))
+                _npcSpecByName[spec.npcName.Trim()] = spec;
+        }
+
+        if (verboseLog)
+            Debug.Log($"[NpcEventDebugLoader] NPC 카탈로그 인덱싱 완료: owners={_npcSpecsByKey.Count}, names={_npcSpecByName.Count}");
+    }
+
+    private void SpawnNpcsForOwnerOnEnter(string ownerForIO)
+    {
+        if (deactivateOtherOwnersNpcsOnEnter)
+            DeactivateOrDestroyNpcsExcept(Key(ownerForIO));
+
+        if (!_npcSpecsByKey.TryGetValue(Key(ownerForIO), out var list) || list.Count == 0) return;
+
+        foreach (var spec in list)
+        {
+            if (!spec.spawnOnHouseEnter) continue;
+            SpawnOrReuseNpc(Key(ownerForIO), spec);
+        }
+    }
+
+    private GameObject SpawnOrReuseNpc(string ownerKey, NpcSpec spec)
+    {
+        if (spec.prefab == null) return null;
+
+        if (!_spawnedNpcByKey.TryGetValue(ownerKey, out var byName))
+        {
+            byName = new Dictionary<string, GameObject>(StringComparer.OrdinalIgnoreCase);
+            _spawnedNpcByKey[ownerKey] = byName;
+        }
+
+        if (spec.reuseIfAlreadySpawned && byName.TryGetValue(spec.npcName, out var existed) && existed)
+        {
+            if (!existed.activeSelf) existed.SetActive(true);
+            return existed;
+        }
+
+        Vector3 basePos = playerTransform ? playerTransform.position : Vector3.zero;
+        Vector3 spawnPos = basePos + spec.spawnOffset;
+
+        var go = Instantiate(spec.prefab, spawnPos, Quaternion.identity, spec.parent ? spec.parent : null);
+        go.name = string.IsNullOrEmpty(spec.npcName) ? spec.prefab.name : spec.npcName;
+
+        var anim = go.GetComponent<Animator>();
+        if (!anim && spec.addAnimatorIfMissing) anim = go.AddComponent<Animator>();
+        if (anim && spec.animatorController) anim.runtimeAnimatorController = spec.animatorController;
+
+        byName[spec.npcName] = go;
+
+        if (verboseLog)
+            Debug.Log($"[NpcEventDebugLoader] NPC 스폰: ownerKey='{ownerKey}', npc='{spec.npcName}', pos={spawnPos}");
+
+        return go;
+    }
+
+    private void DeactivateOrDestroyNpcsExcept(string keepOwnerKey)
+    {
+        _ownersDeactivatedOnEnter.Clear();
+
+        foreach (var kv in _spawnedNpcByKey)
+        {
+            var ownerKey = kv.Key;
+            if (ownerKey == keepOwnerKey) continue;
+
+            var byName = kv.Value;
+            if (byName == null) continue;
+
+            var snap = new OwnerDeactivateSnapshot { key = ownerKey, deactivated = new List<GameObject>() };
+
+            foreach (var pair in byName)
+            {
+                var go = pair.Value;
+                if (!go) continue;
+
+                var spec = FindNpcSpecByKey(ownerKey, pair.Key);
+                if (spec != null && spec.destroyOnExitHouse)
+                {
+                    Destroy(go);
+                    byName[pair.Key] = null;
+                }
+                else
+                {
+                    if (go.activeSelf)
+                    {
+                        go.SetActive(false);
+                        snap.deactivated.Add(go);
+                    }
+                }
+            }
+
+            if (snap.deactivated.Count > 0)
+                _ownersDeactivatedOnEnter.Add(snap);
+        }
+    }
+
+    private NpcSpec FindNpcSpecByKey(string ownerKey, string npcName)
+    {
+        if (_npcSpecsByKey.TryGetValue(ownerKey, out var list))
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var s = list[i];
+                if (s != null && string.Equals(s.npcName, npcName, StringComparison.OrdinalIgnoreCase))
+                    return s;
+            }
+        }
+        return null;
+    }
+
+    private void HandleNpcSpawnCommands(EventScript script)
+    {
+        if (script.npcSpawns == null || script.npcSpawns.Length == 0) return;
+
+        foreach (var cmd in script.npcSpawns)
+        {
+            if (cmd == null || string.IsNullOrWhiteSpace(cmd.npcName)) continue;
+            string npc = cmd.npcName.Trim();
+
+            if (cmd.deactivateExisting)
+                DeactivateMapNpcs(FindSceneNpcsByName(npc));
+
+            Vector3 p = cmd.relativeToPlayer && playerTransform
+                        ? playerTransform.position + new Vector3(cmd.x, cmd.y, cmd.z)
+                        : new Vector3(cmd.x, cmd.y, cmd.z);
+
+            var go = SpawnNpcByNameAnyOwner(npc, p);
+            if (go == null)
+            {
+                Debug.LogWarning($"[NpcEventDebugLoader] '{npc}' 스폰 실패(오너 무시). 카탈로그에 npcName이 없거나 prefab이 비었습니다.");
+            }
+            else
+            {
+                _spawnedDuringEvent.Add(go);
+                _spawnedNpcByName[npc] = go;
+            }
+        }
+    }
+
+    private List<GameObject> FindSceneNpcsByName(string npcName)
+    {
+        var list = new List<GameObject>();
+
+        var identities = FindObjectsOfType<NpcIdentity>(includeInactive: true);
+        foreach (var id in identities)
+            if (id && string.Equals(id.npcName, npcName, StringComparison.OrdinalIgnoreCase))
+                list.Add(id.gameObject);
+
+        var all = FindObjectsOfType<Transform>(includeInactive: true);
+        foreach (var t in all)
+        {
+            if (!t) continue;
+            var go = t.gameObject;
+            if (string.Equals(go.name, npcName, StringComparison.OrdinalIgnoreCase) && !list.Contains(go))
+                list.Add(go);
+        }
+        return list;
+    }
+
+    private void DeactivateMapNpcs(IEnumerable<GameObject> gos)
+    {
+        foreach (var go in gos)
+        {
+            if (!go) continue;
+            if (go.activeSelf)
+            {
+                go.SetActive(false);
+                _tempDeactivatedMapNpcs.Add(go);
+            }
+        }
+    }
+
+    private GameObject SpawnNpcByNameAnyOwner(string npcName, Vector3 worldPos)
+    {
+        if (string.IsNullOrWhiteSpace(npcName)) return null;
+
+        if (!_npcSpecByName.TryGetValue(npcName.Trim(), out var spec) || spec == null || spec.prefab == null)
+        {
+            Debug.LogWarning($"[NpcEventDebugLoader] 전역 카탈로그에서 '{npcName}' 프리팹을 찾지 못했습니다.");
+            return null;
+        }
+
+        var parent = spec.parent ? spec.parent : null;
+        var go = Instantiate(spec.prefab, worldPos, Quaternion.identity, parent);
+        go.name = string.IsNullOrEmpty(spec.npcName) ? spec.prefab.name : spec.npcName;
+
+        var anim = go.GetComponent<Animator>();
+        if (!anim && spec.addAnimatorIfMissing) anim = go.AddComponent<Animator>();
+        if (anim && spec.animatorController) anim.runtimeAnimatorController = spec.animatorController;
+
+        var ownerKey = Key(spec.ownerName);
+        if (!_spawnedNpcByKey.TryGetValue(ownerKey, out var byName))
+        {
+            byName = new Dictionary<string, GameObject>(StringComparer.OrdinalIgnoreCase);
+            _spawnedNpcByKey[ownerKey] = byName;
+        }
+        byName[spec.npcName] = go;
+        _spawnedNpcByName[spec.npcName] = go;
+
+        if (verboseLog)
+            Debug.Log($"[NpcEventDebugLoader] NPC 스폰(오너무시): npc='{npcName}', ownerInCatalog='{spec.ownerName}', pos={worldPos}");
+        return go;
+    }
+
+    private static void PlayNpcWalkByVector(Animator anim, Vector2 dir, NpcSpec specOrNull)
+    {
+        if (!anim) return;
+        if (dir.sqrMagnitude < 1e-6f) return;
+
+        bool useOverride = (specOrNull != null && specOrNull.overrideWalkStates);
+        string sLeft = useOverride ? specOrNull.stateLeft : "Left_Walk";
+        string sRight = useOverride ? specOrNull.stateRight : "Right_Walk";
+        string sFront = useOverride ? specOrNull.stateFront : "Front_Walk";
+        string sBack = useOverride ? specOrNull.stateBack : "Back_Walk";
+
+        if (Mathf.Abs(dir.x) >= Mathf.Abs(dir.y))
+        {
+            if (dir.x < 0f) anim.Play(sLeft);
+            else anim.Play(sRight);
+        }
+        else
+        {
+            if (dir.y > 0f) anim.Play(sBack);
+            else anim.Play(sFront);
+        }
+        anim.speed = Mathf.Max(0.01f, anim.speed);
+    }
+
+    private static void StopNpcIdle(Animator anim)
+    {
+        if (!anim) return;
+        var st = anim.GetCurrentAnimatorStateInfo(0);
+        anim.Play(st.shortNameHash, 0, 0f);
+        anim.speed = 0f;
+    }
+
+    private IEnumerator NpcMoveByWorld(GameObject npc, Vector2 delta, float duration, NpcSpec specOrNull)
+    {
+        if (!npc) yield break;
+
+        var tr = npc.transform;
+        var rb = npc.GetComponent<Rigidbody2D>();
+        var anim = npc.GetComponent<Animator>();
+
+        Vector3 start = tr.position;
+        Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
+
+        Vector2 dir = delta;
+        float dist = dir.magnitude;
+        float baseAnimSpeed = (duration > 1e-4f) ? Mathf.Clamp01(dist / duration) : 1f;
+        float speedScale = (specOrNull != null) ? Mathf.Max(0f, specOrNull.animSpeedScale) : 1f;
+        float finalAnimSpd = Mathf.Lerp(0.7f, 1.1f, baseAnimSpeed) * speedScale;
+
+        if (anim)
+        {
+            anim.speed = finalAnimSpd;
+            if (dir.sqrMagnitude > 1e-6f) PlayNpcWalkByVector(anim, dir.normalized, specOrNull);
+        }
+
+        if (duration <= 0f)
+        {
+            if (rb)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.MovePosition(new Vector2(target.x, target.y));
+            }
+            else tr.position = target;
+
+            if (anim) StopNpcIdle(anim);
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / duration);
+            Vector3 pos = Vector3.Lerp(start, target, u);
+
+            if (rb)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.MovePosition(new Vector2(pos.x, pos.y));
+            }
+            else tr.position = pos;
+
+            yield return null;
+        }
+
+        if (rb)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.MovePosition(new Vector2(target.x, target.y));
+        }
+        else tr.position = target;
+
+        if (anim) StopNpcIdle(anim);
+    }
+
+    // ───────────── 정리 ─────────────
+    private void DestroyEventSpawnedNpcs()
+    {
+        if (_spawnedDuringEvent.Count == 0) return;
+
+        foreach (var go in _spawnedDuringEvent)
+        {
+            if (!go) continue;
+
+            foreach (var kv in _spawnedNpcByKey)
+            {
+                var dict = kv.Value;
+                if (dict == null) continue;
+                foreach (var k in new List<string>(dict.Keys))
+                {
+                    if (dict[k] == go) dict[k] = null;
+                }
+            }
+            foreach (var k in new List<string>(_spawnedNpcByName.Keys))
+            {
+                if (_spawnedNpcByName[k] == go) _spawnedNpcByName.Remove(k);
+            }
+
+            Destroy(go);
+        }
+        _spawnedDuringEvent.Clear();
+    }
+
+    private void ReactivateOwnersDeactivatedOnEnter()
+    {
+        if (_ownersDeactivatedOnEnter.Count == 0) return;
+
+        foreach (var snap in _ownersDeactivatedOnEnter)
+        {
+            if (snap == null || snap.deactivated == null) continue;
+            foreach (var go in snap.deactivated)
+            {
+                if (go) go.SetActive(true);
+            }
+        }
+        _ownersDeactivatedOnEnter.Clear();
+    }
+}
+
+// 맵 NPC 식별용 보조 컴포넌트
+public class NpcIdentity : MonoBehaviour
+{
+    public string npcName;
 }

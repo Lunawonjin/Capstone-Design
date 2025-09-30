@@ -1,10 +1,30 @@
 {
-  "defaultStepDuration": 0.5,
+  "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
+
+  "player": {
+    "forceUsePlayerMoveSpeed": true,
+    "moveSpeed": 1.0
+  },
+
+  "npcSpawns": [
+    { "npcName": "Sol",  "x": 33.0,  "y": 19.0,  "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false },
+    { "npcName": "Boss", "x": 34.5, "y": 18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+  ],
+
   "steps": [
-    {"axis":"y", "delta": 3},   // Y +3
-    {"axis":"x", "delta":-2},   // X -2
-    {"dx": 0, "dy": -1, "duration": 0.25} // 직접 dx,dy와 개별 duration도 가능
+    { "axis": "y", "delta": 1 },
+    { "axis": "x", "delta": -1 },
+    { "axis": "y", "delta": 1 }
+  ],
+
+  "afterPlayerActions": [
+    { "type": "npcMove", "npcName": "Boss", "dx": 0, "dy": -1, "duration": 1.0 },
+
+    // 여기서 대화 호출(소문자/대문자 무관, 내부에서 여러 케이스 시도)
+    { "type": "dialogue", "owner": "Sol", "eventName": "Sol_First_Meet" },
+
+    { "type": "eventEnd" }
   ]
 }
