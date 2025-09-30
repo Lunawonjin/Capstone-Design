@@ -57,12 +57,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9420180754432
-    m_Localized: "Grown-ups always react like that! Heh-heh! \nBut I\u2019m fine
-      now, so I\u2019m happy!"
+    m_Localized: "But it doesn\u2019t hurt now, so I\u2019m happy! \nSol is totally
+      the strongest!"
     m_Metadata:
       m_Items: []
   - m_Id: 9567400824832
-    m_Localized: You seem awfully mature for your age.
+    m_Localized: "Haha! That\u2019s such a relief."
     m_Metadata:
       m_Items: []
   - m_Id: 20500135219200
@@ -127,6 +127,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 243804032462848
     m_Localized: "(Let\u2019s head home now.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 289421408595968
+    m_Localized: "That\u2019s how grown-ups always react! Heh-heh!"
     m_Metadata:
       m_Items: []
   references:

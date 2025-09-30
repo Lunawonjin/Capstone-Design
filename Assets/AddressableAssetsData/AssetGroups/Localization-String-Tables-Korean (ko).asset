@@ -21,19 +21,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4c2d89f0d2fbed149bc662f9cd6c8c8d
-    m_Address: Test_ko
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ko
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 629707c10d105794b97e44d3a57c4a36
-    m_Address: Dialogue Table_ko
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ko
-    - Preload
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c2abab3656c07054a957981bb239911a
     m_Address: UI_Table_ko
     m_ReadOnly: 1
