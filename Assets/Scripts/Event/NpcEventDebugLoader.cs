@@ -1,15 +1,17 @@
 // Unity 6 (LTS)
 // Cutscene/Event System (JSON-driven)
 // - JSON path: StreamingAssets/Event/{owner}/{event}.json (fallback: Assets/Event/...)
-// - Script supports: npcSpawns / steps / afterPlayerActions (npcMove, log, dialogue, dialoguePanelActive, npcSetActive, eventEnd)
+// - Script supports: npcSpawns / steps / afterPlayerActions
+//   (npcMove, log, dialogue, dialoguePanelActive, dialoguePanelRestoreNow, npcSetActive, eventEnd,
+//    affinityUp, affinityDown, dataDelta)
 // - Dialogue: DialogueRunnerStringTables.BeginWithEventName("{Event}")
 //   Uses StringTables: "{Event}_Speaker" / "{Event}_Dialogue" (fallback: "... table")
 // - dialogueReactions: fire actions when a specific StringTable key is shown
-// - Temporary hide dialogue panel -> move/deactivate boss -> auto restore panel
 //
 // Notes:
 // - 이벤트 종료 대기는 GameObject 활성 여부 대신 OnDialogueEnded 이벤트로 변경(비활성 코루틴 예외 방지)
-// - NpcMoveByWorld는 단일 정의 보장(중복/모호성 제거)
+// - NpcMoveByWorld는 단일 정의
+// - 호감도/데이터 갱신: TryBindInt + ApplyDataDeltaInt + AffinityUp/Down
 
 using System;
 using System.IO;
@@ -59,11 +61,16 @@ public class NpcEventDebugLoader : MonoBehaviour
     [Serializable]
     public class EventPostAction
     {
-        // "npcMove" | "log" | "dialogue" | "dialoguePanelActive" | "npcSetActive" | "eventEnd"
+        // "npcMove" | "log" | "dialogue" | "dialoguePanelActive" | "dialoguePanelRestoreNow" |
+        // "npcSetActive" | "eventEnd" | "affinityUp" | "affinityDown" | "dataDelta"
         public string type = "";
+
+        // npcMove / npcSetActive 공통
         public string npcName = "";
         public float dx = 0f, dy = 0f;
         public float duration = 1f;
+
+        // log
         public string message = "";
 
         // dialogue 전용(비우면 현재 owner/event)
@@ -72,6 +79,10 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         // dialoguePanelActive / npcSetActive 전용
         public bool active = true;
+
+        // 데이터 갱신 전용
+        public string dataName = "";  // PlayerData의 int 필드/프로퍼티 이름(대소문자 무시)
+        public float delta = 0f;      // 증감량(정수로 사용)
     }
 
     [Serializable]
@@ -153,10 +164,8 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private bool verboseLog = true;
     [SerializeField] private bool logSanitizedJsonOnError = true;
 
-    // 클래스 필드로 추가
+    // 현재 이벤트 동안 플레이어 속도 캐시( NPC 이동 지속시간 산출에도 사용 )
     private float _currentPlayerMoveSpeedForEvent = 0f;
-
-
 
     // ───────────── 런타임 상태 ─────────────
     private readonly Dictionary<string, Dictionary<string, LoadedEvent>> _loaded =
@@ -383,6 +392,7 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         if (script.player != null && script.player.forceUsePlayerMoveSpeed && script.player.moveSpeed > 1e-4f)
             _currentPlayerMoveSpeedForEvent = script.player.moveSpeed;
+
         // 현재 이벤트의 리액션 준비
         _currentDialogueReactions = script.dialogueReactions ?? Array.Empty<DialogueReaction>();
         _reactionsFired.Clear();
@@ -390,33 +400,26 @@ public class NpcEventDebugLoader : MonoBehaviour
         // NPC 스폰 명령 수행
         HandleNpcSpawnCommands(script);
 
+        // 플레이어 스텝 실행
         for (int i = 0; i < (script.steps?.Length ?? 0); i++)
         {
             var step = script.steps[i];
             var (sx, sy) = NormalizeStep(step);
 
-            // 속도 고정(기본 1). JSON의 player.forceUsePlayerMoveSpeed=true, moveSpeed=1.0 권장
             float speed = 1f;
             bool useFixedSpeed = script.player != null && script.player.forceUsePlayerMoveSpeed;
-            if (useFixedSpeed)
-                speed = Mathf.Max(1e-4f, script.player.moveSpeed);
+            if (useFixedSpeed) speed = Mathf.Max(1e-4f, script.player.moveSpeed);
 
-            // 애니 방향 미리 계산
+            // 애니 방향
             Vector2 dirAnim = new Vector2(Mathf.Sign(sx), Mathf.Sign(sy));
             if (Mathf.Abs(sx) >= Mathf.Abs(sy)) dirAnim = new Vector2(Mathf.Sign(sx), 0f);
             else dirAnim = new Vector2(0f, Mathf.Sign(sy));
 
-            // 애니 재생
             if (playerMove != null)
-            {
-                // 속도 기반 애니 스케일을 1.0 근방으로 고정
                 playerMove.ExternalAnim_PlayWalk(dirAnim, 1.0f);
-            }
 
-            // 대각선 금지: 두 축으로 쪼개서 순차 이동
             if (!Mathf.Approximately(sx, 0f) && !Mathf.Approximately(sy, 0f))
             {
-                // X 먼저, 그 다음 Y(필요 시 순서 바꿔도 무방)
                 float durX = useFixedSpeed ? Mathf.Abs(sx) / speed
                                            : (step.duration > 0f ? step.duration * Mathf.Abs(sx) / (Mathf.Abs(sx) + Mathf.Abs(sy)) : Mathf.Max(0f, script.defaultStepDuration));
                 float durY = useFixedSpeed ? Mathf.Abs(sy) / speed
@@ -434,10 +437,9 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
             else
             {
-                // 단일 축 이동
-                float dist = Mathf.Abs(sx) + Mathf.Abs(sy); // 둘 중 하나만 0이 아님
+                float dist = Mathf.Abs(sx) + Mathf.Abs(sy);
                 float dur = useFixedSpeed
-                            ? dist / speed
+                            ? (dist > 1e-6f ? dist / speed : (step.duration > 0f ? step.duration : script.defaultStepDuration))
                             : (step.duration > 0f ? step.duration : Mathf.Max(0f, script.defaultStepDuration));
 
                 if (Mathf.Approximately(dist, 0f))
@@ -453,7 +455,6 @@ public class NpcEventDebugLoader : MonoBehaviour
                 }
             }
 
-            // 다음 스텝이 정지면 애니 정지
             if (playerMove != null)
             {
                 bool nextIsZero =
@@ -473,9 +474,9 @@ public class NpcEventDebugLoader : MonoBehaviour
             foreach (var act in script.afterPlayerActions)
             {
                 if (act == null) continue;
-                string type = (act.type ?? "").Trim().ToLowerInvariant();
+                var actionType = (act.type ?? "").Trim().ToLowerInvariant();
 
-                if (type == "npcmove")
+                if (actionType == "npcmove")
                 {
                     GameObject targetNpc = ResolveNpc(act.npcName);
                     if (!targetNpc)
@@ -489,30 +490,44 @@ public class NpcEventDebugLoader : MonoBehaviour
                         yield return StartCoroutine(NpcMoveByWorld(targetNpc, new Vector2(act.dx, act.dy), dur, specForNpc));
                     }
                 }
-                else if (type == "log")
+                else if (actionType == "log")
                 {
                     Debug.Log(string.IsNullOrEmpty(act.message) ? "[NpcEventDebugLoader] (log)" : act.message);
                 }
-                else if (type == "dialogue")
+                else if (actionType == "dialogue")
                 {
                     string dlgOwner = string.IsNullOrWhiteSpace(act.owner) ? ownerForIO : act.owner.Trim();
                     string dlgEvent = string.IsNullOrWhiteSpace(act.eventName) ? eventForIO : act.eventName.Trim();
                     yield return StartCoroutine(RunDialogueSequence(dlgOwner, dlgEvent));
-                    break; // dialogue 끝나면 종료 루틴으로
+                    break; // dialogue 끝나면 종료
                 }
-                else if (type == "dialoguepanelactive")
+                else if (actionType == "dialoguepanelactive")
                 {
                     HandleDialoguePanelActive(act.active);
                 }
-                else if (type == "npcsetactive")
+                else if (actionType == "dialoguepanelrestorenow")
+                {
+                    ForceActivateDialoguePanelNow();
+                }
+                else if (actionType == "npcsetactive")
                 {
                     HandleNpcSetActive(act.npcName, act.active);
                     if (_dialoguePanelAutoReEnableArmed && act.active == false)
-                    {
                         RestoreDialoguePanelAfterTempHide();
-                    }
                 }
-                else if (type == "eventend")
+                else if (actionType == "affinityup")
+                {
+                    AffinityUp(act.dataName, (int)act.delta, clamp: true, min: 0, max: 100);
+                }
+                else if (actionType == "affinitydown")
+                {
+                    AffinityDown(act.dataName, (int)act.delta, clamp: true, min: 0, max: 100);
+                }
+                else if (actionType == "datadelta")
+                {
+                    ApplyDataDeltaInt(act.dataName, (int)act.delta, clamp01: false);
+                }
+                else if (actionType == "eventend")
                 {
                     break;
                 }
@@ -527,18 +542,16 @@ public class NpcEventDebugLoader : MonoBehaviour
         yield break;
     }
 
-    // ── 대각선 금지 + 속도 고정으로 NPC 이동을 래핑 ──
+    // ── 대각선 금지 + 속도 고정으로 NPC 이동을 래핑(필요 시) ──
     private IEnumerator NpcMoveAxisSplit(GameObject npc, float dx, float dy, float speed, NpcSpec specOrNull)
     {
         speed = Mathf.Max(1e-4f, speed);
 
-        // X 축
         if (!Mathf.Approximately(dx, 0f))
         {
             float durX = Mathf.Abs(dx) / speed;
             yield return StartCoroutine(NpcMoveByWorld(npc, new Vector2(dx, 0f), durX, specOrNull));
         }
-        // Y 축
         if (!Mathf.Approximately(dy, 0f))
         {
             float durY = Mathf.Abs(dy) / speed;
@@ -597,25 +610,22 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         if (dialoguePanel) dialoguePanel.SetActive(false);
     }
+
     private float DeriveNpcDurationBySpeed(Vector2 delta, float requestedDuration)
     {
-        // 1) JSON이 duration을 명시했다면 그대로 사용
         if (requestedDuration > 0f) return requestedDuration;
 
-        // 2) 그렇지 않다면 ‘플레이어 moveSpeed’를 기본값으로 공유
-        //    (원한다면 script 전용의 npcMoveSpeedDefault를 추가해도 좋습니다)
         float speed = 0f;
-        if (_currentPlayerMoveSpeedForEvent > 1e-4f) speed = _currentPlayerMoveSpeedForEvent; // 아래 필드 참고
+        if (_currentPlayerMoveSpeedForEvent > 1e-4f) speed = _currentPlayerMoveSpeedForEvent;
 
         if (speed > 1e-4f)
         {
             float dist = delta.magnitude;
             return (dist <= 1e-6f) ? 0f : (dist / speed);
         }
-
-        // 3) 아무 정보도 없으면 1초 기본
         return 1f;
     }
+
     private IEnumerator ExecutePostActions(EventPostAction[] actions)
     {
         if (actions == null || actions.Length == 0) yield break;
@@ -623,52 +633,58 @@ public class NpcEventDebugLoader : MonoBehaviour
         foreach (var act in actions)
         {
             if (act == null) continue;
-            string type = (act.type ?? "").Trim().ToLowerInvariant();
+            var actionType = (act.type ?? "").Trim().ToLowerInvariant();
 
-            if (type == "dialoguepanelactive")
+            if (actionType == "dialoguepanelactive")
             {
                 HandleDialoguePanelActive(act.active);
             }
-            else if (type == "npcmove")
+            else if (actionType == "dialoguepanelrestorenow")
+            {
+                ForceActivateDialoguePanelNow();
+            }
+            else if (actionType == "npcmove")
             {
                 var go = ResolveNpc(act.npcName);
                 if (go)
                 {
                     _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
-
-                    // duration 명시 없으면 현재 이벤트의 moveSpeed로 자동 산출
                     float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
-
-                    // ★ 여기! 기존의 'targetNpc' 오타를 'go'로 교체
                     yield return StartCoroutine(NpcMoveByWorld(go, new Vector2(act.dx, act.dy), dur, specForNpc));
                 }
-                else
-                {
-                    Debug.LogWarning($"[NpcEventDebugLoader] dialogueReaction npcMove 대상 '{act.npcName}' 없음");
-                }
+                else Debug.LogWarning($"[NpcEventDebugLoader] dialogueReaction npcMove 대상 '{act.npcName}' 없음");
             }
-            else if (type == "npcsetactive")
+            else if (actionType == "npcsetactive")
             {
                 HandleNpcSetActive(act.npcName, act.active);
                 if (_dialoguePanelAutoReEnableArmed && act.active == false)
                     RestoreDialoguePanelAfterTempHide();
             }
-            else if (type == "log")
+            else if (actionType == "log")
             {
                 Debug.Log(string.IsNullOrEmpty(act.message) ? "[NpcEventDebugLoader] (reaction log)" : act.message);
             }
-            else if (type == "eventend")
+            else if (actionType == "affinityup")
+            {
+                AffinityUp(act.dataName, (int)act.delta, clamp: true, min: 0, max: 100);
+            }
+            else if (actionType == "affinitydown")
+            {
+                AffinityDown(act.dataName, (int)act.delta, clamp: true, min: 0, max: 100);
+            }
+            else if (actionType == "datadelta")
+            {
+                ApplyDataDeltaInt(act.dataName, (int)act.delta, clamp01: false);
+            }
+            else if (actionType == "eventend")
             {
                 break;
             }
         }
 
-        // 마무리 훅: 임시 비활성 상태가 남아 있으면 무조건 복구
         if (_dialoguePanelAutoReEnableArmed || _dialoguePanelTemporarilyHidden)
             RestoreDialoguePanelAfterTempHide();
     }
-
-
 
     // 다이얼로그 패널 토글(+ 임시 비활 → 첫 npcSetActive:false 직후 자동 복구)
     private void HandleDialoguePanelActive(bool active)
@@ -702,6 +718,19 @@ public class NpcEventDebugLoader : MonoBehaviour
         _dialoguePanelTemporarilyHidden = false;
         _dialoguePanelAutoReEnableArmed = false;
         if (verboseLog) Debug.Log("[NpcEventDebugLoader] Dialogue Panel 자동 복구");
+    }
+
+    private void ForceActivateDialoguePanelNow()
+    {
+        if (autoFindDialogueManager && dialogueManager == null)
+            dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+        if (!dialoguePanel && dialogueManager) dialoguePanel = dialogueManager.gameObject;
+
+        _dialoguePanelTemporarilyHidden = false;
+        _dialoguePanelAutoReEnableArmed = false;
+        if (dialoguePanel) dialoguePanel.SetActive(true);
+
+        if (verboseLog) Debug.Log("[NpcEventDebugLoader] Dialogue Panel 강제 활성화");
     }
 
     // ───────────── 파일 로드/캐시/유틸 ─────────────
@@ -853,7 +882,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         getter = null; setter = null;
         var t = obj.GetType();
 
-        // case-insensitive
         var field = t.GetFields(_bf).FirstOrDefault(fi =>
             fi.FieldType == typeof(bool) &&
             string.Equals(fi.Name, boolName, StringComparison.OrdinalIgnoreCase));
@@ -877,6 +905,69 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         return false;
     }
+
+    // === 새로 추가: int 바인딩/증감 ===
+    private bool TryBindInt(object obj, string name, out Func<int> getter, out Action<int> setter)
+    {
+        getter = null; setter = null;
+        if (obj == null || string.IsNullOrWhiteSpace(name)) return false;
+
+        var t = obj.GetType();
+
+        var f = t.GetFields(_bf).FirstOrDefault(fi =>
+            fi.FieldType == typeof(int) &&
+            string.Equals(fi.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (f != null)
+        {
+            getter = () => (int)f.GetValue(obj);
+            setter = v => f.SetValue(obj, v);
+            return true;
+        }
+
+        var p = t.GetProperties(_bf).FirstOrDefault(pi =>
+            pi.PropertyType == typeof(int) &&
+            string.Equals(pi.Name, name, StringComparison.OrdinalIgnoreCase) &&
+            pi.CanRead && pi.CanWrite);
+        if (p != null)
+        {
+            getter = () => (int)p.GetValue(obj, null);
+            setter = v => p.SetValue(obj, v, null);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ApplyDataDeltaInt(string dataName, int delta, bool clamp01 = false, int min = 0, int max = 100)
+    {
+        var pd = _cachedPlayer ?? ResolvePlayerData();
+        if (pd == null)
+        {
+            Debug.LogWarning($"[NpcEventDebugLoader] PlayerData 없음: '{dataName}' 업데이트 불가");
+            return;
+        }
+
+        if (!TryBindInt(pd, dataName, out var get, out var set))
+        {
+            Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 int '{dataName}'를 찾지 못했습니다.");
+            return;
+        }
+
+        int oldv = get();
+        int newv = oldv + delta;
+        if (clamp01) newv = Mathf.Clamp(newv, min, max);
+        set(newv);
+
+        if (verboseLog) Debug.Log($"[NpcEventDebugLoader] {dataName}: {oldv} -> {newv} (delta {delta})");
+
+        if (saveAfterWrite) InvokeSave();
+    }
+
+    private void AffinityUp(string dataName, int delta = 1, bool clamp = true, int min = 0, int max = 100)
+        => ApplyDataDeltaInt(dataName, +Mathf.Abs(delta), clamp, min, max);
+
+    private void AffinityDown(string dataName, int delta = 1, bool clamp = true, int min = 0, int max = 100)
+        => ApplyDataDeltaInt(dataName, -Mathf.Abs(delta), clamp, min, max);
 
     // ───────────── NPC 인덱싱/스폰/정리 ─────────────
     private void IndexNpcCatalog()
@@ -1143,7 +1234,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (!npc) yield break;
 
         var tr = npc.transform;
-        if (!tr) yield break; // 파괴된 경우 방지
+        if (!tr) yield break;
 
         var rb = npc.GetComponent<Rigidbody2D>();
         var anim = npc.GetComponent<Animator>();
@@ -1183,7 +1274,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         float t = 0f;
         while (t < duration)
         {
-            if (!npc || !tr) yield break; // 매 프레임 안전 체크
+            if (!npc || !tr) yield break;
 
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
@@ -1247,7 +1338,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     // ───────────── 가드/복구 ─────────────
     private void EnterEventGuard()
     {
-        // UI 잠금
         _uiBackup.Clear();
         foreach (var go in uiCanvasesToDisable)
         {
@@ -1520,19 +1610,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
         _ownersDeactivatedOnEnter.Clear();
-    }
-
-    // ───────────── 보조 ─────────────
-    private static string BuildHierarchyPath(Transform tr)
-    {
-        var stack = new Stack<string>(8);
-        var cur = tr;
-        while (cur != null)
-        {
-            stack.Push(cur.name);
-            cur = cur.parent;
-        }
-        return string.Join("/", stack);
     }
 }
 

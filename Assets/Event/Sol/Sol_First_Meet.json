@@ -2,14 +2,10 @@
   "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
-
-  "player": {
-    "forceUsePlayerMoveSpeed": true,
-    "moveSpeed": 1.0
-  },
+  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
 
   "npcSpawns": [
-    { "npcName": "Sol",  "x": 33.0,  "y": 19.0,  "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false },
+    { "npcName": "Sol",  "x": 33.0, "y": 19.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false },
     { "npcName": "Boss", "x": 34.5, "y": 18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
   ],
 
@@ -20,7 +16,7 @@
   ],
 
   "afterPlayerActions": [
-    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0 },
+    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0, "duration": 1.0 },
     { "type": "dialogue", "owner": "Sol", "eventName": "Sol_First_Meet" }
   ],
 
@@ -29,11 +25,28 @@
       "onKey": "Dialogue_Choice1_Same_002",
       "actions": [
         { "type": "dialoguePanelActive", "active": false },
+        { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": -3.0 },
+        { "type": "npcSetActive", "npcName": "Boss", "active": false },
+        { "type": "dialoguePanelRestoreNow" }
+      ]
+    },
 
-        { "type": "npcMove", "npcName": "Boss", "dx": -0.6,  "dy": 0.0, "duration": 1.0 },
-        { "type": "npcMove", "npcName": "Boss", "dx":  0.0,"dy":  -3.0, "duration": 1.0 },
+    { "onKey": "Dialogue_Choice3_A2_001",
+      "actions": [
+        { "type": "affinityDown", "dataName": "Sol_FriendShip", "delta": -1, "clamp": true, "min": -100, "max": 100 }
+      ]
+    },
 
-        { "type": "npcSetActive", "npcName": "Boss", "active": false }
+    { "onKey": "Dialogue_Choice4_A1_001",
+      "actions": [
+        { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
+      ]
+    },
+
+    { "onKey": "Dialogue_Choice4_A2_001",
+      "actions": [
+        { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
       ]
     }
   ]

@@ -50,11 +50,20 @@ public class PlayerData
     // 언어 코드("ko","en","jp") — 기본 "ko"
     public string Language;
 
+    //첫 방문 지역 이벤트
+    public bool StarestFistGo;
+
     // 첫 만남 플래그(스토리 트리거)
     public bool Sol_First_Meet;
     public bool Salt_First_Meet;
     public bool Ryu_First_Meet;
     public bool White_First_Meet;
+
+    public int Sol_FriendShip;
+    public int Salt_FriendShip;
+    public int Ryu_FriendShip;
+    public int White_FriendShip;
+
 
     // ===== 활성 씬 오브젝트 스냅샷 =====
     public string ActiveSceneName;         // 저장 시점 활성 씬명
@@ -68,12 +77,19 @@ public class PlayerData
         Weekday = 1;
         Language = "ko";
 
+        StarestFistGo = false;
+
         Sol_First_Meet = false;
         Salt_First_Meet = false;
         Ryu_First_Meet = false;
         White_First_Meet = false;
 
-        ActiveSceneName = "";
+        Sol_FriendShip = 0;
+        Salt_FriendShip = 0;
+        Ryu_FriendShip = 0;
+        White_FriendShip = 0;
+
+    ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
     }
 }

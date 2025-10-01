@@ -35,7 +35,7 @@ public class HouseDoorTeleporter_BiDirectional2D : MonoBehaviour
 
     [Header("입력/물리")]
     [Tooltip("House→Door 이동용 키. None이면 충돌 즉시 이동")]
-    [SerializeField] private KeyCode houseActivationKey = KeyCode.None;
+    [SerializeField] private KeyCode houseActivationKey = KeyCode.F;
 
     [Tooltip("Door→House 복귀용 키(누른 '상태'여야 함). 기본 S")]
     [SerializeField] private KeyCode doorReturnKey = KeyCode.S;

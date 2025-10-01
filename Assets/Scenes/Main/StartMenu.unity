@@ -5157,10 +5157,15 @@ MonoBehaviour:
     Scene: 
     Weekday: 1
     Language: ko
+    StarestFistGo: 0
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
     White_First_Meet: 0
+    Sol_FriendShip: 0
+    Salt_FriendShip: 0
+    Ryu_FriendShip: 0
+    White_FriendShip: 0
     ActiveSceneName: 
     ActiveObjects: []
   path: 
