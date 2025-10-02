@@ -28,6 +28,7 @@
         { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },
         { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": -3.0 },
         { "type": "npcSetActive", "npcName": "Boss", "active": false },
+    	{ "type": "delay", "duration": 0.5 },
         { "type": "dialoguePanelRestoreNow" }
       ]
     },
@@ -38,13 +39,7 @@
       ]
     },
 
-    { "onKey": "Dialogue_Choice4_A1_001",
-      "actions": [
-        { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
-      ]
-    },
-
-    { "onKey": "Dialogue_Choice4_A2_001",
+    { "onKey": "Dialogue_Choice4_Same_002",
       "actions": [
         { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
       ]

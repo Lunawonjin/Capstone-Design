@@ -167,6 +167,22 @@ MonoBehaviour:
     m_Key: UI_GoMain
     m_Metadata:
       m_Items: []
+  - m_Id: 1479545064984576
+    m_Key: UI_Sol_Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1479545119510528
+    m_Key: UI_Salt_Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1479545119510529
+    m_Key: UI_Ryu_Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1479545119510530
+    m_Key: UI_White_Name
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

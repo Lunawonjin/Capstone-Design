@@ -180,9 +180,47 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+--- !u!114 &264420237411700845 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1124283197175443820, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+  m_PrefabInstance: {fileID: 878528836102021377}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!114 &1134321366014647661 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 255792685623557228, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+  m_PrefabInstance: {fileID: 878528836102021377}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!4 &1311079471859221432 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2161950503124443833, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+  m_PrefabInstance: {fileID: 878528836102021377}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2332501267547512414 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3201950316217843551, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+  m_PrefabInstance: {fileID: 878528836102021377}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1 &9197320741484940511 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8327818915183242718, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
   m_PrefabInstance: {fileID: 878528836102021377}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7151364268865797940
@@ -193,6 +231,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7569553354186251677}
     m_Modifications:
+    - target: {fileID: 926034032343825517, guid: 287ff717f82dd434d8efc3df73451b2f, type: 3}
+      propertyPath: bodyText
+      value: 
+      objectReference: {fileID: 2332501267547512414}
+    - target: {fileID: 926034032343825517, guid: 287ff717f82dd434d8efc3df73451b2f, type: 3}
+      propertyPath: namePanel
+      value: 
+      objectReference: {fileID: 9197320741484940511}
+    - target: {fileID: 926034032343825517, guid: 287ff717f82dd434d8efc3df73451b2f, type: 3}
+      propertyPath: promptText
+      value: 
+      objectReference: {fileID: 264420237411700845}
+    - target: {fileID: 926034032343825517, guid: 287ff717f82dd434d8efc3df73451b2f, type: 3}
+      propertyPath: speakerText
+      value: 
+      objectReference: {fileID: 1134321366014647661}
     - target: {fileID: 1128675145414633027, guid: 287ff717f82dd434d8efc3df73451b2f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

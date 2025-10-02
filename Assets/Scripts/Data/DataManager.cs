@@ -66,7 +66,7 @@ public class PlayerData
 
 
     // ===== 활성 씬 오브젝트 스냅샷 =====
-    public string ActiveSceneName;         // 저장 시점 활성 씬명
+    public string ActiveSceneName;      // 저장 시점 활성 씬명
     public ActiveObjectInfo[] ActiveObjects; // 저장 시점 activeInHierarchy == true 목록
 
     public PlayerData()
@@ -89,7 +89,7 @@ public class PlayerData
         Ryu_FriendShip = 0;
         White_FriendShip = 0;
 
-    ActiveSceneName = "";
+        ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
     }
 }
@@ -100,14 +100,20 @@ public class DataManager : MonoBehaviour
 
     [Header("플레이어/저장 슬롯")]
     public PlayerData nowPlayer = new PlayerData();
-    public string path;               // 저장 폴더 경로 (persistentDataPath/save)
-    public int nowSlot = -1;          // 현재 선택된 저장 슬롯(0,1,2 ...)
+    public string path;          // 저장 폴더 경로 (persistentDataPath/save)
+    public int nowSlot = -1;     // 현재 선택된 저장 슬롯(0,1,2 ...)
 
     [Header("HUD(TextMeshProUGUI)")]
     [SerializeField] private TMP_Text coinText;
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private TMP_Text dayText;
     [SerializeField] private TMP_Text nameText;
+
+    [Header("호감도 UI(TextMeshProUGUI)")]
+    [SerializeField] private TMP_Text solFriendshipText;
+    [SerializeField] private TMP_Text saltFriendshipText;
+    [SerializeField] private TMP_Text ryuFriendshipText;
+    [SerializeField] private TMP_Text whiteFriendshipText;
 
     [Header("HUD 유지/재바인딩 옵션")]
     [SerializeField] private bool dontDestroyOnLoadHUD = false;
@@ -120,12 +126,42 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string levelObjectName = "Text_Level";
     [SerializeField] private string dayObjectName = "Text_Day";
     [SerializeField] private string nameObjectName = "Text_Name";
+    [SerializeField] private string solFriendshipObjectName = "Text_Sol_Friendship";
+    [SerializeField] private string saltFriendshipObjectName = "Text_Salt_Friendship";
+    [SerializeField] private string ryuFriendshipObjectName = "Text_Ryu_Friendship";
+    [SerializeField] private string whiteFriendshipObjectName = "Text_White_Friendship";
+
 
     [Header("표기 형식(언어별)")]
     // {0}=일차(숫자), {1}=요일명
     [SerializeField] private string dayFormatKo = "{0}일 ({1})";
     [SerializeField] private string dayFormatEn = "Day {0} ({1})";
     [SerializeField] private string dayFormatJp = "{0}日（{1}）";
+
+    [Header("호감도 표기 형식(언어별)")]
+    [Tooltip("{0}=캐릭터 이름, {1}=호감도 값")]
+    [SerializeField] private string friendshipFormatKo = "{0} 호감도: {1}";
+    [Tooltip("{0}=Character Name, {1}=Friendship Value")]
+    [SerializeField] private string friendshipFormatEn = "{0} Affinity: {1}";
+    [Tooltip("{0}=キャラクター名, {1}=好感度")]
+    [SerializeField] private string friendshipFormatJp = "{0} 好感度: {1}";
+
+    [Header("캐릭터 이름 (언어별)")]
+    [SerializeField] private string solNameKo = "솔";
+    [SerializeField] private string solNameEn = "Sol";
+    [SerializeField] private string solNameJp = "ソル";
+    [Space(10)]
+    [SerializeField] private string saltNameKo = "솔트";
+    [SerializeField] private string saltNameEn = "Salt";
+    [SerializeField] private string saltNameJp = "ソルト";
+    [Space(10)]
+    [SerializeField] private string ryuNameKo = "류";
+    [SerializeField] private string ryuNameEn = "Ryu";
+    [SerializeField] private string ryuNameJp = "リュウ";
+    [Space(10)]
+    [SerializeField] private string whiteNameKo = "화이트";
+    [SerializeField] private string whiteNameEn = "White";
+    [SerializeField] private string whiteNameJp = "ホワイト";
 
     [Header("기타 표기 형식")]
     [SerializeField] private string coinFormat = "{0}";
@@ -158,26 +194,30 @@ public class DataManager : MonoBehaviour
     [SerializeField] private int dayFontSizeEn = 35;
     [SerializeField] private int dayFontSizeJp = 35;
 
+    // ===== 추가된 부분 & 수정된 부분 =====
+    [Header("호감도 텍스트 폰트/사이즈(언어별)")]
+    [SerializeField] private TMP_FontAsset friendshipFontKo;
+    [SerializeField] private TMP_FontAsset friendshipFontEn;
+    [SerializeField] private TMP_FontAsset friendshipFontJp;
+
+    [SerializeField] private int friendshipFontSizeKo = 30;
+    [SerializeField] private int friendshipFontSizeEn = 30;
+    [SerializeField] private int friendshipFontSizeJp = 30;
+    // ===== 추가/수정 끝 =====
+
     [Header("활성 오브젝트 저장 옵션")]
     [Tooltip("활성 씬에서 activeInHierarchy == true 인 오브젝트를 저장")]
     [SerializeField] private bool captureActiveObjectsOnSave = true;
 
-    // HUD 외에 UIPanel도 제외
     [Tooltip("이 태그를 가진 오브젝트는 저장/복원에서 제외(HUD 등)")]
     [SerializeField] private string[] excludeTagsForActiveObjects = new string[] { "HUD", "UIPanel" };
 
-    // 선택(정확 이름 일치로 제외하고 싶을 때)
-    //   이미 'UIPanel' 이름을 쓰신다면 기본값에 넣어둡니다.
     [Tooltip("이 이름(정확 일치)을 가진 오브젝트는 저장/복원에서 제외")]
     [SerializeField] private string[] excludeNamesForActiveObjects = new string[] { "UIPanel" };
 
-    // ===== 복원(restore) 관련 옵션 =====
     public enum ActiveRestoreMode
     {
-        // 스냅샷에 기록된 경로만 true로 만든다(그 외는 손대지 않음)
         OnlyListedToActive,
-
-        // 스냅샷에 기록된 경로는 true, 같은 씬의 나머지(예외 목록 제외)는 false로 만든다(완전 동기화)
         FullSyncActiveVsOthersInactive
     }
 
@@ -195,6 +235,8 @@ public class DataManager : MonoBehaviour
     int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue, _lastWeekday = int.MinValue;
     string _lastName = null;
     string _lastLanguage = null;
+
+    int _lastSolFriendship = int.MinValue, _lastSaltFriendship = int.MinValue, _lastRyuFriendship = int.MinValue, _lastWhiteFriendship = int.MinValue;
 
     void Awake()
     {
@@ -218,6 +260,11 @@ public class DataManager : MonoBehaviour
             if (levelText) DontDestroyOnLoad(levelText.gameObject);
             if (dayText) DontDestroyOnLoad(dayText.gameObject);
             if (nameText) DontDestroyOnLoad(nameText.gameObject);
+
+            if (solFriendshipText) DontDestroyOnLoad(solFriendshipText.gameObject);
+            if (saltFriendshipText) DontDestroyOnLoad(saltFriendshipText.gameObject);
+            if (ryuFriendshipText) DontDestroyOnLoad(ryuFriendshipText.gameObject);
+            if (whiteFriendshipText) DontDestroyOnLoad(whiteFriendshipText.gameObject);
         }
 
         SceneManager.sceneLoaded += OnSceneLoaded_RebindHUD_AndApplyPos;
@@ -280,7 +327,6 @@ public class DataManager : MonoBehaviour
             EnsureWeekdayValid();
             EnsureLanguageValid();
 
-            // ===== 활성 오브젝트 스냅샷 수집 =====
             if (captureActiveObjectsOnSave)
             {
                 var activeScene = SceneManager.GetActiveScene();
@@ -333,9 +379,6 @@ public class DataManager : MonoBehaviour
                 RecomputeWeekdayFromDay();
 
             EnsureLanguageValid();
-
-            // 로드시에는 즉시 복원하지 않음(씬 로드 이후 시점이 안전)
-            // -> OnSceneLoaded handler에서 autoRestoreActiveObjectsOnSceneLoaded 옵션에 따라 적용
 
             NotifyChanged();
             SnapshotValues();
@@ -662,12 +705,12 @@ public class DataManager : MonoBehaviour
                 dayText.fontSize = dayFontSizeKo;
                 break;
 
-            case "jp": // ja 매핑됨 → jp
+            case "jp":
                 if (fontJp) dayText.font = fontJp;
                 dayText.fontSize = dayFontSizeJp;
                 break;
 
-            default:   // en
+            default:  // en
                 if (fontEn) dayText.font = fontEn;
                 dayText.fontSize = dayFontSizeEn;
                 break;
@@ -676,16 +719,51 @@ public class DataManager : MonoBehaviour
         dayText.ForceMeshUpdate();
     }
 
+    // ===== 추가된 부분 & 수정된 부분 =====
+    private void ApplyFriendshipStylePerLanguage(string langCode)
+    {
+        TMP_FontAsset targetFont = null;
+        int targetSize = 30;
+
+        switch (NormalizeLang(langCode))
+        {
+            case "ko":
+                targetFont = friendshipFontKo;
+                targetSize = friendshipFontSizeKo;
+                break;
+            case "jp":
+                targetFont = friendshipFontJp;
+                targetSize = friendshipFontSizeJp;
+                break;
+            default: // en
+                targetFont = friendshipFontEn;
+                targetSize = friendshipFontSizeEn;
+                break;
+        }
+
+        // 모든 호감도 텍스트에 폰트와 사이즈 적용
+        var friendshipTexts = new[] { solFriendshipText, saltFriendshipText, ryuFriendshipText, whiteFriendshipText };
+        foreach (var text in friendshipTexts)
+        {
+            if (text)
+            {
+                if (targetFont) text.font = targetFont;
+                text.fontSize = targetSize;
+            }
+        }
+    }
+    // ===== 추가/수정 끝 =====
+
     void UpdateHUD()
     {
         if (coinText) coinText.text = string.Format(coinFormat, nowPlayer.Coin);
         if (levelText) levelText.text = string.Format(levelFormat, nowPlayer.Level);
 
-        // Day + 요일 (언어 로컬라이즈 + 폰트/사이즈 적용)
+        string lang = CurrentLang();
+
         if (dayText)
         {
             int wd = GetWeekday();
-            string lang = CurrentLang();
             dayText.text = FormatDayAndWeekLocalized(nowPlayer.Day, wd, lang);
             ApplyDayStylePerLanguage(lang);
         }
@@ -695,14 +773,59 @@ public class DataManager : MonoBehaviour
             string nm = string.IsNullOrEmpty(nowPlayer.Name) ? "No Name" : nowPlayer.Name;
             nameText.text = string.Format(nameFormat, nm);
         }
+
+        // ===== 추가된 부분 & 수정된 부분 =====
+        // 호감도 스타일 적용
+        ApplyFriendshipStylePerLanguage(lang);
+        // ===== 추가/수정 끝 =====
+
+        string format;
+        string characterName;
+
+        switch (lang)
+        {
+            case "en": format = friendshipFormatEn; break;
+            case "jp": format = friendshipFormatJp; break;
+            default: format = friendshipFormatKo; break;
+        }
+
+        if (solFriendshipText)
+        {
+            characterName = lang switch { "en" => solNameEn, "jp" => solNameJp, _ => solNameKo };
+            solFriendshipText.text = string.Format(format, characterName, nowPlayer.Sol_FriendShip);
+        }
+
+        if (saltFriendshipText)
+        {
+            characterName = lang switch { "en" => saltNameEn, "jp" => saltNameJp, _ => saltNameKo };
+            saltFriendshipText.text = string.Format(format, characterName, nowPlayer.Salt_FriendShip);
+        }
+
+        if (ryuFriendshipText)
+        {
+            characterName = lang switch { "en" => ryuNameEn, "jp" => ryuNameJp, _ => ryuNameKo };
+            ryuFriendshipText.text = string.Format(format, characterName, nowPlayer.Ryu_FriendShip);
+        }
+
+        if (whiteFriendshipText)
+        {
+            characterName = lang switch { "en" => whiteNameEn, "jp" => whiteNameJp, _ => whiteNameKo };
+            whiteFriendshipText.text = string.Format(format, characterName, nowPlayer.White_FriendShip);
+        }
     }
 
-    public void BindHUD(TMP_Text coin, TMP_Text level, TMP_Text day = null, TMP_Text name = null)
+    public void BindHUD(TMP_Text coin, TMP_Text level, TMP_Text day = null, TMP_Text name = null,
+                        TMP_Text solFriendship = null, TMP_Text saltFriendship = null, TMP_Text ryuFriendship = null, TMP_Text whiteFriendship = null)
     {
         coinText = coin;
         levelText = level;
         dayText = day;
         nameText = name;
+
+        solFriendshipText = solFriendship;
+        saltFriendshipText = saltFriendship;
+        ryuFriendshipText = ryuFriendship;
+        whiteFriendshipText = whiteFriendship;
 
         if (dontDestroyOnLoadHUD)
         {
@@ -710,6 +833,11 @@ public class DataManager : MonoBehaviour
             if (levelText) DontDestroyOnLoad(levelText.gameObject);
             if (dayText) DontDestroyOnLoad(dayText.gameObject);
             if (nameText) DontDestroyOnLoad(nameText.gameObject);
+
+            if (solFriendshipText) DontDestroyOnLoad(solFriendshipText.gameObject);
+            if (saltFriendshipText) DontDestroyOnLoad(saltFriendshipText.gameObject);
+            if (ryuFriendshipText) DontDestroyOnLoad(ryuFriendshipText.gameObject);
+            if (whiteFriendshipText) DontDestroyOnLoad(whiteFriendshipText.gameObject);
         }
 
         UpdateHUD();
@@ -730,7 +858,12 @@ public class DataManager : MonoBehaviour
             bool needDay = dayText == null && !string.IsNullOrEmpty(dayObjectName);
             bool needName = nameText == null && !string.IsNullOrEmpty(nameObjectName);
 
-            if (needCoin || needLevel || needDay || needName)
+            bool needSol = solFriendshipText == null && !string.IsNullOrEmpty(solFriendshipObjectName);
+            bool needSalt = saltFriendshipText == null && !string.IsNullOrEmpty(saltFriendshipObjectName);
+            bool needRyu = ryuFriendshipText == null && !string.IsNullOrEmpty(ryuFriendshipObjectName);
+            bool needWhite = whiteFriendshipText == null && !string.IsNullOrEmpty(whiteFriendshipObjectName);
+
+            if (needCoin || needLevel || needDay || needName || needSol || needSalt || needRyu || needWhite)
             {
                 Transform root = null;
                 if (!string.IsNullOrEmpty(hudRootTag))
@@ -766,14 +899,19 @@ public class DataManager : MonoBehaviour
                 var fd = needDay ? FindTMP(dayObjectName) : dayText;
                 var fn = needName ? FindTMP(nameObjectName) : nameText;
 
-                if (fc || fl || fd || fn) BindHUD(fc, fl, fd, fn);
+                var fSol = needSol ? FindTMP(solFriendshipObjectName) : solFriendshipText;
+                var fSalt = needSalt ? FindTMP(saltFriendshipObjectName) : saltFriendshipText;
+                var fRyu = needRyu ? FindTMP(ryuFriendshipObjectName) : ryuFriendshipText;
+                var fWhite = needWhite ? FindTMP(whiteFriendshipObjectName) : whiteFriendshipText;
+
+                if (fc || fl || fd || fn || fSol || fSalt || fRyu || fWhite)
+                    BindHUD(fc, fl, fd, fn, fSol, fSalt, fRyu, fWhite);
             }
         }
 
         if (applySavedPositionOnLoad && nowPlayer != null && nowPlayer.HasSavedPosition)
             StartCoroutine(ApplyPositionWhenReady());
 
-        // ===== 씬 로드 후 활성 오브젝트 복원(옵션) =====
         if (autoRestoreActiveObjectsOnSceneLoaded)
         {
             StartCoroutine(ApplyActiveObjectsSnapshotCoroutine());
@@ -788,6 +926,14 @@ public class DataManager : MonoBehaviour
         _lastWeekday = nowPlayer?.Weekday ?? 1;
         _lastName = nowPlayer?.Name ?? "";
         _lastLanguage = nowPlayer?.Language ?? "ko";
+
+        if (nowPlayer != null)
+        {
+            _lastSolFriendship = nowPlayer.Sol_FriendShip;
+            _lastSaltFriendship = nowPlayer.Salt_FriendShip;
+            _lastRyuFriendship = nowPlayer.Ryu_FriendShip;
+            _lastWhiteFriendship = nowPlayer.White_FriendShip;
+        }
     }
 
     bool HasValueChanged()
@@ -798,16 +944,15 @@ public class DataManager : MonoBehaviour
             || _lastDay != nowPlayer.Day
             || _lastWeekday != (nowPlayer.Weekday < 1 || nowPlayer.Weekday > 7 ? WrapWeekday(nowPlayer.Weekday) : nowPlayer.Weekday)
             || _lastName != (nowPlayer.Name ?? "")
-            || _lastLanguage != (string.IsNullOrEmpty(nowPlayer.Language) ? "ko" : nowPlayer.Language);
+            || _lastLanguage != (string.IsNullOrEmpty(nowPlayer.Language) ? "ko" : nowPlayer.Language)
+            || _lastSolFriendship != nowPlayer.Sol_FriendShip
+            || _lastSaltFriendship != nowPlayer.Salt_FriendShip
+            || _lastRyuFriendship != nowPlayer.Ryu_FriendShip
+            || _lastWhiteFriendship != nowPlayer.White_FriendShip;
     }
 
     // ===== 활성 오브젝트 수집(저장) =====
 
-    /// <summary>
-    /// 현재 활성 씬에서 activeInHierarchy == true 인 모든 GameObject를 스냅샷으로 수집.
-    /// - DontDestroyOnLoad 영역, 다른 씬 소속, hideFlags != None 은 제외.
-    /// - excludeTagsForActiveObjects / excludeNamesForActiveObjects 조건에 해당하면 제외.
-    /// </summary>
     private List<ActiveObjectInfo> CaptureActiveObjectsInCurrentScene()
     {
         var result = new List<ActiveObjectInfo>(256);
@@ -832,18 +977,14 @@ public class DataManager : MonoBehaviour
 
         var go = t.gameObject;
 
-        // 1) 씬 일치 + 로드 확인
         if (go.scene != activeScene || !go.scene.isLoaded)
             return;
 
-        // 2) hideFlags 체크(에디터/내부용 제외)
         if (go.hideFlags != HideFlags.None)
             return;
 
-        // 3) 활성 상태 체크
         if (go.activeInHierarchy)
         {
-            // 4) 제외 조건(태그/이름)
             if (!ShouldExclude(go))
             {
                 sink.Add(new ActiveObjectInfo
@@ -856,18 +997,12 @@ public class DataManager : MonoBehaviour
             }
         }
 
-        // 자식 순회
         for (int i = 0; i < t.childCount; i++)
             TraverseAndCollect(t.GetChild(i), activeScene, sink);
     }
 
     // ===== 활성 오브젝트 복원(restore) =====
 
-    /// <summary>
-    /// 즉시 복원(코루틴 대기 없이 현 시점에서 가능한 만큼 수행).
-    /// 씬이 막 로드된 직후라면 일부 오브젝트 탐색이 늦을 수 있으므로
-    /// 일반적으로는 ApplyActiveObjectsSnapshotCoroutine() 사용을 권장.
-    /// </summary>
     public void ApplyActiveObjectsSnapshotNow()
     {
         try
@@ -880,12 +1015,8 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 씬 로드 직후 안정 시점까지 한두 프레임 정도 대기 후 복원 수행.
-    /// </summary>
     public IEnumerator ApplyActiveObjectsSnapshotCoroutine(float delayOneFrame = 0f)
     {
-        // 한 프레임 대기(옵션): 씬 내 오브젝트 초기화/스폰이 끝나도록 여유를 둠
         if (delayOneFrame <= 0f) yield return null;
         else
         {
@@ -900,14 +1031,6 @@ public class DataManager : MonoBehaviour
         ApplyActiveObjectsSnapshotInternal();
     }
 
-    /// <summary>
-    /// 실제 복원 로직(경로 기반으로 GameObject를 찾아 활성/비활성 동기화).
-    /// - 스냅샷 씬명과 현재 씬명이 다르면 경고만 남기고 중단(안전).
-    /// - 제외 목록 태그/이름은 건드리지 않음.
-    /// - 복원 모드:
-    ///   * OnlyListedToActive: 스냅샷에 있는 경로만 true로, 나머지는 변경하지 않음.
-    ///   * FullSyncActiveVsOthersInactive: 경로 SetActive(true), 나머지는 SetActive(false).
-    /// </summary>
     private void ApplyActiveObjectsSnapshotInternal()
     {
         if (nowPlayer == null || nowPlayer.ActiveObjects == null) return;
@@ -922,10 +1045,8 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        // 1) 현재 씬의 모든 GameObject를 경로 사전으로 구성(예외 목록 제외, hideFlags 제외)
         var sceneObjects = BuildSceneObjectMap();
 
-        // 2) 스냅샷의 활성 경로 집합 구성
         var activeSet = new HashSet<string>(StringComparer.Ordinal);
         foreach (var info in nowPlayer.ActiveObjects)
         {
@@ -933,7 +1054,6 @@ public class DataManager : MonoBehaviour
             activeSet.Add(info.HierarchyPath);
         }
 
-        // 3) 복원 모드에 따른 적용
         int setOn = 0, setOff = 0, missing = 0;
 
         if (activeRestoreMode == ActiveRestoreMode.OnlyListedToActive)
@@ -953,11 +1073,9 @@ public class DataManager : MonoBehaviour
         }
         else // FullSyncActiveVsOthersInactive
         {
-            // 먼저 모두 false(예외 제외) → 스냅샷 경로 true
             foreach (var kv in sceneObjects)
             {
                 var go = kv.Value;
-                // 스냅샷에 없는 경로면 비활성
                 if (!activeSet.Contains(kv.Key))
                 {
                     if (go.activeSelf) { go.SetActive(false); setOff++; }
@@ -982,11 +1100,6 @@ public class DataManager : MonoBehaviour
             Debug.Log($"[DataManager] 복원 완료 — 켬:{setOn}, 끔:{setOff}, 경로누락:{missing}, 씬:'{currentSceneName}'");
     }
 
-    /// <summary>
-    /// 현재 씬의 모든 GameObject를 "계층 경로 → GameObject" 사전으로 구성.
-    /// - excludeTagsForActiveObjects / excludeNamesForActiveObjects 제외
-    /// - hideFlags != None 제외
-    /// </summary>
     private Dictionary<string, GameObject> BuildSceneObjectMap()
     {
         var map = new Dictionary<string, GameObject>(1024, StringComparer.Ordinal);
@@ -1023,7 +1136,6 @@ public class DataManager : MonoBehaviour
 
     // ===== 공통 유틸 =====
 
-    // 계층 경로 생성: "Root/Child/SubChild"
     private static string BuildHierarchyPath(Transform tr)
     {
         var stack = new Stack<string>(8);
@@ -1036,18 +1148,14 @@ public class DataManager : MonoBehaviour
         return string.Join("/", stack);
     }
 
-    // 안전한 태그 접근
     private static string SafeTag(GameObject go)
     {
         try { return go.tag; }
         catch { return "Untagged"; }
     }
 
-    // 저장/복원 예외 조건
-    // 저장/복원 예외 조건
     private bool ShouldExclude(GameObject go)
     {
-        // 태그 제외
         if (excludeTagsForActiveObjects != null && excludeTagsForActiveObjects.Length > 0)
         {
             string gTag = SafeTag(go);
@@ -1059,7 +1167,6 @@ public class DataManager : MonoBehaviour
             }
         }
 
-        // 이름 제외(정확 일치)
         if (excludeNamesForActiveObjects != null && excludeNamesForActiveObjects.Length > 0)
         {
             string nm = go.name;
@@ -1071,14 +1178,10 @@ public class DataManager : MonoBehaviour
             }
         }
 
-        // 추가: UIPanel 컴포넌트가 붙어 있으면 제외
-        // - 프로젝트에 UIPanel 스크립트가 없다면 이 줄은 아무 영향이 없습니다.
-        // - 네임스페이스가 있다면 typeof(YourNamespace.UIPanel)로 바꿔 주세요.
         var uiPanelType = Type.GetType("UIPanel");
         if (uiPanelType != null && go.GetComponent(uiPanelType) != null)
             return true;
 
         return false;
     }
-
 }

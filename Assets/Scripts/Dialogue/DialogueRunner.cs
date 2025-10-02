@@ -1,10 +1,3 @@
-// Unity 6 (LTS)
-// Dialogue Runner using Unity Localization StringTables
-// 입력 안정화 패치:
-// - 패널/텍스트가 화면에 나타난 뒤에만 입력 허용(_inputUnlocked)
-// - 첫 표시 후 광클 보호 쿨타임(_advanceCooldownSec)
-// - 다양한 키/마우스/터치 입력 허용
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,6 +23,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public TextMeshProUGUI promptText;
     public GameObject nextIndicator;
     public Button choiceButtonPrefab;
+
+    [Tooltip("화자 이름 텍스트를 감싸는 UI 패널(GameObject)")]
+    public GameObject namePanel; // <-- [추가됨] NamePanel을 연결할 필드
 
     [Header("선택지 컨테이너(없으면 자동 생성)")]
     public Canvas targetCanvas;
@@ -140,7 +136,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     private string _pendingEventName;
 
-    // 입력 게이트 & 쿨타임
     private bool _inputUnlocked = false;
     private float _advanceCooldownLeft = 0f;
 
@@ -202,7 +197,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _advanceCooldownLeft = 0f;
     }
 
-    // ===== 외부 진입 =====
     public void BeginWithEventName(string eventName)
     {
         if (string.IsNullOrWhiteSpace(eventName))
@@ -221,7 +215,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         StartCoroutine(Co_InitAndStart(eventName.Trim()));
     }
 
-    // ===== 테이블 로드 (primary 실패 시 fallback 시도) =====
     private IEnumerator LoadTableMultiTry(string primary, string fallback, Action<StringTable> setter)
     {
         var op1 = LocalizationSettings.StringDatabase.GetTableAsync(primary);
@@ -248,7 +241,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _sameLine = 1;
         _mode = Mode.Linear;
 
-        // 입력 게이트 리셋
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
 
@@ -274,17 +266,13 @@ public class DialogueRunnerStringTables : MonoBehaviour
         Next();
     }
 
-    // ===== 입력 =====
     private void Update()
     {
-        // 쿨타임 틱
         if (_advanceCooldownLeft > 0f)
             _advanceCooldownLeft -= Time.unscaledDeltaTime;
 
-        // 선택지 모드면 버튼 클릭만 허용(여기 입력 무시)
         if (_waitingChoice) return;
 
-        // 아직 입력 잠금이면 리턴
         if (!_inputUnlocked) return;
 
         bool pressed =
@@ -298,7 +286,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         if (debugInputLog) Debug.Log("[DialogueRunner] advance pressed");
 
-        // 광클 보호 쿨타임
         if (_advanceCooldownLeft > 0f) return;
         _advanceCooldownLeft = advanceCooldownSec;
 
@@ -306,7 +293,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         else Next();
     }
 
-    // ===== 키 규칙 =====
     private static string KeyLinear(int i) => $"Dialogue_{i:000}";
     private static string KeyChoiceS(int n, int k, int l) => $"Dialogue_Choice{n}_S{k}_{l:000}";
     private static string KeyChoiceA(int n, int k, int l) => $"Dialogue_Choice{n}_A{k}_{l:000}";
@@ -330,7 +316,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return e == null ? "" : ReplaceTokens(e.GetLocalizedString());
     }
 
-    // ===== 메인 진행 =====
     private void Next()
     {
         switch (_mode)
@@ -360,7 +345,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
     }
 
-    // ===== Linear =====
     private bool TryShowLinear()
     {
         string key = KeyLinear(_linearIndex);
@@ -370,7 +354,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== Choice 시작 =====
     private bool TryStartChoice(int n)
     {
         var options = new List<int>();
@@ -387,8 +370,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         _waitingChoice = true;
         _mode = Mode.ChoiceSelect;
-
-        // 선택지 표시 시에도 입력은 버튼 클릭만 허용 → _inputUnlocked 유지해도 OK
 
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
         if (bodyText) bodyText.gameObject.SetActive(false);
@@ -550,7 +531,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
             if (_activeButtons[i]) _activeButtons[i].interactable = value;
     }
 
-    // ===== Answer =====
     private void ShowAnswerFirstLine(int n, int k)
     {
         string k1 = KeyChoiceA(n, k, 1);
@@ -570,7 +550,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== Same =====
     private bool TryShowSame(int n)
     {
         string key = KeyChoiceSame(n, _sameLine);
@@ -581,7 +560,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== 한 줄 표시 =====
+    // [수정됨] NamePanel 제어 로직 변경
     private void ShowKey(string key)
     {
         if (promptText) promptText.gameObject.SetActive(false);
@@ -592,35 +571,36 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         string sp = LSpeakerRaw(key).Trim();
         bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
+
+        // NamePanel이 연결되어 있으면 패널 전체를 제어
+        if (namePanel != null)
+        {
+            namePanel.SetActive(!isSystem);
+        }
+        // NamePanel이 없으면 기존 방식대로 Text만 제어
+        else if (speakerText != null)
+        {
+            speakerText.gameObject.SetActive(!isSystem);
+        }
+
+        // speakerText는 항상 업데이트
         if (speakerText != null)
         {
-            if (isSystem)
-            {
-                speakerText.text = "";
-                speakerText.gameObject.SetActive(false);
-            }
-            else
-            {
-                if (!speakerText.gameObject.activeSelf) speakerText.gameObject.SetActive(true);
-                speakerText.enableAutoSizing = false;
-                speakerText.fontSize = speakerFontSize;
-                speakerText.text = sp;
-            }
+            speakerText.enableAutoSizing = false;
+            speakerText.fontSize = speakerFontSize;
+            speakerText.text = isSystem ? "" : sp;
         }
 
         string full = LBody(key);
 
-        // Key 브로드캐스트(리액션용)
         OnKeyShown?.Invoke(key);
 
-        // 기존 코루틴 정리
         if (_typingRoutine != null)
         {
             if (isActiveAndEnabled) StopCoroutine(_typingRoutine);
             _typingRoutine = null;
         }
 
-        // 입력 잠금 후 출력 시작
         _inputUnlocked = false;
         _advanceCooldownLeft = advanceCooldownSec;
 
@@ -634,7 +614,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             }
             _isTyping = false;
             if (nextIndicator) nextIndicator.SetActive(true);
-            _inputUnlocked = true; // 비활성 예외 시에도 입력 허용
+            _inputUnlocked = true;
             return;
         }
 
@@ -660,7 +640,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             for (int i = 0; i < fullText.Length; i++)
             {
                 if (bodyText) bodyText.text = fullText.Substring(0, i + 1);
-                if (!printedOne) { printedOne = true; yield return null; _inputUnlocked = true; } // 첫 글자 후 입력 오픈
+                if (!printedOne) { printedOne = true; yield return null; _inputUnlocked = true; }
                 yield return _wait;
             }
         }
@@ -691,7 +671,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _isTyping = false;
         if (nextIndicator) nextIndicator.SetActive(true);
         _typingRoutine = null;
-        // 타이핑 완전히 끝난 뒤에도 입력 가능(이미 _inputUnlocked=true 상태)
     }
 
     private void CompleteTypingInstant()
@@ -706,12 +685,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _isTyping = false;
         if (nextIndicator) nextIndicator.SetActive(true);
 
-        // 즉시 스킵 연타 방지
         _inputUnlocked = true;
         _advanceCooldownLeft = advanceCooldownSec;
     }
 
-    // ===== Canvas/Choice Root =====
     private void EnsureCanvas()
     {
         if (targetCanvas == null)
@@ -774,7 +751,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _choiceRoot.gameObject.SetActive(false);
     }
 
-    // ===== 플레이어 이름 치환 =====
     private string ReplaceTokens(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
@@ -788,7 +764,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return s.Replace("{playerName}", name);
     }
 
-    // ===== 시작/종료 =====
     private void OnDialogueBegin()
     {
         if (playerMove != null) playerMove.controlEnabled = false;
@@ -812,7 +787,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         OnDialogueEnd();
         if (deactivateOnEnd) gameObject.SetActive(false);
 
-        // 정리
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
     }
