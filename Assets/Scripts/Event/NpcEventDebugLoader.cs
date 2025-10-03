@@ -47,7 +47,7 @@ public class NpcEventDebugLoader : MonoBehaviour
     #region 인스펙터 필드
     [Header("텔레포터 연동")]
     [SerializeField] private HouseDoorTeleporter teleporter;
-    [Header("이벤트 폴더 (Event/{owner}/{event}.json)")]
+    [Header("이벤트 폴더 (Assets/Resources/ 하위 경로)")]
     [SerializeField] private string eventFolderName = "Event";
     [Header("오너/이벤트 구성")]
     [SerializeField] private OwnerEvents[] owners = Array.Empty<OwnerEvents>();
@@ -492,27 +492,50 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
     }
 
+    // ===== [수정됨] 파일 로드 방식을 Resources.Load로 변경 =====
     private bool TryLoadSingle(string ownerForIO, string eventForIO, out LoadedEvent loaded)
     {
         loaded = null;
-        string file = eventForIO + ".json";
-        string p1 = Path.Combine(Application.streamingAssetsPath, eventFolderName, ownerForIO, file);
-        string p2 = Path.Combine(Application.dataPath, eventFolderName, ownerForIO, file);
-        string chosen = null;
-        string json = null;
+        // Resources.Load 경로는 'Resources' 폴더를 기준으로 하며, 확장자를 포함하지 않습니다.
+        // 예: "Event/Sol/Sol_First_Meet"
+        string resourcePath = Path.Combine(eventFolderName, ownerForIO, eventForIO);
+
         try
         {
-            if (File.Exists(p1)) { chosen = p1; json = File.ReadAllText(p1); }
-            else if (File.Exists(p2)) { chosen = p2; json = File.ReadAllText(p2); }
+            // .json 파일을 TextAsset으로 불러옵니다.
+            TextAsset textAsset = Resources.Load<TextAsset>(resourcePath);
+
+            // 파일을 찾지 못한 경우
+            if (textAsset == null)
+            {
+                // StreamingAssets에서도 한번 더 찾아봅니다 (이전 방식 호환).
+                // 이 경로는 PC 빌드에서는 잘 작동하지만, 모바일에서는 추가 처리가 필요할 수 있습니다.
+                string streamingPath = Path.Combine(Application.streamingAssetsPath, resourcePath + ".json");
+                if (File.Exists(streamingPath))
+                {
+                    string jsonFromStream = File.ReadAllText(streamingPath);
+                    if (!string.IsNullOrEmpty(jsonFromStream))
+                    {
+                        if (verboseLog) Debug.Log($"[NpcEventDebugLoader] StreamingAssets에서 로드 성공: {streamingPath}");
+                        loaded = new LoadedEvent { ownerName = ownerForIO, eventName = eventForIO, path = streamingPath, json = jsonFromStream };
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            string json = textAsset.text;
+            if (string.IsNullOrEmpty(json)) return false;
+
+            // 성공. 불러온 이벤트 정보 생성
+            loaded = new LoadedEvent { ownerName = ownerForIO, eventName = eventForIO, path = "Resources/" + resourcePath, json = json };
+            return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[NpcEventDebugLoader] JSON 예외: {ownerForIO}/{eventForIO}, err={e}");
+            Debug.LogError($"[NpcEventDebugLoader] Resources.Load 예외 발생: {resourcePath}, 오류={e}");
             return false;
         }
-        if (string.IsNullOrEmpty(chosen) || string.IsNullOrEmpty(json)) return false;
-        loaded = new LoadedEvent { ownerName = ownerForIO, eventName = eventForIO, path = chosen, json = json };
-        return true;
     }
 
     private void Cache(LoadedEvent le)

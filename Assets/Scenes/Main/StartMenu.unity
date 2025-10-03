@@ -387,7 +387,7 @@ GameObject:
   - component: {fileID: 103113883}
   m_Layer: 5
   m_Name: SelectName
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2864,7 +2864,7 @@ GameObject:
   - component: {fileID: 914168136}
   m_Layer: 5
   m_Name: SettingPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5174,6 +5174,10 @@ MonoBehaviour:
   levelText: {fileID: 0}
   dayText: {fileID: 0}
   nameText: {fileID: 0}
+  solFriendshipText: {fileID: 0}
+  saltFriendshipText: {fileID: 0}
+  ryuFriendshipText: {fileID: 0}
+  whiteFriendshipText: {fileID: 0}
   dontDestroyOnLoadHUD: 0
   autoRebindOnSceneLoaded: 1
   refreshHUDOnStart: 1
@@ -5182,9 +5186,28 @@ MonoBehaviour:
   levelObjectName: Text_Level
   dayObjectName: Text_Day
   nameObjectName: Text_Name
+  solFriendshipObjectName: Text_Sol_Friendship
+  saltFriendshipObjectName: Text_Salt_Friendship
+  ryuFriendshipObjectName: Text_Ryu_Friendship
+  whiteFriendshipObjectName: Text_White_Friendship
   dayFormatKo: "{0}\uC77C ({1})"
   dayFormatEn: Day {0} ({1})
   dayFormatJp: "{0}\u65E5\uFF08{1}\uFF09"
+  friendshipFormatKo: "{0} \uD638\uAC10\uB3C4: {1}"
+  friendshipFormatEn: '{0} Affinity: {1}'
+  friendshipFormatJp: "{0} \u597D\u611F\u5EA6: {1}"
+  solNameKo: "\uC194"
+  solNameEn: Sol
+  solNameJp: "\u30BD\u30EB"
+  saltNameKo: "\uC194\uD2B8"
+  saltNameEn: Salt
+  saltNameJp: "\u30BD\u30EB\u30C8"
+  ryuNameKo: "\uB958"
+  ryuNameEn: Ryu
+  ryuNameJp: "\u30EA\u30E5\u30A6"
+  whiteNameKo: "\uD654\uC774\uD2B8"
+  whiteNameEn: White
+  whiteNameJp: "\u30DB\u30EF\u30A4\u30C8"
   coinFormat: '{0}'
   levelFormat: Lv. {0}
   nameFormat: '{0}'
@@ -5200,6 +5223,12 @@ MonoBehaviour:
   dayFontSizeKo: 45
   dayFontSizeEn: 35
   dayFontSizeJp: 35
+  friendshipFontKo: {fileID: 0}
+  friendshipFontEn: {fileID: 0}
+  friendshipFontJp: {fileID: 0}
+  friendshipFontSizeKo: 30
+  friendshipFontSizeEn: 30
+  friendshipFontSizeJp: 30
   captureActiveObjectsOnSave: 1
   excludeTagsForActiveObjects:
   - HUD
@@ -5866,7 +5895,7 @@ GameObject:
   - component: {fileID: 1830876838}
   m_Layer: 5
   m_Name: EndPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7724,7 +7753,7 @@ GameObject:
   - component: {fileID: 2123260700}
   m_Layer: 5
   m_Name: DataSaveLoad
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

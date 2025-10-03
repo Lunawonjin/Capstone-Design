@@ -19,7 +19,7 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 5172039680
-    m_Localized: "Hi, Sol. This is {playerName}. From now on, they\u2019ll be looking
+    m_Localized: "Hi, Sol. This is {playerName}.\nFrom now on, they\u2019ll be looking
       after you."
     m_Metadata:
       m_Items: []
@@ -36,15 +36,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 940057235456
-    m_Localized: "I\u2019ll get going now. Have a good chat with Sol!"
+    m_Localized: "I\u2019ll get going now.\nHave a good chat with Sol!"
     m_Metadata:
       m_Items: []
   - m_Id: 942737395712
-    m_Localized: "What\u2019s Sol sick with? I saw her getting injections."
+    m_Localized: "What\u2019s Sol sick with?\nI saw her getting injections."
     m_Metadata:
       m_Items: []
   - m_Id: 8863063937024
-    m_Localized: "Me\u2026 I have leukemia. They say I\u2019ve had it since I was
+    m_Localized: "Me\u2026 I have leukemia.\nThey say I\u2019ve had it since I was
       little!"
     m_Metadata:
       m_Items: []
@@ -70,7 +70,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 220647078752256
-    m_Localized: "I wish I could\u2019ve gone to school\u2026 Have you?"
+    m_Localized: "I wish I could\u2019ve gone to school\u2026\nHave you?"
     m_Metadata:
       m_Items: []
   - m_Id: 220649352065024
@@ -78,12 +78,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 220657409323008
-    m_Localized: '[Affinity decreased.]'
+    m_Localized: '[Friendship decreased.]'
     m_Metadata:
       m_Items: []
   - m_Id: 221271946162176
-    m_Localized: "You\u2019ve been to school, right? I haven\u2019t, and I wish I
-      could have\u2026"
+    m_Localized: "You\u2019ve been to school, right?\nI haven\u2019t, and I wish
+      I could have\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 221799711240192
@@ -91,17 +91,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 221862810349568
-    m_Localized: "Kkin is my best friend\u2014the rabbit plushie here!"
+    m_Localized: 'Kkin is my best friend
+
+      the rabbit plushie here!'
     m_Metadata:
       m_Items: []
   - m_Id: 221903335714816
-    m_Localized: "Kkin was my only friend\u2026 Mom and Dad were working hard for
+    m_Localized: "Kkin was my only friend\u2026 \nMom and Dad were working hard for
       me,\nso they couldn\u2019t come often"
     m_Metadata:
       m_Items: []
   - m_Id: 221943181602816
-    m_Localized: "I held Kkin\u2019s hand and toughed the pain out. That\u2019s why
-      Kkin is super precious to me!"
+    m_Localized: "I held Kkin\u2019s hand and toughed the pain out. \nThat\u2019s
+      why Kkin is super precious to me!"
     m_Metadata:
       m_Items: []
   - m_Id: 222058420105216
@@ -130,7 +132,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 289421408595968
-    m_Localized: "That\u2019s how grown-ups always react! Heh-heh!"
+    m_Localized: "That\u2019s how grown-ups always react!\nHeh-heh!"
     m_Metadata:
       m_Items: []
   references:

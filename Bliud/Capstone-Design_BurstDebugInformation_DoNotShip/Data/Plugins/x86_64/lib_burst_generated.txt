@@ -11,7 +11,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/
@@ -128,7 +128,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/
@@ -247,7 +247,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/
@@ -268,7 +268,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/
@@ -287,7 +287,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/
@@ -315,7 +315,7 @@ Library: C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data
 --linker-options=PdbAltPath="Capstone-Design_Data/Plugins/x86_64/lib_burst_generated.pdb"
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\Burst
---key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.2f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
+--key-folder=C:/Program Files/Unity/Hub/Editor/6000.2.6f2/Editor/Data/PlaybackEngines/WindowsStandaloneSupport
 --decode-folder=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Library\Burst
 --output=C:\Users\Onezzin\Documents\GitHub\Capstone-Design\Temp\BurstOutput\Data\Plugins\x86_64\lib_burst_generated
 --pdb-search-paths=Temp/ManagedSymbols/

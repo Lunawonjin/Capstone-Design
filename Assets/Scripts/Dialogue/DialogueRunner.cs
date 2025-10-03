@@ -25,7 +25,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public Button choiceButtonPrefab;
 
     [Tooltip("화자 이름 텍스트를 감싸는 UI 패널(GameObject)")]
-    public GameObject namePanel; // <-- [추가됨] NamePanel을 연결할 필드
+    public GameObject namePanel;
 
     [Header("선택지 컨테이너(없으면 자동 생성)")]
     public Canvas targetCanvas;
@@ -37,13 +37,37 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public Vector4 choicePaddingTLBR = new(24, 24, 24, 24);
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
-    [Header("폰트/버튼 크기")]
-    public float bodyFontSize = 52f;
-    public float speakerFontSize = 46f;
+    [Header("폰트/버튼 크기 (기본값)")]
+    public float bodyFontSize = 52f;     // 기본 본문 크기
+    public float speakerFontSize = 46f;  // 기본 화자명 크기
     public float promptFontSize = 52f;
     public float choiceFontSize = 44f;
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
+
+    // ===== 추가: 언어별 폰트 크기 설정 =====
+    [Header("언어별 폰트 크기")]
+    [Tooltip("언어별 Speaker/Body 폰트 크기를 사용할지 여부")]
+    public bool useLanguageFontSizes = true;
+
+    [Serializable]
+    public class LangFont
+    {
+        [Tooltip("Locale code (예: ko, en, ja)")]
+        public string localeCode = "ko";
+        [Tooltip("이 언어에서 Speaker 텍스트 크기")]
+        public float speakerSize = 46f;
+        [Tooltip("이 언어에서 Dialogue 텍스트 크기")]
+        public float bodySize = 52f;
+    }
+
+    [Tooltip("언어별 폰트 크기 테이블")]
+    public List<LangFont> languageFonts = new()
+    {
+        new LangFont { localeCode = "ko", speakerSize = 46f, bodySize = 52f },
+        new LangFont { localeCode = "en", speakerSize = 42f, bodySize = 48f },
+        new LangFont { localeCode = "ja", speakerSize = 44f, bodySize = 50f },
+    };
 
     [Header("Custom Choice Layouts")]
     public bool useCustomLayouts = true;
@@ -139,6 +163,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private bool _inputUnlocked = false;
     private float _advanceCooldownLeft = 0f;
 
+    // ===== Locale 변경 감지용 =====
+    private bool _localeHooked = false;
+
     private void Awake()
     {
         if (speakerText) { speakerText.text = ""; speakerText.raycastTarget = false; }
@@ -160,6 +187,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
         }
 
+        // ===== Locale 변경 이벤트 구독 =====
+        HookLocaleChange();
+
+        // 시작 시 현재 언어의 폰트 크기 즉시 반영
+        ApplyCurrentFontSizes();
+
         if (!string.IsNullOrEmpty(_pendingEventName))
         {
             var ev = _pendingEventName;
@@ -170,6 +203,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     private void OnEnable()
     {
+        HookLocaleChange();
+        ApplyCurrentFontSizes();
+
         if (!string.IsNullOrEmpty(_pendingEventName))
         {
             var ev = _pendingEventName;
@@ -197,11 +233,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _advanceCooldownLeft = 0f;
     }
 
+    private void OnDestroy()
+    {
+        UnhookLocaleChange();
+    }
+
     public void BeginWithEventName(string eventName)
     {
         if (string.IsNullOrWhiteSpace(eventName))
         {
-            Debug.LogError("[DialogueRunnerStringTables] eventName이 비었습니다.");
+            Debug.LogError("[DialogueRunnerStringTables] eventName is empty.");
             return;
         }
 
@@ -256,9 +297,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         if (_speakerTable == null || _dialogueTable == null)
         {
-            Debug.LogError($"[DialogueRunnerStringTables] 컬렉션을 찾지 못했습니다.\n" +
-                           $"  Speaker 후보:  {_eventName}_Speaker  / {_eventName}_Speaker table\n" +
-                           $"  Dialogue 후보: {_eventName}_Dialogue / {_eventName}_Dialogue table");
+            Debug.LogError($"[DialogueRunnerStringTables] Missing tables.\n" +
+                           $"  Speaker candidates:  {_eventName}_Speaker / {_eventName}_Speaker table\n" +
+                           $"  Dialogue candidates: {_eventName}_Dialogue / {_eventName}_Dialogue table");
             yield break;
         }
 
@@ -272,7 +313,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
             _advanceCooldownLeft -= Time.unscaledDeltaTime;
 
         if (_waitingChoice) return;
-
         if (!_inputUnlocked) return;
 
         bool pressed =
@@ -436,7 +476,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         if (useCustomLayouts && TryApplyCustomLayout(sList.Count))
         {
-            // custom layout 적용됨
+            // custom layout applied
         }
         else
         {
@@ -560,7 +600,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // [수정됨] NamePanel 제어 로직 변경
+    // ===== 변경: NamePanel 제어 + 언어별 폰트 크기 적용 =====
     private void ShowKey(string key)
     {
         if (promptText) promptText.gameObject.SetActive(false);
@@ -572,22 +612,19 @@ public class DialogueRunnerStringTables : MonoBehaviour
         string sp = LSpeakerRaw(key).Trim();
         bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
 
-        // NamePanel이 연결되어 있으면 패널 전체를 제어
         if (namePanel != null)
         {
             namePanel.SetActive(!isSystem);
         }
-        // NamePanel이 없으면 기존 방식대로 Text만 제어
         else if (speakerText != null)
         {
             speakerText.gameObject.SetActive(!isSystem);
         }
 
-        // speakerText는 항상 업데이트
         if (speakerText != null)
         {
             speakerText.enableAutoSizing = false;
-            speakerText.fontSize = speakerFontSize;
+            speakerText.fontSize = GetSpeakerFontSize();  // 언어별 적용
             speakerText.text = isSystem ? "" : sp;
         }
 
@@ -609,7 +646,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             if (bodyText)
             {
                 bodyText.enableAutoSizing = false;
-                bodyText.fontSize = bodyFontSize;
+                bodyText.fontSize = GetBodyFontSize();     // 언어별 적용
                 bodyText.text = full;
             }
             _isTyping = false;
@@ -629,7 +666,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (bodyText)
         {
             bodyText.enableAutoSizing = false;
-            bodyText.fontSize = bodyFontSize;
+            bodyText.fontSize = GetBodyFontSize(); // 언어별 적용
             bodyText.text = "";
         }
 
@@ -789,5 +826,81 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
+    }
+
+    // ===== 언어별 폰트 크기 유틸 =====
+
+    private void HookLocaleChange()
+    {
+        if (_localeHooked) return;
+        try
+        {
+            LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+            _localeHooked = true;
+        }
+        catch { /* ignore */ }
+    }
+
+    private void UnhookLocaleChange()
+    {
+        if (!_localeHooked) return;
+        try
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+            _localeHooked = false;
+        }
+        catch { /* ignore */ }
+    }
+
+    private void OnLocaleChanged(Locale loc)
+    {
+        ApplyCurrentFontSizes();
+        // 진행 중인 타이핑이 있으면 즉시 반영
+        if (_isTyping && bodyText != null)
+        {
+            bodyText.fontSize = GetBodyFontSize();
+        }
+        if (speakerText != null)
+        {
+            speakerText.fontSize = GetSpeakerFontSize();
+        }
+    }
+
+    private void ApplyCurrentFontSizes()
+    {
+        if (speakerText)
+        {
+            speakerText.enableAutoSizing = false;
+            speakerText.fontSize = GetSpeakerFontSize();
+        }
+        if (bodyText)
+        {
+            bodyText.enableAutoSizing = false;
+            bodyText.fontSize = GetBodyFontSize();
+        }
+    }
+
+    private float GetSpeakerFontSize()
+    {
+        if (!useLanguageFontSizes) return speakerFontSize;
+
+        string code = GetCurrentLocaleCode();
+        var f = languageFonts.Find(x => string.Equals(x.localeCode, code, StringComparison.OrdinalIgnoreCase));
+        return f != null ? f.speakerSize : speakerFontSize;
+    }
+
+    private float GetBodyFontSize()
+    {
+        if (!useLanguageFontSizes) return bodyFontSize;
+
+        string code = GetCurrentLocaleCode();
+        var f = languageFonts.Find(x => string.Equals(x.localeCode, code, StringComparison.OrdinalIgnoreCase));
+        return f != null ? f.bodySize : bodyFontSize;
+    }
+
+    private static string GetCurrentLocaleCode()
+    {
+        var loc = LocalizationSettings.SelectedLocale;
+        return loc != null ? loc.Identifier.Code : "";
     }
 }

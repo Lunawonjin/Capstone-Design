@@ -42,6 +42,9 @@ public class HouseDoorTeleporter : MonoBehaviour
 
     private Rigidbody2D playerRb2D;
 
+    // ===== [추가됨] 현재 접촉 중인 집의 인덱스를 저장하기 위한 변수 =====
+    private int currentHouseIndex = -1;
+
     private void Reset() { playerTransform = transform; }
 
     private void Awake()
@@ -50,24 +53,48 @@ public class HouseDoorTeleporter : MonoBehaviour
         playerRb2D = playerTransform.GetComponent<Rigidbody2D>();
     }
 
-    // ===== [수정됨] 불필요한 플레이어 확인 로직 제거 =====
-    private void OnCollisionStay2D(Collision2D col)
+    // ===== [추가됨] Update에서 키 입력을 감지 =====
+    // Update는 매 프레임 호출되므로 키 입력을 놓치지 않습니다.
+    private void Update()
     {
-        // [진단용 로그 추가] 어떤 오브젝트와 충돌 중인지 확인합니다.
-        // 만약 이 로그조차 뜨지 않는다면, 물리 충돌 자체가 일어나지 않는 것입니다.
-        // Debug.Log($"[Teleporter] OnCollisionStay2D with: {col.gameObject.name}");
-
-        // House → Door 로직 (F키 누르는 순간 이동)
-        int hIdx = FindIndexByParents(col.collider.transform, houses);
-        if (hIdx >= 0 && IsIndexValid(hIdx))
+        // currentHouseIndex가 유효할 때 (즉, 집과 충돌 중일 때) F키 입력을 확인합니다.
+        if (currentHouseIndex != -1 && IsIndexValid(currentHouseIndex))
         {
             if (houseActivationKey == KeyCode.None || Input.GetKeyDown(houseActivationKey))
             {
-                Sequence_HouseToDoor(hIdx);
+                Sequence_HouseToDoor(currentHouseIndex);
+                // 이동 후에는 다시 충돌하기 전까지 재실행되지 않도록 인덱스를 초기화합니다.
+                currentHouseIndex = -1;
             }
-            return;
         }
+    }
 
+    // ===== [추가됨] 집에 처음 충돌했을 때 인덱스를 기록 =====
+    private void OnCollisionEnter2D(Collision2D col)
+    {
+        int hIdx = FindIndexByParents(col.collider.transform, houses);
+        if (hIdx >= 0)
+        {
+            currentHouseIndex = hIdx;
+            if (verboseLog) Debug.Log($"[Teleporter] 집과 충돌 시작. 인덱스: {currentHouseIndex}");
+        }
+    }
+
+    // ===== [추가됨] 집에서 충돌이 끝났을 때 인덱스를 초기화 =====
+    private void OnCollisionExit2D(Collision2D col)
+    {
+        int hIdx = FindIndexByParents(col.collider.transform, houses);
+        // 현재 충돌이 끝난 집이 기억하고 있던 집이 맞는지 확인 후 초기화합니다.
+        if (hIdx >= 0 && hIdx == currentHouseIndex)
+        {
+            currentHouseIndex = -1;
+            if (verboseLog) Debug.Log($"[Teleporter] 집과 충돌 끝남. 인덱스 초기화.");
+        }
+    }
+
+    // ===== [수정됨] OnCollisionStay2D는 이제 문(Door)에서 집으로 돌아오는 로직만 처리 =====
+    private void OnCollisionStay2D(Collision2D col)
+    {
         // Door → House 로직 (S키 누르고 있는 '동안' 이동)
         int dIdx = FindIndexByParents(col.collider.transform, GetDoorGameObjects());
         if (dIdx >= 0 && IsIndexValid(dIdx))
@@ -154,13 +181,11 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (useRigidbodySnap && playerRb2D)
         {
             playerRb2D.position = new Vector2(target.x, target.y);
-            playerRb2D.linearVelocity = Vector2.zero;
+            playerRb2D.linearVelocity = Vector2.zero; // linearVelocity는 이제 사용되지 않음
             playerRb2D.angularVelocity = 0f;
         }
         playerTransform.position = target;
     }
-
-    // [삭제됨] 불필요한 IsPlayerSelf 메서드 제거
 
     private bool IsIndexValid(int index)
     {
