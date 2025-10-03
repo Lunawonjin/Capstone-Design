@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Starest_First_Visit_Dialogue_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: fd3dbbc3c8ebf854996cb12a9d324f8e, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5172039680
+    m_Localized: 'Hey! Over here. {playerName}
+
+      You saw my text?
+
+      Right
+      on time.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: 'You got most of it from the message
+
+      I sent, right?'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 667238731776
+    m_Localized: Yes, I understand clearly.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 679607734272
+    m_Localized: "I\u2019ll read it once more."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542025482240
+    m_Localized: Good. Fired up for your first day, huh.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542059036672
+    m_Localized: Steady your breathing and get ready to head in.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542059036673
+    m_Localized: "Right\u2014first day and all; getting it at once can be hard.\nI\u2019ll
+      explain it again, simple and quick."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287332106240
+    m_Localized: "Listen up. \nThe spirit we\u2019re healing is a kid named Sol."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077760
+    m_Localized: 'Learn about Sol by talking to her,
+
+      and our goal is to heal
+      her wounds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077761
+    m_Localized: "Got it? Let\u2019s go meet Sol."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077762
+    m_Localized: "I\u2019ll go in first, so follow me at your pace."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17311670988800
+    m_Localized: "(Let\u2019s follow Sol into her home.)"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

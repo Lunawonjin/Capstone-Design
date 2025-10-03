@@ -323,7 +323,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -387,7 +387,7 @@ GameObject:
   - component: {fileID: 103113883}
   m_Layer: 5
   m_Name: SelectName
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -911,7 +911,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -1135,7 +1135,7 @@ MonoBehaviour:
   m_CaretWidth: 1
   m_ReadOnly: 0
   m_RichText: 1
-  m_GlobalFontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_GlobalFontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_OnFocusSelectAll: 1
   m_ResetOnDeActivation: 1
   m_KeepTextSelectionVisible: 0
@@ -1538,7 +1538,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -2104,7 +2104,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: GoGame
         m_Mode: 1
@@ -2652,6 +2652,84 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Padding: {x: -8, y: -5, z: -8, w: -5}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &802761138
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 802761140}
+  - component: {fileID: 802761139}
+  - component: {fileID: 802761141}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &802761139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e02ad2fbfd58dc4db4fd2082350e534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Select
+  creat: {fileID: 103113879}
+  slotText:
+  - {fileID: 1933847031}
+  - {fileID: 1044956605}
+  - {fileID: 1927431254}
+  newPlayerInput: {fileID: 382194438}
+  newPlayerPreview: {fileID: 0}
+  startSceneName: Player's Room
+  leaveEmptySlotTextUntouched: 1
+--- !u!4 &802761140
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.46955, y: 3.58185, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &802761141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 802761138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 338e18a6f425f80408939ab7d6ef4c6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  newGameButton: {fileID: 1050906262}
+  settingButton: {fileID: 2028002115}
+  loadGameButton: {fileID: 1911289360}
+  exitButton: {fileID: 1757702349}
+  newGamePanel: {fileID: 2123260696}
+  settingPanel: {fileID: 914168132}
+  endPanel: {fileID: 1830876836}
+  endYesButton: {fileID: 1224945722}
+  endNoButton: {fileID: 2119683334}
+  useCancelAxis: 1
+  gameSceneName: Player's Room
+  slotCount: 3
 --- !u!1 &877180044
 GameObject:
   m_ObjectHideFlags: 0
@@ -2786,7 +2864,7 @@ GameObject:
   - component: {fileID: 914168136}
   m_Layer: 5
   m_Name: SettingPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3130,7 +3208,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -4196,7 +4274,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: DeleteSlot
         m_Mode: 3
@@ -4603,8 +4681,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
-  m_sharedMaterial: {fileID: -3050571709569891352, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
+  m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -5047,8 +5125,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1425800728}
   - component: {fileID: 1425800727}
-  - component: {fileID: 1425800729}
-  - component: {fileID: 1425800730}
   m_Layer: 0
   m_Name: DataManager
   m_TagString: Untagged
@@ -5081,12 +5157,27 @@ MonoBehaviour:
     Scene: 
     Weekday: 1
     Language: ko
+    StarestFistGo: 0
+    Sol_First_Meet: 0
+    Salt_First_Meet: 0
+    Ryu_First_Meet: 0
+    White_First_Meet: 0
+    Sol_FriendShip: 0
+    Salt_FriendShip: 0
+    Ryu_FriendShip: 0
+    White_FriendShip: 0
+    ActiveSceneName: 
+    ActiveObjects: []
   path: 
   nowSlot: 0
   coinText: {fileID: 0}
   levelText: {fileID: 0}
   dayText: {fileID: 0}
   nameText: {fileID: 0}
+  solFriendshipText: {fileID: 0}
+  saltFriendshipText: {fileID: 0}
+  ryuFriendshipText: {fileID: 0}
+  whiteFriendshipText: {fileID: 0}
   dontDestroyOnLoadHUD: 0
   autoRebindOnSceneLoaded: 1
   refreshHUDOnStart: 1
@@ -5095,7 +5186,28 @@ MonoBehaviour:
   levelObjectName: Text_Level
   dayObjectName: Text_Day
   nameObjectName: Text_Name
-  dayFormat: "{0}\uC77C ({1})"
+  solFriendshipObjectName: Text_Sol_Friendship
+  saltFriendshipObjectName: Text_Salt_Friendship
+  ryuFriendshipObjectName: Text_Ryu_Friendship
+  whiteFriendshipObjectName: Text_White_Friendship
+  dayFormatKo: "{0}\uC77C ({1})"
+  dayFormatEn: Day {0} ({1})
+  dayFormatJp: "{0}\u65E5\uFF08{1}\uFF09"
+  friendshipFormatKo: "{0} \uD638\uAC10\uB3C4: {1}"
+  friendshipFormatEn: '{0} Affinity: {1}'
+  friendshipFormatJp: "{0} \u597D\u611F\u5EA6: {1}"
+  solNameKo: "\uC194"
+  solNameEn: Sol
+  solNameJp: "\u30BD\u30EB"
+  saltNameKo: "\uC194\uD2B8"
+  saltNameEn: Salt
+  saltNameJp: "\u30BD\u30EB\u30C8"
+  ryuNameKo: "\uB958"
+  ryuNameEn: Ryu
+  ryuNameJp: "\u30EA\u30E5\u30A6"
+  whiteNameKo: "\uD654\uC774\uD2B8"
+  whiteNameEn: White
+  whiteNameJp: "\u30DB\u30EF\u30A4\u30C8"
   coinFormat: '{0}'
   levelFormat: Lv. {0}
   nameFormat: '{0}'
@@ -5105,6 +5217,25 @@ MonoBehaviour:
   playerTagForReposition: Player
   applyPosTimeoutSec: 3
   autoLoadSavedSceneOnStart: 0
+  fontKo: {fileID: 0}
+  fontEn: {fileID: 0}
+  fontJp: {fileID: 0}
+  dayFontSizeKo: 45
+  dayFontSizeEn: 35
+  dayFontSizeJp: 35
+  friendshipFontKo: {fileID: 0}
+  friendshipFontEn: {fileID: 0}
+  friendshipFontJp: {fileID: 0}
+  friendshipFontSizeKo: 30
+  friendshipFontSizeEn: 30
+  friendshipFontSizeJp: 30
+  captureActiveObjectsOnSave: 1
+  excludeTagsForActiveObjects:
+  - HUD
+  excludeNamesForActiveObjects: []
+  autoRestoreActiveObjectsOnSceneLoaded: 1
+  activeRestoreMode: 0
+  logRestoreDetails: 1
 --- !u!4 &1425800728
 Transform:
   m_ObjectHideFlags: 0
@@ -5120,51 +5251,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1425800729
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425800726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8e02ad2fbfd58dc4db4fd2082350e534, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  creat: {fileID: 103113879}
-  slotText:
-  - {fileID: 1933847031}
-  - {fileID: 1044956605}
-  - {fileID: 1927431254}
-  newPlayerInput: {fileID: 382194438}
-  newPlayerPreview: {fileID: 0}
-  startSceneName: Player's Room
-  leaveEmptySlotTextUntouched: 1
---- !u!114 &1425800730
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425800726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 338e18a6f425f80408939ab7d6ef4c6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  newGameButton: {fileID: 1050906262}
-  settingButton: {fileID: 2028002115}
-  loadGameButton: {fileID: 1911289360}
-  exitButton: {fileID: 1757702349}
-  newGamePanel: {fileID: 2123260696}
-  settingPanel: {fileID: 914168132}
-  endPanel: {fileID: 1830876836}
-  endYesButton: {fileID: 1224945722}
-  endNoButton: {fileID: 2119683334}
-  useCancelAxis: 1
-  gameSceneName: Player's Room
-  slotCount: 3
 --- !u!1 &1511384831
 GameObject:
   m_ObjectHideFlags: 0
@@ -5249,7 +5335,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1425800729}
+      - m_Target: {fileID: 802761139}
         m_TargetAssemblyTypeName: Select, Assembly-CSharp
         m_MethodName: Slot
         m_Mode: 3
@@ -5809,7 +5895,7 @@ GameObject:
   - component: {fileID: 1830876838}
   m_Layer: 5
   m_Name: EndPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7667,7 +7753,7 @@ GameObject:
   - component: {fileID: 2123260700}
   m_Layer: 5
   m_Name: DataSaveLoad
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7761,4 +7847,5 @@ SceneRoots:
   - {fileID: 362828471}
   - {fileID: 1677075837}
   - {fileID: 1569774069}
+  - {fileID: 802761140}
   - {fileID: 1425800728}

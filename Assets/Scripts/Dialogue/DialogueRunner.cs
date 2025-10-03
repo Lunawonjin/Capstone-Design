@@ -1,19 +1,6 @@
-// DialogueRunnerCSVLocalized.cs
-// Unity 6 (LTS) / TextMeshPro / Localization 사용
-// - JSON 제거, 단일 CSV(TextAsset)로 노드/스텝을 정의
-// - CSV에는 "문자열 그 자체"가 아니라 String Table의 Key만 적는다
-// - 현재 선택된 Locale(에디터 드롭다운/런타임 변경)에 맞춰 텍스트를 가져와
-//   한 글자씩 타이핑 출력한다(스페이스: 스킵/다음 진행)
-// - 선택지 프롬프트/옵션도 모두 Localization 키로 지정
-// - 선택지 동안 특정 오브젝트를 끄고(speaker는 유지하고 싶을 때) 종료 시 복귀
-// - PlayerMove 유무에 따라 입력 잠금/복귀 지원(선택)
-// - EventSystem/Canvas가 없으면 자동 생성
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -21,117 +8,169 @@ using TMPro;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 [DisallowMultipleComponent]
-public class DialogueRunnerCSVLocalized : MonoBehaviour
+public class DialogueRunnerStringTables : MonoBehaviour
 {
-    // ====== UI 레퍼런스 ======
-    [Header("UI")]
-    [Tooltip("화자 이름 출력용 TMP")]
-    public TextMeshProUGUI speakerText;
-    [Tooltip("본문 대사 출력용 TMP")]
-    public TextMeshProUGUI bodyText;
-    [Tooltip("선택지 프롬프트 출력용 TMP")]
-    public TextMeshProUGUI promptText;
-    [Tooltip("다음 진행 표시 아이콘(점멸 화살표 등)")]
-    public GameObject nextIndicator;
+    // ===== 외부 알림 =====
+    public event Action<string> OnKeyShown;
+    public event Action OnDialogueEnded;
 
-    [Header("선택지 버튼 프리팹 (UGUI Button + 자식에 TMP_Text 필수)")]
+    // ===== UI =====
+    [Header("UI")]
+    public TextMeshProUGUI speakerText;  // {Event}_Speaker
+    public TextMeshProUGUI bodyText;     // {Event}_Dialogue
+    public TextMeshProUGUI promptText;
+    public GameObject nextIndicator;
     public Button choiceButtonPrefab;
+
+    [Tooltip("화자 이름 텍스트를 감싸는 UI 패널(GameObject)")]
+    public GameObject namePanel;
 
     [Header("선택지 컨테이너(없으면 자동 생성)")]
     public Canvas targetCanvas;
     public Vector2 referenceResolution = new(1920, 1080);
     [Range(0, 1)] public float matchWidthOrHeight = 0.5f;
-
-    public Vector2 choiceContainerSize = new(1100f, 520f);
-    public Vector2 choiceContainerOffset = new(0f, 120f);
+    public Vector2 choiceContainerSize = new(1100, 520);
+    public Vector2 choiceContainerOffset = new(0, 120);
     public float choiceSpacing = 14f;
     public Vector4 choicePaddingTLBR = new(24, 24, 24, 24);
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
-    [Header("폰트/버튼 크기")]
-    public float bodyFontSize = 52f;
-    public float speakerFontSize = 46f;
+    [Header("폰트/버튼 크기 (기본값)")]
+    public float bodyFontSize = 52f;     // 기본 본문 크기
+    public float speakerFontSize = 46f;  // 기본 화자명 크기
     public float promptFontSize = 52f;
     public float choiceFontSize = 44f;
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
 
-    // ====== 타이핑/입력 ======
+    // ===== 추가: 언어별 폰트 크기 설정 =====
+    [Header("언어별 폰트 크기")]
+    [Tooltip("언어별 Speaker/Body 폰트 크기를 사용할지 여부")]
+    public bool useLanguageFontSizes = true;
+
+    [Serializable]
+    public class LangFont
+    {
+        [Tooltip("Locale code (예: ko, en, ja)")]
+        public string localeCode = "ko";
+        [Tooltip("이 언어에서 Speaker 텍스트 크기")]
+        public float speakerSize = 46f;
+        [Tooltip("이 언어에서 Dialogue 텍스트 크기")]
+        public float bodySize = 52f;
+    }
+
+    [Tooltip("언어별 폰트 크기 테이블")]
+    public List<LangFont> languageFonts = new()
+    {
+        new LangFont { localeCode = "ko", speakerSize = 46f, bodySize = 52f },
+        new LangFont { localeCode = "en", speakerSize = 42f, bodySize = 48f },
+        new LangFont { localeCode = "ja", speakerSize = 44f, bodySize = 50f },
+    };
+
+    [Header("Custom Choice Layouts")]
+    public bool useCustomLayouts = true;
+
+    [Serializable]
+    public class ChoiceLayout
+    {
+        public int optionCount = 2;
+        public Vector2[] positions = Array.Empty<Vector2>();
+        public Vector2 buttonSize = new(900, 100);
+        public bool centerRoot = true;
+    }
+
+    public List<ChoiceLayout> layouts = new()
+    {
+        new ChoiceLayout {
+            optionCount = 2,
+            positions = new [] { new Vector2(-250, 100), new Vector2( 250, 100) },
+            buttonSize = new Vector2(900, 100),
+            centerRoot = true
+        },
+        new ChoiceLayout {
+            optionCount = 3,
+            positions = new [] { new Vector2(-360, 120), new Vector2(0, 120), new Vector2(360, 120) },
+            buttonSize = new Vector2(820, 100),
+            centerRoot = true
+        },
+        new ChoiceLayout {
+            optionCount = 4,
+            positions = new [] {
+                new Vector2(-300, 160), new Vector2(300, 160),
+                new Vector2(-300,  40), new Vector2(300,  40),
+            },
+            buttonSize = new Vector2(740, 92),
+            centerRoot = true
+        },
+    };
+
     [Header("타이핑/입력")]
     [Range(0f, 0.1f)] public float charDelay = 0.03f;
     public bool respectRichText = true;
     public KeyCode advanceKey = KeyCode.Space;
 
-    // ====== 동작 옵션 ======
-    [Header("동작 옵션")]
-    [Tooltip("대화 종료 시 이 오브젝트를 비활성화")]
+    [Tooltip("패널/대사가 나타난 직후 광클로 스킵되는 것 방지(초)")]
+    [Range(0f, 0.5f)] public float advanceCooldownSec = 0.12f;
+
+    [Tooltip("입력 디버그 로그(키/마우스 감지 시 콘솔 출력)")]
+    public bool debugInputLog = false;
+
+    [Header("동작")]
     public bool deactivateOnEnd = true;
-
-    [Tooltip("선택지 표시 동안 비활성화할 오브젝트(본문 말풍선 그룹 등). speakerText는 끄지 않음.")]
     public GameObject toggleDuringChoiceTarget;
-
-    [Header("플레이어 입력 잠금(선택)")]
     public PlayerMove playerMove;
     public bool autoFindPlayerMove = true;
     public bool includeInactiveOnFind = true;
 
-    [Header("대화 종료 시 비활성화할 오브젝트들(선택)")]
-    public GameObject[] endDeactivateTargets = new GameObject[2];
+    [Header("선택지 입력 제어")]
+    public bool blockSpaceSubmitOnChoices = true;
+    public bool autoSelectFirstChoice = false;
 
-    // ====== 데이터 소스 ======
-    [Header("CSV / String Table")]
-    [Tooltip("UTF-8 CSV(TextAsset). 헤더 고정: nodeId,stepIndex,kind,speakerKey,bodyKey,promptKey,optionKeys,optionNextNodes")]
-    public TextAsset csvTextAsset;
+    [Header("Player Name Token")]
+    public string fallbackPlayerName = "Player";
 
-    [Tooltip("String Table Collection 이름(예: \"Dialogue Table\")")]
-    public string stringTableCollectionName = "Dialogue Table";
+    // ===== 내부 상태 =====
+    private RectTransform _choiceRoot;
+    private VerticalLayoutGroup _vlg;
+    private ContentSizeFitter _csf;
 
-    [Tooltip("시작 노드 ID(비우면 CSV의 첫 번째 노드가 시작점)")]
-    public string startNodeId = "";
+    private readonly List<Button> _activeButtons = new();
+    private readonly Stack<Button> _buttonPool = new();
 
-    // ====== 내부 모델 ======
-    [Serializable]
-    public class Step
-    {
-        public string kind;          // "line" 또는 "choice"
-        public string speakerKey;    // 화자 이름 키
-        public string bodyKey;       // 본문 대사 키
-        public string promptKey;     // 선택지 프롬프트 키
-        public string[] optionKeys;  // 선택지 텍스트 키 배열
-        public string[] optionNext;  // 각 선택지 클릭 시 이동할 노드 id 배열
-    }
+    private StringTable _speakerTable;
+    private StringTable _dialogueTable;
 
-    // nodeId -> 순서 리스트
-    private readonly Dictionary<string, List<Step>> _nodes = new();
-
-    // 진행 상태
-    private string _currentNodeId;
-    private int _stepIndex = -1;
-
-    // 타이핑 상태
     private Coroutine _typingRoutine;
     private bool _isTyping = false;
     private bool _waitingChoice = false;
     private string _currentFullText = "";
     private WaitForSeconds _wait;
 
-    // 선택지 UI
-    private RectTransform _choiceRoot;
-    private readonly List<Button> _activeButtons = new();
-    private readonly Stack<Button> _buttonPool = new();
+    private enum Mode { Linear, ChoiceSelect, AnswerRun, SameRun, Done }
+    private Mode _mode = Mode.Linear;
 
-    // String Table 핸들
-    private StringTable _stringTable;
+    private string _eventName;
+    private int _linearIndex = 1;
+    private int _choiceIndex = 1;
+    private int _answerPick = -1;
+    private int _answerLine = 1;
+    private int _sameLine = 1;
 
-    // ====== Unity 수명주기 ======
+    private string _pendingEventName;
+
+    private bool _inputUnlocked = false;
+    private float _advanceCooldownLeft = 0f;
+
+    // ===== Locale 변경 감지용 =====
+    private bool _localeHooked = false;
+
     private void Awake()
     {
-        if (speakerText) speakerText.text = "";
-        if (bodyText) bodyText.text = "";
-        if (promptText) { promptText.text = ""; promptText.gameObject.SetActive(false); }
+        if (speakerText) { speakerText.text = ""; speakerText.raycastTarget = false; }
+        if (bodyText) { bodyText.text = ""; bodyText.raycastTarget = false; }
+        if (promptText) { promptText.text = ""; promptText.raycastTarget = false; }
         if (nextIndicator) nextIndicator.SetActive(false);
         _wait = new WaitForSeconds(charDelay);
     }
@@ -141,10 +180,6 @@ public class DialogueRunnerCSVLocalized : MonoBehaviour
         EnsureCanvas();
         EnsureChoiceRoot();
 
-        if (bodyText) { bodyText.enableAutoSizing = false; bodyText.fontSize = bodyFontSize; }
-        if (speakerText) { speakerText.enableAutoSizing = false; speakerText.fontSize = speakerFontSize; }
-
-        // PlayerMove 자동 탐색
         if (autoFindPlayerMove && playerMove == null)
         {
             playerMove = includeInactiveOnFind
@@ -152,63 +187,30 @@ public class DialogueRunnerCSVLocalized : MonoBehaviour
                 : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
         }
 
-        if (csvTextAsset == null)
-        {
-            Debug.LogError("[DialogueRunnerCSVLocalized] CSV가 비어 있습니다.");
-            return;
-        }
+        // ===== Locale 변경 이벤트 구독 =====
+        HookLocaleChange();
 
-        // CSV 파싱
-        try
-        {
-            ParseCsv(csvTextAsset.text, out string firstNodeId);
-            if (string.IsNullOrEmpty(startNodeId))
-                _currentNodeId = firstNodeId;
-            else
-                _currentNodeId = startNodeId;
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("[DialogueRunnerCSVLocalized] CSV 파싱 실패: " + e.Message);
-            return;
-        }
+        // 시작 시 현재 언어의 폰트 크기 즉시 반영
+        ApplyCurrentFontSizes();
 
-        // Localization 초기화 및 String Table 로드 후 시작
-        StartCoroutine(Co_InitAndStart());
+        if (!string.IsNullOrEmpty(_pendingEventName))
+        {
+            var ev = _pendingEventName;
+            _pendingEventName = null;
+            StartCoroutine(Co_InitAndStart(ev));
+        }
     }
 
-    private IEnumerator Co_InitAndStart()
+    private void OnEnable()
     {
-        // Localization Settings 준비 대기
-        var initOp = LocalizationSettings.InitializationOperation;
-        if (!initOp.IsDone) yield return initOp;
+        HookLocaleChange();
+        ApplyCurrentFontSizes();
 
-        // 지정된 String Table 로드
-        var tableOp = LocalizationSettings.StringDatabase.GetTableAsync(stringTableCollectionName);
-        yield return tableOp;
-        _stringTable = tableOp.Result;
-
-        if (_stringTable == null)
+        if (!string.IsNullOrEmpty(_pendingEventName))
         {
-            Debug.LogError("[DialogueRunnerCSVLocalized] String Table을 찾을 수 없습니다: " + stringTableCollectionName);
-            yield break;
-        }
-
-        // 시작 훅
-        OnDialogueBegin();
-
-        _stepIndex = -1;
-        NextStepOrLine();
-    }
-
-    private void Update()
-    {
-        if (_waitingChoice) return;
-
-        if (Input.GetKeyDown(advanceKey))
-        {
-            if (_isTyping) CompleteTypingInstant();
-            else NextStepOrLine();
+            var ev = _pendingEventName;
+            _pendingEventName = null;
+            StartCoroutine(Co_InitAndStart(ev));
         }
     }
 
@@ -216,18 +218,521 @@ public class DialogueRunnerCSVLocalized : MonoBehaviour
     {
         if (charDelay < 0f) charDelay = 0f;
         _wait = new WaitForSeconds(Mathf.Max(0f, charDelay));
+        if (advanceCooldownSec < 0f) advanceCooldownSec = 0f;
     }
 
-    // ====== 캔버스/선택지 컨테이너 보장 ======
+    private void OnDisable()
+    {
+        if (_typingRoutine != null)
+        {
+            StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+        _isTyping = false;
+        _inputUnlocked = false;
+        _advanceCooldownLeft = 0f;
+    }
+
+    private void OnDestroy()
+    {
+        UnhookLocaleChange();
+    }
+
+    public void BeginWithEventName(string eventName)
+    {
+        if (string.IsNullOrWhiteSpace(eventName))
+        {
+            Debug.LogError("[DialogueRunnerStringTables] eventName is empty.");
+            return;
+        }
+
+        if (!gameObject.activeSelf)
+        {
+            _pendingEventName = eventName.Trim();
+            gameObject.SetActive(true);
+            return;
+        }
+
+        StartCoroutine(Co_InitAndStart(eventName.Trim()));
+    }
+
+    private IEnumerator LoadTableMultiTry(string primary, string fallback, Action<StringTable> setter)
+    {
+        var op1 = LocalizationSettings.StringDatabase.GetTableAsync(primary);
+        yield return op1;
+        var table = op1.Result;
+
+        if (table == null && !string.IsNullOrEmpty(fallback))
+        {
+            var op2 = LocalizationSettings.StringDatabase.GetTableAsync(fallback);
+            yield return op2;
+            table = op2.Result;
+        }
+
+        setter?.Invoke(table);
+    }
+
+    private IEnumerator Co_InitAndStart(string eventName)
+    {
+        _eventName = eventName;
+        _linearIndex = 1;
+        _choiceIndex = 1;
+        _answerPick = -1;
+        _answerLine = 1;
+        _sameLine = 1;
+        _mode = Mode.Linear;
+
+        _inputUnlocked = false;
+        _advanceCooldownLeft = 0f;
+
+        var initOp = LocalizationSettings.InitializationOperation;
+        if (!initOp.IsDone) yield return initOp;
+
+        StringTable sp = null, bo = null;
+        yield return LoadTableMultiTry($"{_eventName}_Speaker", $"{_eventName}_Speaker table", t => sp = t);
+        yield return LoadTableMultiTry($"{_eventName}_Dialogue", $"{_eventName}_Dialogue table", t => bo = t);
+
+        _speakerTable = sp;
+        _dialogueTable = bo;
+
+        if (_speakerTable == null || _dialogueTable == null)
+        {
+            Debug.LogError($"[DialogueRunnerStringTables] Missing tables.\n" +
+                           $"  Speaker candidates:  {_eventName}_Speaker / {_eventName}_Speaker table\n" +
+                           $"  Dialogue candidates: {_eventName}_Dialogue / {_eventName}_Dialogue table");
+            yield break;
+        }
+
+        OnDialogueBegin();
+        Next();
+    }
+
+    private void Update()
+    {
+        if (_advanceCooldownLeft > 0f)
+            _advanceCooldownLeft -= Time.unscaledDeltaTime;
+
+        if (_waitingChoice) return;
+        if (!_inputUnlocked) return;
+
+        bool pressed =
+            Input.GetKeyDown(advanceKey) ||
+            Input.GetKeyDown(KeyCode.Return) ||
+            Input.GetKeyDown(KeyCode.KeypadEnter) ||
+            Input.GetMouseButtonDown(0) ||
+            Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began;
+
+        if (!pressed) return;
+
+        if (debugInputLog) Debug.Log("[DialogueRunner] advance pressed");
+
+        if (_advanceCooldownLeft > 0f) return;
+        _advanceCooldownLeft = advanceCooldownSec;
+
+        if (_isTyping) CompleteTypingInstant();
+        else Next();
+    }
+
+    private static string KeyLinear(int i) => $"Dialogue_{i:000}";
+    private static string KeyChoiceS(int n, int k, int l) => $"Dialogue_Choice{n}_S{k}_{l:000}";
+    private static string KeyChoiceA(int n, int k, int l) => $"Dialogue_Choice{n}_A{k}_{l:000}";
+    private static string KeyChoiceSame(int n, int l) => $"Dialogue_Choice{n}_Same_{l:000}";
+
+    private bool HasBody(string key)
+    {
+        if (_dialogueTable == null) return false;
+        return _dialogueTable.GetEntry(key) != null;
+    }
+    private string LBody(string key)
+    {
+        if (_dialogueTable == null) return key;
+        var e = _dialogueTable.GetEntry(key);
+        return e == null ? key : ReplaceTokens(e.GetLocalizedString());
+    }
+    private string LSpeakerRaw(string key)
+    {
+        if (_speakerTable == null) return "";
+        var e = _speakerTable.GetEntry(key);
+        return e == null ? "" : ReplaceTokens(e.GetLocalizedString());
+    }
+
+    private void Next()
+    {
+        switch (_mode)
+        {
+            case Mode.Linear:
+                if (TryShowLinear()) return;
+                if (TryStartChoice(_choiceIndex)) return;
+                EndDialogue();
+                return;
+
+            case Mode.AnswerRun:
+                if (TryShowAnswer(_choiceIndex, _answerPick)) return;
+                _mode = Mode.SameRun;
+                Next();
+                return;
+
+            case Mode.SameRun:
+                if (TryShowSame(_choiceIndex)) return;
+                _choiceIndex++;
+                _mode = Mode.Linear;
+                Next();
+                return;
+
+            case Mode.ChoiceSelect:
+            case Mode.Done:
+                return;
+        }
+    }
+
+    private bool TryShowLinear()
+    {
+        string key = KeyLinear(_linearIndex);
+        if (!HasBody(key)) return false;
+        ShowKey(key);
+        _linearIndex++;
+        return true;
+    }
+
+    private bool TryStartChoice(int n)
+    {
+        var options = new List<int>();
+        for (int k = 1; k <= 9; k++)
+            if (HasBody(KeyChoiceS(n, k, 1))) options.Add(k);
+
+        if (options.Count == 0) return false;
+
+        ShowChoiceButtons(n, options);
+        return true;
+    }
+
+    private void ShowChoiceButtons(int n, List<int> sList)
+    {
+        _waitingChoice = true;
+        _mode = Mode.ChoiceSelect;
+
+        if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
+        if (bodyText) bodyText.gameObject.SetActive(false);
+        if (nextIndicator) nextIndicator.SetActive(false);
+        if (promptText)
+        {
+            promptText.enableAutoSizing = false;
+            promptText.fontSize = promptFontSize;
+            promptText.text = "";
+            promptText.gameObject.SetActive(true);
+        }
+
+        EnsureChoiceRoot();
+        _choiceRoot.gameObject.SetActive(true);
+        ReleaseAllButtons();
+
+        foreach (var k in sList)
+        {
+            var btn = GetButton();
+            btn.transform.SetParent(_choiceRoot, false);
+            btn.interactable = true;
+
+            var label = btn.GetComponentInChildren<TMP_Text>(true);
+            string optKey = KeyChoiceS(n, k, 1);
+            string text = LBody(optKey);
+
+            if (label)
+            {
+                label.richText = true;
+                label.enableAutoSizing = false;
+                label.fontSize = choiceFontSize;
+                label.text = text;
+                label.raycastTarget = false;
+            }
+            else
+            {
+                var legacy = btn.GetComponentInChildren<Text>(true);
+                if (legacy) { legacy.text = text; legacy.raycastTarget = false; }
+            }
+
+            var le = btn.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
+            float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2f);
+            le.preferredHeight = h; le.minHeight = h;
+            if (choiceButtonMinWidth > 0f) le.minWidth = choiceButtonMinWidth;
+
+            int capturedK = k;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                SetButtonsInteractable(false);
+                _choiceRoot.gameObject.SetActive(false);
+                if (promptText) promptText.gameObject.SetActive(false);
+                if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
+
+                _answerPick = capturedK;
+                _waitingChoice = false;
+                _mode = Mode.AnswerRun;
+
+                ShowAnswerFirstLine(n, _answerPick);
+            });
+
+            _activeButtons.Add(btn);
+        }
+
+        if (useCustomLayouts && TryApplyCustomLayout(sList.Count))
+        {
+            // custom layout applied
+        }
+        else
+        {
+            EnableDefaultLayout(true);
+        }
+
+        if (blockSpaceSubmitOnChoices)
+        {
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+        }
+        else if (autoSelectFirstChoice && EventSystem.current != null && _activeButtons.Count > 0)
+        {
+            EventSystem.current.SetSelectedGameObject(_activeButtons[0].gameObject);
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
+    }
+
+    private bool TryApplyCustomLayout(int count)
+    {
+        var layout = layouts.Find(l => l.optionCount == count && l.positions != null && l.positions.Length == count);
+        if (layout == null) return false;
+
+        EnableDefaultLayout(false);
+
+        _choiceRoot.sizeDelta = choiceContainerSize;
+        _choiceRoot.anchoredPosition = choiceContainerOffset;
+
+        for (int i = 0; i < _activeButtons.Count; i++)
+        {
+            var btn = _activeButtons[i];
+            if (!btn) continue;
+
+            var rt = btn.GetComponent<RectTransform>() ?? btn.gameObject.AddComponent<RectTransform>();
+
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            rt.sizeDelta = layout.buttonSize;
+            rt.anchoredPosition = layout.positions[i];
+
+            var le = btn.GetComponent<LayoutElement>();
+            if (le)
+            {
+                le.minWidth = 0f;
+                le.minHeight = 0f;
+                le.preferredWidth = -1f;
+                le.preferredHeight = -1f;
+                le.flexibleWidth = 0f;
+                le.flexibleHeight = 0f;
+            }
+        }
+        return true;
+    }
+
+    private void EnableDefaultLayout(bool enabled)
+    {
+        if (_vlg) _vlg.enabled = enabled;
+        if (_csf) _csf.enabled = enabled;
+    }
+
+    private Button GetButton()
+    {
+        Button btn = _buttonPool.Count > 0 ? _buttonPool.Pop() : Instantiate(choiceButtonPrefab);
+        btn.gameObject.SetActive(true);
+        btn.interactable = true;
+        btn.onClick.RemoveAllListeners();
+        return btn;
+    }
+
+    private void ReleaseAllButtons()
+    {
+        for (int i = 0; i < _activeButtons.Count; i++)
+        {
+            var b = _activeButtons[i];
+            if (b)
+            {
+                b.onClick.RemoveAllListeners();
+                b.gameObject.SetActive(false);
+                b.transform.SetParent(transform, false);
+                _buttonPool.Push(b);
+            }
+        }
+        _activeButtons.Clear();
+    }
+
+    private void SetButtonsInteractable(bool value)
+    {
+        for (int i = 0; i < _activeButtons.Count; i++)
+            if (_activeButtons[i]) _activeButtons[i].interactable = value;
+    }
+
+    private void ShowAnswerFirstLine(int n, int k)
+    {
+        string k1 = KeyChoiceA(n, k, 1);
+        if (!HasBody(k1)) { _mode = Mode.SameRun; Next(); return; }
+
+        ShowKey(k1);
+        _answerLine = 2;
+    }
+
+    private bool TryShowAnswer(int n, int k)
+    {
+        string key = KeyChoiceA(n, k, _answerLine);
+        if (!HasBody(key)) { _answerLine = 1; return false; }
+
+        ShowKey(key);
+        _answerLine++;
+        return true;
+    }
+
+    private bool TryShowSame(int n)
+    {
+        string key = KeyChoiceSame(n, _sameLine);
+        if (!HasBody(key)) { _sameLine = 1; return false; }
+
+        ShowKey(key);
+        _sameLine++;
+        return true;
+    }
+
+    // ===== 변경: NamePanel 제어 + 언어별 폰트 크기 적용 =====
+    private void ShowKey(string key)
+    {
+        if (promptText) promptText.gameObject.SetActive(false);
+        if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
+
+        if (bodyText) bodyText.gameObject.SetActive(true);
+        if (nextIndicator) nextIndicator.SetActive(false);
+
+        string sp = LSpeakerRaw(key).Trim();
+        bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
+
+        if (namePanel != null)
+        {
+            namePanel.SetActive(!isSystem);
+        }
+        else if (speakerText != null)
+        {
+            speakerText.gameObject.SetActive(!isSystem);
+        }
+
+        if (speakerText != null)
+        {
+            speakerText.enableAutoSizing = false;
+            speakerText.fontSize = GetSpeakerFontSize();  // 언어별 적용
+            speakerText.text = isSystem ? "" : sp;
+        }
+
+        string full = LBody(key);
+
+        OnKeyShown?.Invoke(key);
+
+        if (_typingRoutine != null)
+        {
+            if (isActiveAndEnabled) StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+
+        _inputUnlocked = false;
+        _advanceCooldownLeft = advanceCooldownSec;
+
+        if (!isActiveAndEnabled)
+        {
+            if (bodyText)
+            {
+                bodyText.enableAutoSizing = false;
+                bodyText.fontSize = GetBodyFontSize();     // 언어별 적용
+                bodyText.text = full;
+            }
+            _isTyping = false;
+            if (nextIndicator) nextIndicator.SetActive(true);
+            _inputUnlocked = true;
+            return;
+        }
+
+        _typingRoutine = StartCoroutine(TypeLine(full));
+    }
+
+    private IEnumerator TypeLine(string fullText)
+    {
+        _isTyping = true;
+        _currentFullText = fullText;
+
+        if (bodyText)
+        {
+            bodyText.enableAutoSizing = false;
+            bodyText.fontSize = GetBodyFontSize(); // 언어별 적용
+            bodyText.text = "";
+        }
+
+        bool printedOne = false;
+
+        if (!respectRichText)
+        {
+            for (int i = 0; i < fullText.Length; i++)
+            {
+                if (bodyText) bodyText.text = fullText.Substring(0, i + 1);
+                if (!printedOne) { printedOne = true; yield return null; _inputUnlocked = true; }
+                yield return _wait;
+            }
+        }
+        else
+        {
+            int i = 0;
+            while (i < fullText.Length)
+            {
+                char c = fullText[i];
+                if (c == '<')
+                {
+                    int close = fullText.IndexOf('>', i);
+                    if (close == -1) { if (bodyText) bodyText.text += fullText.Substring(i); break; }
+                    if (bodyText) bodyText.text += fullText.Substring(i, close - i + 1);
+                    i = close + 1;
+                    if (!printedOne && bodyText && bodyText.text.Length > 0) { printedOne = true; yield return null; _inputUnlocked = true; }
+                }
+                else
+                {
+                    if (bodyText) bodyText.text += c;
+                    i++;
+                    if (!printedOne) { printedOne = true; yield return null; _inputUnlocked = true; }
+                    yield return _wait;
+                }
+            }
+        }
+
+        _isTyping = false;
+        if (nextIndicator) nextIndicator.SetActive(true);
+        _typingRoutine = null;
+    }
+
+    private void CompleteTypingInstant()
+    {
+        if (!_isTyping) return;
+        if (_typingRoutine != null && isActiveAndEnabled)
+        {
+            StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+        if (bodyText) bodyText.text = _currentFullText;
+        _isTyping = false;
+        if (nextIndicator) nextIndicator.SetActive(true);
+
+        _inputUnlocked = true;
+        _advanceCooldownLeft = advanceCooldownSec;
+    }
+
     private void EnsureCanvas()
     {
         if (targetCanvas == null)
         {
             targetCanvas = GetComponentInParent<Canvas>();
             if (targetCanvas == null)
-            {
                 targetCanvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-            }
             if (targetCanvas == null)
             {
                 var go = new GameObject("DialogueCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -258,436 +763,44 @@ public class DialogueRunnerCSVLocalized : MonoBehaviour
         _choiceRoot.sizeDelta = choiceContainerSize;
         _choiceRoot.anchoredPosition = choiceContainerOffset;
 
-        var bg = go.GetComponent<Image>(); bg.color = choiceContainerBg;
+        var bg = go.GetComponent<Image>();
+        bg.color = choiceContainerBg;
+        bg.raycastTarget = false;
 
-        var vlg = go.AddComponent<VerticalLayoutGroup>();
-        vlg.childAlignment = TextAnchor.UpperLeft;
-        vlg.spacing = choiceSpacing;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = true;
-        vlg.childForceExpandWidth = true;
-        vlg.childForceExpandHeight = false;
-        vlg.padding = new RectOffset(
+        _vlg = go.AddComponent<VerticalLayoutGroup>();
+        _vlg.childAlignment = TextAnchor.UpperLeft;
+        _vlg.spacing = choiceSpacing;
+        _vlg.childControlWidth = true;
+        _vlg.childControlHeight = true;
+        _vlg.childForceExpandWidth = true;
+        _vlg.childForceExpandHeight = false;
+        _vlg.padding = new RectOffset(
             Mathf.RoundToInt(choicePaddingTLBR.y),
             Mathf.RoundToInt(choicePaddingTLBR.w),
             Mathf.RoundToInt(choicePaddingTLBR.x),
             Mathf.RoundToInt(choicePaddingTLBR.z)
         );
 
-        var csf = go.AddComponent<ContentSizeFitter>();
-        csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        _csf = go.AddComponent<ContentSizeFitter>();
+        _csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        _csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         _choiceRoot.gameObject.SetActive(false);
     }
 
-    // ====== CSV 파서 ======
-    // 헤더 고정:
-    // nodeId,stepIndex,kind,speakerKey,bodyKey,promptKey,optionKeys,optionNextNodes
-    // optionKeys / optionNextNodes는 세미콜론(;)로 구분
-    private void ParseCsv(string csv, out string firstNodeId)
+    private string ReplaceTokens(string s)
     {
-        firstNodeId = "";
+        if (string.IsNullOrEmpty(s)) return s;
 
-        using (var sr = new StringReader(csv))
-        {
-            string? header = sr.ReadLine();
-            if (header == null) throw new Exception("빈 CSV");
+        string name = fallbackPlayerName;
 
-            // 헤더가 정규 포맷인지 판정
-            bool headerLooksStructured = header.Contains("nodeId") && header.Contains("stepIndex") && header.Contains("kind");
+        var dm = DataManager.instance ?? FindFirstObjectByType<DataManager>(FindObjectsInactive.Include);
+        if (dm != null && dm.nowPlayer != null && !string.IsNullOrEmpty(dm.nowPlayer.Name))
+            name = dm.nowPlayer.Name.Trim();
 
-            var tempLines = new List<string>();
-            string? line;
-            while ((line = sr.ReadLine()) != null)
-            {
-                if (!string.IsNullOrWhiteSpace(line)) tempLines.Add(line);
-            }
-
-            if (tempLines.Count == 0) throw new Exception("데이터 행이 없습니다.");
-
-            if (headerLooksStructured)
-            {
-                // ===== A포맷: 엄격 8컬럼 =====
-                firstNodeId = ParseStructuredCsvRows(tempLines);
-            }
-            else
-            {
-                // ===== B포맷: 간단/Localization 내보내기 유사 =====
-                // 기대: 첫 컬럼이 String Table의 키(예: Dialog_0001). 나머지 열은 무시.
-                // 모든 행을 nodeId="Start" 아래의 line으로 직렬 배치.
-                firstNodeId = BuildSimpleSequenceFromKeys(tempLines);
-            }
-        }
+        return s.Replace("{playerName}", name);
     }
 
-    // A포맷: 정규 8컬럼 라인들을 파싱
-    private string ParseStructuredCsvRows(List<string> rows)
-    {
-        string firstNodeId = "";
-        bool firstAssigned = false;
-
-        for (int r = 0; r < rows.Count; r++)
-        {
-            var cols = SplitCsvLine(rows[r]);
-            if (cols.Count < 8)
-                throw new Exception("컬럼 수가 부족합니다. 라인: " + rows[r]);
-
-            string nodeId = cols[0].Trim();
-            string stepIndexStr = cols[1].Trim();
-            string kind = cols[2].Trim();
-            string speakerKey = cols[3].Trim();
-            string bodyKey = cols[4].Trim();
-            string promptKey = cols[5].Trim();
-            string optionKeysRaw = cols[6].Trim();
-            string optionNextRaw = cols[7].Trim();
-
-            if (!firstAssigned)
-            {
-                firstNodeId = nodeId;
-                firstAssigned = true;
-            }
-
-            if (!_nodes.TryGetValue(nodeId, out var list))
-            {
-                list = new List<Step>(8);
-                _nodes[nodeId] = list;
-            }
-
-            var step = new Step
-            {
-                kind = kind,
-                speakerKey = speakerKey,
-                bodyKey = bodyKey,
-                promptKey = promptKey,
-                optionKeys = string.IsNullOrEmpty(optionKeysRaw) ? Array.Empty<string>() : optionKeysRaw.Split(';'),
-                optionNext = string.IsNullOrEmpty(optionNextRaw) ? Array.Empty<string>() : optionNextRaw.Split(';')
-            };
-
-            if (!int.TryParse(stepIndexStr, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int idx))
-                idx = list.Count;
-
-            while (list.Count <= idx) list.Add(null);
-            list[idx] = step;
-        }
-
-        // null 제거
-        foreach (var kv in _nodes)
-        {
-            var compact = new List<Step>(kv.Value.Count);
-            for (int i = 0; i < kv.Value.Count; i++)
-                if (kv.Value[i] != null) compact.Add(kv.Value[i]);
-            _nodes[kv.Key] = compact;
-        }
-
-        return firstNodeId;
-    }
-
-    // B포맷: "키,..." 형태의 라인들을 단일 노드 Start 아래에 순서대로 line으로 생성
-    private string BuildSimpleSequenceFromKeys(List<string> rows)
-    {
-        const string nodeId = "Start";
-        var list = new List<Step>(rows.Count);
-        _nodes[nodeId] = list;
-
-        for (int r = 0; r < rows.Count; r++)
-        {
-            var cols = SplitCsvLine(rows[r]);
-            if (cols.Count < 1) continue;
-
-            // 첫 컬럼을 String Table 키로 사용
-            string key = cols[0].Trim();
-            if (string.IsNullOrEmpty(key)) continue;
-
-            list.Add(new Step
-            {
-                kind = "line",
-                speakerKey = "",   // 간단 모드에서는 화자 생략
-                bodyKey = key,     // 본문 키로 바로 사용
-                promptKey = "",
-                optionKeys = Array.Empty<string>(),
-                optionNext = Array.Empty<string>()
-            });
-        }
-
-        return nodeId;
-    }
-
-    // 따옴표/콤마 처리 CSV 분리기(기존 것 그대로 사용)
-    private List<string> SplitCsvLine(string line)
-    {
-        var result = new List<string>(8);
-        bool inQuotes = false;
-        int start = 0;
-        for (int i = 0; i < line.Length; i++)
-        {
-            char c = line[i];
-            if (c == '\"')
-            {
-                if (inQuotes && i + 1 < line.Length && line[i + 1] == '\"') { i++; }
-                else { inQuotes = !inQuotes; }
-            }
-            else if (c == ',' && !inQuotes)
-            {
-                result.Add(Unquote(line.Substring(start, i - start)));
-                start = i + 1;
-            }
-        }
-        result.Add(Unquote(line.Substring(start)));
-        return result;
-    }
-
-    private string Unquote(string s)
-    {
-        s = s.Trim();
-        if (s.Length >= 2 && s[0] == '\"' && s[s.Length - 1] == '\"')
-            s = s.Substring(1, s.Length - 2).Replace("\"\"", "\"");
-        return s;
-    }
-
-    // ====== 진행 ======
-    private void NextStepOrLine()
-    {
-        if (_waitingChoice) return;
-        if (string.IsNullOrEmpty(_currentNodeId) || !_nodes.TryGetValue(_currentNodeId, out var steps) || steps == null)
-        {
-            EndDialogue();
-            return;
-        }
-
-        _stepIndex++;
-        if (_stepIndex >= steps.Count)
-        {
-            EndDialogue();
-            return;
-        }
-
-        var step = steps[_stepIndex];
-        if (step == null)
-        {
-            NextStepOrLine();
-            return;
-        }
-
-        switch (step.kind)
-        {
-            case "line":
-                ShowLine(step.speakerKey, step.bodyKey);
-                return;
-            case "choice":
-                ShowChoice(step.promptKey, step.optionKeys, step.optionNext);
-                return;
-            default:
-                Debug.LogWarning("[DialogueRunnerCSVLocalized] 알 수 없는 kind: " + step.kind);
-                NextStepOrLine();
-                return;
-        }
-    }
-
-    // ====== 로컬라이즈 유틸 ======
-    private string L(string key)
-    {
-        if (string.IsNullOrEmpty(key)) return "";
-        if (_stringTable == null) return key; // 안전장치
-        var entry = _stringTable.GetEntry(key);
-        if (entry == null) return key;        // 키 누락 시 키 그대로
-        return entry.GetLocalizedString();
-    }
-
-    // ====== 한 줄 표시 ======
-    private void ShowLine(string speakerKey, string bodyKey)
-    {
-        if (promptText) promptText.gameObject.SetActive(false);
-        if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
-
-        if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
-        if (bodyText) bodyText.gameObject.SetActive(true);
-        if (nextIndicator) nextIndicator.SetActive(false);
-
-        if (speakerText)
-        {
-            speakerText.enableAutoSizing = false;
-            speakerText.fontSize = speakerFontSize;
-            speakerText.text = L(speakerKey);
-        }
-
-        _currentFullText = L(bodyKey);
-
-        if (_typingRoutine != null) StopCoroutine(_typingRoutine);
-        _typingRoutine = StartCoroutine(TypeLine(_currentFullText));
-    }
-
-    private IEnumerator TypeLine(string fullText)
-    {
-        _isTyping = true;
-        if (bodyText)
-        {
-            bodyText.enableAutoSizing = false;
-            bodyText.fontSize = bodyFontSize;
-            bodyText.text = "";
-        }
-
-        if (!respectRichText)
-        {
-            for (int i = 0; i < fullText.Length; i++)
-            {
-                if (bodyText) bodyText.text = fullText.Substring(0, i + 1);
-                yield return _wait;
-            }
-        }
-        else
-        {
-            int i = 0;
-            while (i < fullText.Length)
-            {
-                char c = fullText[i];
-                if (c == '<')
-                {
-                    int close = fullText.IndexOf('>', i);
-                    if (close == -1)
-                    {
-                        if (bodyText) bodyText.text += fullText.Substring(i);
-                        break;
-                    }
-                    else
-                    {
-                        if (bodyText) bodyText.text += fullText.Substring(i, close - i + 1);
-                        i = close + 1;
-                    }
-                }
-                else
-                {
-                    if (bodyText) bodyText.text += c;
-                    i++;
-                    yield return _wait;
-                }
-            }
-        }
-
-        _isTyping = false;
-        if (nextIndicator) nextIndicator.SetActive(true);
-        _typingRoutine = null;
-    }
-
-    private void CompleteTypingInstant()
-    {
-        if (!_isTyping) return;
-        if (_typingRoutine != null) { StopCoroutine(_typingRoutine); _typingRoutine = null; }
-        if (bodyText) bodyText.text = _currentFullText;
-        _isTyping = false;
-        if (nextIndicator) nextIndicator.SetActive(true);
-    }
-
-    // ====== 선택지 표시 ======
-    private void ShowChoice(string promptKey, string[] optionKeys, string[] optionNext)
-    {
-        if (nextIndicator) nextIndicator.SetActive(false);
-
-        if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
-        if (bodyText) bodyText.gameObject.SetActive(false);
-
-        if (promptText)
-        {
-            promptText.enableAutoSizing = false;
-            promptText.fontSize = promptFontSize;
-            promptText.text = L(promptKey);
-            promptText.gameObject.SetActive(true);
-        }
-
-        EnsureChoiceRoot();
-        _choiceRoot.gameObject.SetActive(true);
-
-        ReleaseAllButtons();
-        _waitingChoice = true;
-
-        int count = optionKeys != null ? optionKeys.Length : 0;
-        for (int i = 0; i < count; i++)
-        {
-            string optKey = optionKeys[i];
-            string optNext = (optionNext != null && i < optionNext.Length) ? optionNext[i] : "";
-
-            var btn = GetButton();
-            btn.transform.SetParent(_choiceRoot, false);
-
-            var label = btn.GetComponentInChildren<TMP_Text>(true);
-            if (label)
-            {
-                label.richText = true;
-                label.enableAutoSizing = false;
-                label.fontSize = choiceFontSize;
-                label.text = L(optKey);
-            }
-            else
-            {
-                var legacy = btn.GetComponentInChildren<Text>(true);
-                if (legacy) legacy.text = L(optKey);
-            }
-
-            var le = btn.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
-            float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2.0f);
-            le.preferredHeight = h; le.minHeight = h;
-            if (choiceButtonMinWidth > 0f) le.minWidth = choiceButtonMinWidth;
-
-            btn.interactable = true;
-            btn.onClick.RemoveAllListeners();
-            btn.onClick.AddListener(() =>
-            {
-                SetButtonsInteractable(false);
-                _waitingChoice = false;
-
-                _choiceRoot.gameObject.SetActive(false);
-                if (promptText) promptText.gameObject.SetActive(false);
-                if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
-
-                if (!string.IsNullOrEmpty(optNext) && _nodes.ContainsKey(optNext))
-                {
-                    _currentNodeId = optNext;
-                    _stepIndex = -1;
-                    NextStepOrLine();
-                }
-                else
-                {
-                    NextStepOrLine();
-                }
-            });
-
-            _activeButtons.Add(btn);
-        }
-
-        LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
-    }
-
-    // ====== 버튼 풀 ======
-    private Button GetButton()
-    {
-        Button btn = _buttonPool.Count > 0 ? _buttonPool.Pop() : Instantiate(choiceButtonPrefab);
-        btn.gameObject.SetActive(true);
-        return btn;
-    }
-
-    private void ReleaseAllButtons()
-    {
-        for (int i = 0; i < _activeButtons.Count; i++)
-        {
-            var b = _activeButtons[i];
-            if (b)
-            {
-                b.onClick.RemoveAllListeners();
-                b.gameObject.SetActive(false);
-                b.transform.SetParent(transform, false);
-                _buttonPool.Push(b);
-            }
-        }
-        _activeButtons.Clear();
-    }
-
-    private void SetButtonsInteractable(bool value)
-    {
-        for (int i = 0; i < _activeButtons.Count; i++)
-            if (_activeButtons[i]) _activeButtons[i].interactable = value;
-    }
-
-    // ====== 시작/종료 훅 ======
     private void OnDialogueBegin()
     {
         if (playerMove != null) playerMove.controlEnabled = false;
@@ -695,27 +808,106 @@ public class DialogueRunnerCSVLocalized : MonoBehaviour
 
     private void OnDialogueEnd()
     {
-        if (endDeactivateTargets != null)
-        {
-            for (int i = 0; i < endDeactivateTargets.Length; i++)
-            {
-                var go = endDeactivateTargets[i];
-                if (go != null) go.SetActive(false);
-            }
-        }
         if (playerMove != null) playerMove.controlEnabled = true;
+        OnDialogueEnded?.Invoke();
     }
 
     private void EndDialogue()
     {
         if (nextIndicator) nextIndicator.SetActive(false);
         if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
-        if (promptText) promptText.gameObject.SetActive(false);
+        if (promptText) { promptText.gameObject.SetActive(false); promptText.text = ""; }
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         ReleaseAllButtons();
 
+        // ← 여기 추가: 텍스트 비우기
+        if (speakerText) { speakerText.text = ""; speakerText.ForceMeshUpdate(); }
+        if (bodyText) { bodyText.text = ""; bodyText.ForceMeshUpdate(); }
+        if (namePanel) { namePanel.SetActive(false); } // 원하면 이름판도 숨김
+
+        _mode = Mode.Done;
         OnDialogueEnd();
 
         if (deactivateOnEnd) gameObject.SetActive(false);
+
+        _inputUnlocked = false;
+        _advanceCooldownLeft = 0f;
+    }
+
+
+    // ===== 언어별 폰트 크기 유틸 =====
+
+    private void HookLocaleChange()
+    {
+        if (_localeHooked) return;
+        try
+        {
+            LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
+            _localeHooked = true;
+        }
+        catch { /* ignore */ }
+    }
+
+    private void UnhookLocaleChange()
+    {
+        if (!_localeHooked) return;
+        try
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
+            _localeHooked = false;
+        }
+        catch { /* ignore */ }
+    }
+
+    private void OnLocaleChanged(Locale loc)
+    {
+        ApplyCurrentFontSizes();
+        // 진행 중인 타이핑이 있으면 즉시 반영
+        if (_isTyping && bodyText != null)
+        {
+            bodyText.fontSize = GetBodyFontSize();
+        }
+        if (speakerText != null)
+        {
+            speakerText.fontSize = GetSpeakerFontSize();
+        }
+    }
+
+    private void ApplyCurrentFontSizes()
+    {
+        if (speakerText)
+        {
+            speakerText.enableAutoSizing = false;
+            speakerText.fontSize = GetSpeakerFontSize();
+        }
+        if (bodyText)
+        {
+            bodyText.enableAutoSizing = false;
+            bodyText.fontSize = GetBodyFontSize();
+        }
+    }
+
+    private float GetSpeakerFontSize()
+    {
+        if (!useLanguageFontSizes) return speakerFontSize;
+
+        string code = GetCurrentLocaleCode();
+        var f = languageFonts.Find(x => string.Equals(x.localeCode, code, StringComparison.OrdinalIgnoreCase));
+        return f != null ? f.speakerSize : speakerFontSize;
+    }
+
+    private float GetBodyFontSize()
+    {
+        if (!useLanguageFontSizes) return bodyFontSize;
+
+        string code = GetCurrentLocaleCode();
+        var f = languageFonts.Find(x => string.Equals(x.localeCode, code, StringComparison.OrdinalIgnoreCase));
+        return f != null ? f.bodySize : bodyFontSize;
+    }
+
+    private static string GetCurrentLocaleCode()
+    {
+        var loc = LocalizationSettings.SelectedLocale;
+        return loc != null ? loc.Identifier.Code : "";
     }
 }

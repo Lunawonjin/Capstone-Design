@@ -15,20 +15,32 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Korean (ko)
   m_GUID: 69fafdd9737c1a540899a392702ae672
   m_SerializeEntries:
-  - m_GUID: 4c2d89f0d2fbed149bc662f9cd6c8c8d
-    m_Address: Dialogue_ko
+  - m_GUID: 1770f5e428214894482f498caa6d7255
+    m_Address: Starest_First_Visit_Speaker_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 629707c10d105794b97e44d3a57c4a36
-    m_Address: Dialogue Table_ko
+  - m_GUID: 4b39f678413aea042bc549aa5b0ca535
+    m_Address: Sol_First_Meet_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89a13a36059b73c46825d2cb1da1a40c
+    m_Address: Starest_First_Visit_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c2abab3656c07054a957981bb239911a
     m_Address: UI_Table_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c5ae947734d189147aac50c26071cd28
+    m_Address: Sol_First_Meet_Speaker_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko

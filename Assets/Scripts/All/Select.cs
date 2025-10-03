@@ -183,9 +183,10 @@ public class Select : MonoBehaviour
 
         DataManager.instance.nowSlot = number;
 
+        // 저장 유무에 따라 GoGame()이 알아서 신규/기존 분기 처리
         if (hasSave[number])
         {
-            SafeLoad();
+            // 미리 SafeLoad() 하지 않고 바로 GoGame() 호출
             GoGame();
         }
         else
@@ -193,6 +194,7 @@ public class Select : MonoBehaviour
             if (creat) creat.SetActive(true);
         }
     }
+
 
     public void Creat()
     {
@@ -214,6 +216,7 @@ public class Select : MonoBehaviour
 
         if (!exists)
         {
+            // ── 신규 생성: 처음 시작할 때만 startSceneName으로 진입
             string name = GetFinalEnteredName();
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -230,26 +233,44 @@ public class Select : MonoBehaviour
                 Coin = 0,
                 Item = 0,
                 Day = 1,
-                Scene = startSceneName,
+                Scene = startSceneName,    // 최초 시작 씬은 여기 기록
                 HasSavedPosition = false
             };
 
             DataManager.instance.SaveData();
             if (s < hasSave.Length) hasSave[s] = true;
 
-            // 방금 만든 슬롯을 이름 고정 모드로 갱신
             RefreshSingleSlotUI(s);
+
+            // 최초 시작은 startSceneName으로 진입
+            if (!string.IsNullOrEmpty(startSceneName))
+                SceneManager.LoadScene(startSceneName);
+            else
+                Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
         }
         else
         {
-            SafeLoad();
-        }
+            // ── 저장이 존재: 무조건 저장된 Scene으로 이동(플레이어 위치도 적용)
+            SafeLoad(); // nowPlayer 채움
 
-        if (!string.IsNullOrEmpty(startSceneName))
-            SceneManager.LoadScene(startSceneName);
-        else
-            Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
+            string savedScene = DataManager.instance.nowPlayer?.Scene;
+            if (!string.IsNullOrEmpty(savedScene))
+            {
+                // 저장된 씬과 좌표를 존중하여 이동
+                StartCoroutine(DataManager.instance.LoadSavedSceneAndPlacePlayer());
+            }
+            else
+            {
+                // 혹시 Scene이 비어 있으면 안전하게 폴백
+                Debug.LogWarning("[Select] 저장 파일에 Scene 정보가 비어 있습니다. startSceneName으로 폴백합니다.");
+                if (!string.IsNullOrEmpty(startSceneName))
+                    SceneManager.LoadScene(startSceneName);
+                else
+                    Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
+            }
+        }
     }
+
 
     // ---------- 로드/삭제 ----------
     private void SafeLoad()

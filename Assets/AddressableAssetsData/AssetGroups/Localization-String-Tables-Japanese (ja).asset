@@ -15,20 +15,32 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Japanese (ja)
   m_GUID: cbd97113c59d0294985385b69ee4d844
   m_SerializeEntries:
+  - m_GUID: 08f45ef4a1f1c3a46960876295292813
+    m_Address: Sol_First_Meet_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d7b434bb54046148b4bf2eb03bbfad9
+    m_Address: Starest_First_Visit_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2f90516b66aad9e4a9681c5a75c6cecc
+    m_Address: Sol_First_Meet_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6dda378ab27dc3e498466e3c2cd7591b
     m_Address: UI_Table_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8acb9da5a1ba0fd449ed8d09c561623a
-    m_Address: Dialogue_ja
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ja
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e1f83c24a111d264da37ee47dcc8cc0a
-    m_Address: Dialogue Table_ja
+  - m_GUID: 756ae4d022afd9e489de7b80367d6f51
+    m_Address: Starest_First_Visit_Speaker_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja

@@ -1,0 +1,48 @@
+{
+  "defaultStepDuration": 1.0,
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
+
+  "npcSpawns": [
+    { "npcName": "Sol",  "x": 33.0, "y": 19.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false },
+    { "npcName": "Boss", "x": 34.5, "y": 18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+  ],
+
+  "steps": [
+    { "axis": "y", "delta": 1.3 },
+    { "axis": "x", "delta": -1 },
+    { "axis": "y", "delta": 1 }
+  ],
+
+  "afterPlayerActions": [
+    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0, "duration": 1.0 },
+    { "type": "dialogue", "owner": "Sol", "eventName": "Sol_First_Meet" }
+  ],
+
+  "dialogueReactions": [
+    {
+      "onKey": "Dialogue_Choice1_Same_002",
+      "actions": [
+        { "type": "dialoguePanelActive", "active": false },
+        { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": -3.0 },
+        { "type": "npcSetActive", "npcName": "Boss", "active": false },
+    	{ "type": "delay", "duration": 0.5 },
+        { "type": "dialoguePanelRestoreNow" }
+      ]
+    },
+
+    { "onKey": "Dialogue_Choice3_A2_001",
+      "actions": [
+        { "type": "affinityDown", "dataName": "Sol_FriendShip", "delta": -1, "clamp": true, "min": -100, "max": 100 }
+      ]
+    },
+
+    { "onKey": "Dialogue_Choice4_Same_002",
+      "actions": [
+        { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
+      ]
+    }
+  ]
+}

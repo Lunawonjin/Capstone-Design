@@ -1,0 +1,131 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Sol_First_Meet_Speaker_ja
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ja
+  m_SharedData: {fileID: 11400000, guid: 4c59ec5375f8cb3449f72b10a779e3ce, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5172039680
+    m_Localized: "\u4E0A\u53F8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 667238731776
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 679607734272
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 940057235456
+    m_Localized: "\u4E0A\u53F8"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 942737395712
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8863063937024
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8992483381248
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9147165118464
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9420180754432
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9567400824832
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20500135219200
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220647078752256
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220649352065024
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220657409323008
+    m_Localized: '{System}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221271946162176
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221799711240192
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221862810349568
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221903335714816
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221943181602816
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222058420105216
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222098752532480
+    m_Localized: '{playerName}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222176154218496
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 222220244742144
+    m_Localized: '{System}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243722453250048
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 243804032462848
+    m_Localized: '{System}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 268584311844864
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []
