@@ -51,7 +51,7 @@ public class PlayerData
     public string Language;
 
     //첫 방문 지역 이벤트
-    public bool StarestFistGo;
+    public static bool Starest_Frist_Visit;
 
     // 첫 만남 플래그(스토리 트리거)
     public bool Sol_First_Meet;
@@ -77,7 +77,7 @@ public class PlayerData
         Weekday = 1;
         Language = "ko";
 
-        StarestFistGo = false;
+        Starest_Frist_Visit = false;
 
         Sol_First_Meet = false;
         Salt_First_Meet = false;

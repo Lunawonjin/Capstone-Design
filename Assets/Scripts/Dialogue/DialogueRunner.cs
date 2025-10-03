@@ -816,17 +816,24 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (nextIndicator) nextIndicator.SetActive(false);
         if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
-        if (promptText) promptText.gameObject.SetActive(false);
+        if (promptText) { promptText.gameObject.SetActive(false); promptText.text = ""; }
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         ReleaseAllButtons();
 
+        // ← 여기 추가: 텍스트 비우기
+        if (speakerText) { speakerText.text = ""; speakerText.ForceMeshUpdate(); }
+        if (bodyText) { bodyText.text = ""; bodyText.ForceMeshUpdate(); }
+        if (namePanel) { namePanel.SetActive(false); } // 원하면 이름판도 숨김
+
         _mode = Mode.Done;
         OnDialogueEnd();
+
         if (deactivateOnEnd) gameObject.SetActive(false);
 
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
     }
+
 
     // ===== 언어별 폰트 크기 유틸 =====
 

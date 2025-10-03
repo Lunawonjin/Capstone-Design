@@ -881,7 +881,7 @@ MonoBehaviour:
           value: 1250
         - localeIdentifier:
             m_Code: ko
-          value: 1200
+          value: 1250
 --- !u!1 &494192970
 GameObject:
   m_ObjectHideFlags: 0
@@ -930,10 +930,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -1170,6 +1170,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
+    - target: {fileID: 1758735948047722464, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_RenderMode
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2332501267547512414, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_fontSize
       value: 60
@@ -1180,11 +1184,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2368923070395934058, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 120
+      value: 1250
       objectReference: {fileID: 0}
     - target: {fileID: 2368923070395934058, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_UiScaleMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_ReferenceResolution.x
+      value: 1920
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_ReferenceResolution.y
+      value: 1080
       objectReference: {fileID: 0}
     - target: {fileID: 6695889460613402659, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_Name
@@ -1621,8 +1637,10 @@ MonoBehaviour:
   - ownerName: White
     eventNames:
     - White_First_Meet
+  - ownerName: Boss
+    eventNames:
+    - Starest_First_Visit
   autoRunOnHouseEnter: 1
-  saveAfterWrite: 1
   playerTransform: {fileID: 1405067363}
   playerMove: {fileID: 1405067366}
   uiCanvasesToDisable:
@@ -1727,6 +1745,10 @@ MonoBehaviour:
   logWhenSkip: 1
   verboseLog: 1
   logSanitizedJsonOnError: 1
+  runOnStart_IfSceneAndFlag: 1
+  sceneNameToTrigger: Starest
+  bossOwnerName: Boss
+  bossEventName: Starest_First_Visit
 --- !u!1001 &666888510
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2436,7 +2458,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DataManager
   nowPlayer:
-    Name: 
+    Name: "\uC6D0\uC9C4"
     Level: 1
     Coin: 0
     Day: 1
@@ -2448,7 +2470,6 @@ MonoBehaviour:
     Scene: 
     Weekday: 1
     Language: ko
-    StarestFistGo: 0
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0

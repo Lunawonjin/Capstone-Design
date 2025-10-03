@@ -30,6 +30,17 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4e495e59b4ed0d245bbc771a6d06ec71
+    m_Address: Assets/Localization/Dialogue/Boss/Starest_Frist_Visit Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd3dbbc3c8ebf854996cb12a9d324f8e
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Starest_Frist_Visit_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 544fd178bf8e1be45bdb8065448f99a1, type: 2}
   m_SchemaSet:

@@ -6901,7 +6901,7 @@ GameObject:
   - component: {fileID: 7385213814477489811}
   m_Layer: 5
   m_Name: Setting
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7791,7 +7791,7 @@ GameObject:
   - component: {fileID: 6983614111797982604}
   m_Layer: 5
   m_Name: Messenger
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
