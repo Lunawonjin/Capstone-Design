@@ -244,6 +244,14 @@ public class MapMenuController : MonoBehaviour
             if (!weekend) { ShowNotification(); return; }
         }
 
+        // [MODIFIED] 씬을 로드하기 전에, 현재 게임 상태(PlayerData)를 임시 파일에 저장합니다.
+        // 이렇게 하면 씬 이동 중에 발생할 수 있는 데이터 손실을 방지하고,
+        // NpcEventDebugLoader 등 다른 스크립트에 의해 변경된 사항이 다음 씬에 반영됩니다.
+        if (DataManager.instance != null)
+        {
+            DataManager.instance.CommitDataToTempFile();
+        }
+
         var active = SceneManager.GetActiveScene();
 
         // 빌드 인덱스 우선 로드

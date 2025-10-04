@@ -183,6 +183,10 @@ MonoBehaviour:
     m_Key: UI_White_Name
     m_Metadata:
       m_Items: []
+  - m_Id: 2081703971516416
+    m_Key: UI_CurrentMap
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

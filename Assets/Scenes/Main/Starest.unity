@@ -140,17 +140,6 @@ Canvas:
   m_CorrespondingSourceObject: {fileID: 1758735948047722464, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
   m_PrefabInstance: {fileID: 531893092}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &124456250 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 773151017453211489, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
-  m_PrefabInstance: {fileID: 1875851538}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1001 &152375491
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -448,28 +437,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
---- !u!114 &268674987 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1919318016079022291, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
-  m_PrefabInstance: {fileID: 1875851538}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
---- !u!114 &282238194 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1250882904647824351, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
-  m_PrefabInstance: {fileID: 1875851538}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &390881973 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6653993690181892630, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
@@ -1745,6 +1712,10 @@ MonoBehaviour:
   logWhenSkip: 1
   verboseLog: 1
   logSanitizedJsonOnError: 1
+  firstVisitEvents:
+  - sceneName: Starest
+    ownerName: Boss
+    eventName: Starest_First_Visit
   runOnStart_IfSceneAndFlag: 1
   sceneNameToTrigger: Starest
   bossOwnerName: Boss
@@ -2428,143 +2399,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5265435926130295525, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
   m_PrefabInstance: {fileID: 258513218}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1335903509
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1335903511}
-  - component: {fileID: 1335903510}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1335903510
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1335903509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8c78a96326d98840ada5ecdb07fabae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DataManager
-  nowPlayer:
-    Name: "\uC6D0\uC9C4"
-    Level: 1
-    Coin: 0
-    Day: 1
-    Item: 0
-    Px: 0
-    Py: 0
-    Pz: 0
-    HasSavedPosition: 0
-    Scene: 
-    Weekday: 1
-    Language: ko
-    Sol_First_Meet: 0
-    Salt_First_Meet: 0
-    Ryu_First_Meet: 0
-    White_First_Meet: 0
-    Sol_FriendShip: 0
-    Salt_FriendShip: 0
-    Ryu_FriendShip: 0
-    White_FriendShip: 0
-    ActiveSceneName: 
-    ActiveObjects: []
-  path: 
-  nowSlot: 0
-  coinText: {fileID: 0}
-  levelText: {fileID: 0}
-  dayText: {fileID: 0}
-  nameText: {fileID: 0}
-  solFriendshipText: {fileID: 124456250}
-  saltFriendshipText: {fileID: 268674987}
-  ryuFriendshipText: {fileID: 1917524427}
-  whiteFriendshipText: {fileID: 282238194}
-  dontDestroyOnLoadHUD: 0
-  autoRebindOnSceneLoaded: 1
-  refreshHUDOnStart: 1
-  hudRootTag: HUD
-  coinObjectName: Text_Coin
-  levelObjectName: Text_Level
-  dayObjectName: Text_Day
-  nameObjectName: Text_Name
-  solFriendshipObjectName: Text_Sol_Friendship
-  saltFriendshipObjectName: Text_Salt_Friendship
-  ryuFriendshipObjectName: Text_Ryu_Friendship
-  whiteFriendshipObjectName: Text_White_Friendship
-  dayFormatKo: "{0}\uC77C ({1})"
-  dayFormatEn: Day {0} ({1})
-  dayFormatJp: "{0}\u65E5\uFF08{1}\uFF09"
-  friendshipFormatKo: "{0} \uD638\uAC10\uB3C4: {1}"
-  friendshipFormatEn: '{0} FriendShip: {1}'
-  friendshipFormatJp: "{0} \u597D\u611F\u5EA6: {1}"
-  solNameKo: "\uC194\uC774"
-  solNameEn: Sol
-  solNameJp: "\u30BD\u30EB"
-  saltNameKo: "\uC18C\uAE08\uC774"
-  saltNameEn: Sogeum
-  saltNameJp: "\u30BD\u30B0\u30E0"
-  ryuNameKo: "\uB958\uC9C0\uD604"
-  ryuNameEn: Ryu Jihyeon
-  ryuNameJp: "\u30EA\u30E5\u30FB\u30B8\u30D2\u30E7\u30F3"
-  whiteNameKo: "\uCC9C\uD558\uC580"
-  whiteNameEn: Cheon Hayan
-  whiteNameJp: "\u30C1\u30E7\u30F3\u30FB\u30CF\u30E4\u30F3"
-  coinFormat: '{0}'
-  levelFormat: Lv. {0}
-  nameFormat: '{0}'
-  baseWeekdayForDay1: 1
-  autoSyncWeekdayOnSetDay: 1
-  applySavedPositionOnLoad: 1
-  playerTagForReposition: Player
-  applyPosTimeoutSec: 3
-  autoLoadSavedSceneOnStart: 0
-  fontKo: {fileID: 0}
-  fontEn: {fileID: 0}
-  fontJp: {fileID: 0}
-  dayFontSizeKo: 45
-  dayFontSizeEn: 35
-  dayFontSizeJp: 35
-  friendshipFontKo: {fileID: 0}
-  friendshipFontEn: {fileID: 0}
-  friendshipFontJp: {fileID: 0}
-  friendshipFontSizeKo: 30
-  friendshipFontSizeEn: 30
-  friendshipFontSizeJp: 30
-  captureActiveObjectsOnSave: 1
-  excludeTagsForActiveObjects:
-  - HUD
-  - UIPanel
-  excludeNamesForActiveObjects:
-  - UIPanel
-  autoRestoreActiveObjectsOnSceneLoaded: 1
-  activeRestoreMode: 0
-  logRestoreDetails: 0
---- !u!4 &1335903511
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1335903509}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1388461864
 GameObject:
   m_ObjectHideFlags: 0
@@ -3270,9 +3104,17 @@ PrefabInstance:
       propertyPath: m_HorizontalAlignment
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3496779009035905659, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4051993470011338799, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_Name
       value: UIPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 4198364525068548763, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4537495821395895112, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
@@ -3286,8 +3128,16 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -280
       objectReference: {fileID: 0}
+    - target: {fileID: 5950119198424117319, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6393498565044971116, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6701223701166394042, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6701223701166394042, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
@@ -3301,6 +3151,10 @@ PrefabInstance:
     - target: {fileID: 7190232730554983671, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -280
+      objectReference: {fileID: 0}
+    - target: {fileID: 7636817172484143417, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8214699285864704912, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: bodyText
@@ -3361,17 +3215,6 @@ PrefabInstance:
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1134321366014647661, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
   m_PrefabInstance: {fileID: 531893092}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
---- !u!114 &1917524427 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2835213396397185401, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
-  m_PrefabInstance: {fileID: 1875851538}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
@@ -3642,4 +3485,3 @@ SceneRoots:
   - {fileID: 152375491}
   - {fileID: 1922017510}
   - {fileID: 645547098}
-  - {fileID: 1335903511}

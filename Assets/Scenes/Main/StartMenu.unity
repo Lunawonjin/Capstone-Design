@@ -5157,7 +5157,7 @@ MonoBehaviour:
     Scene: 
     Weekday: 1
     Language: ko
-    StarestFistGo: 0
+    Starest_First_Visit: 0
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
@@ -5170,6 +5170,9 @@ MonoBehaviour:
     ActiveObjects: []
   path: 
   nowSlot: 0
+  subPath: 
+  nonGameplayScenes:
+  - StartMenu
   coinText: {fileID: 0}
   levelText: {fileID: 0}
   dayText: {fileID: 0}
