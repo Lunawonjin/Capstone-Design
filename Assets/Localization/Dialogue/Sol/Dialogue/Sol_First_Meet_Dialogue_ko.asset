@@ -29,7 +29,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 667238731776
-    m_Localized: "\uC548\uB155 \uB098\uB294 {playerName}\uC774\uC57C."
+    m_Localized: "\uC548\uB155 \uB098\uB294 {playerName}(\uC774)\uC57C."
     m_Metadata:
       m_Items: []
   - m_Id: 679607734272
