@@ -12,7 +12,6 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public class NpcEventDebugLoader : MonoBehaviour
 {
-    // 외부로부터 플레이어 입력 ON/OFF를 제어할 수 있게 하는 인터페이스(선택)
     public interface IPlayerControlToggle { void SetControlEnabled(bool enabled); }
 
     #region 데이터 스키마
@@ -42,7 +41,18 @@ public class NpcEventDebugLoader : MonoBehaviour
     }
 
     [Serializable] public class DialogueReaction { public string onKey = ""; public EventPostAction[] actions = Array.Empty<EventPostAction>(); }
-    [Serializable] public class EventScript { public EventStep[] steps = Array.Empty<EventStep>(); public float defaultStepDuration = 0.5f; public bool useWorldSpace = true; public bool useRigidbodyMove = true; public NpcSpawnCmd[] npcSpawns = Array.Empty<NpcSpawnCmd>(); public PlayerSection player = null; public EventPostAction[] afterPlayerActions = Array.Empty<EventPostAction>(); public DialogueReaction[] dialogueReactions = Array.Empty<DialogueReaction>(); }
+    [Serializable]
+    public class EventScript
+    {
+        public EventStep[] steps = Array.Empty<EventStep>();
+        public float defaultStepDuration = 0.5f;
+        public bool useWorldSpace = true;
+        public bool useRigidbodyMove = true;
+        public NpcSpawnCmd[] npcSpawns = Array.Empty<NpcSpawnCmd>();
+        public PlayerSection player = null;
+        public EventPostAction[] afterPlayerActions = Array.Empty<EventPostAction>();
+        public DialogueReaction[] dialogueReactions = Array.Empty<DialogueReaction>();
+    }
     #endregion
 
     #region 인스펙터 필드
@@ -94,8 +104,18 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private bool verboseLog = true;
     [SerializeField] private bool logSanitizedJsonOnError = true;
 
-    // 시작 조건 실행(요청 사항)
-    [Header("시작 시 1회 실행(첫 방문)")]
+    [Serializable]
+    public class FirstVisitEvent
+    {
+        public string sceneName = "Starest";
+        public string ownerName = "Boss";
+        public string eventName = "Starest_Frist_Visit";
+    }
+
+    [Header("시작 시 1회 실행(첫 방문) - 다건")]
+    [SerializeField] private FirstVisitEvent[] firstVisitEvents = Array.Empty<FirstVisitEvent>();
+
+    [Header("레거시(배열 비었을 때만 사용)")]
     [SerializeField] private bool runOnStart_IfSceneAndFlag = true;
     [SerializeField] private string sceneNameToTrigger = "Starest";
     [SerializeField] private string bossOwnerName = "Boss";
@@ -123,7 +143,32 @@ public class NpcEventDebugLoader : MonoBehaviour
     private struct AnimSpriteBackup { public bool hasAnimator; public int stateHash; public float normalizedTime; public float speed; public bool hasSpriteRenderer; public Sprite sprite; public bool flipX; public bool flipY; }
     private AnimSpriteBackup _animBak;
 
-    [Serializable] public class NpcSpec { [Header("기본")] public string ownerName = "Sol"; public string npcName = "Sol_Npc"; public GameObject prefab; public bool spawnOnHouseEnter = true; public Vector3 spawnOffset = Vector3.zero; public Transform parent; public bool reuseIfAlreadySpawned = true; public bool deactivateOnExitHouse = true; public bool destroyOnExitHouse = false; [Header("애니메이터(선택)")] public RuntimeAnimatorController animatorController; public bool addAnimatorIfMissing = true; [Header("애니메이션 설정(선택)")] public bool overrideWalkStates = false; public string stateFront = "Front_Walk"; public string stateBack = "Back_Walk"; public string stateLeft = "Left_Walk"; public string stateRight = "Right_Walk"; public float animSpeedScale = 1f; }
+    [Serializable]
+    public class NpcSpec
+    {
+        [Header("기본")]
+        public string ownerName = "Sol";
+        public string npcName = "Sol_Npc";
+        public GameObject prefab;
+        public bool spawnOnHouseEnter = true;
+        public Vector3 spawnOffset = Vector3.zero;
+        public Transform parent;
+        public bool reuseIfAlreadySpawned = true;
+        public bool deactivateOnExitHouse = true;
+        public bool destroyOnExitHouse = false;
+
+        [Header("애니메이터(선택)")]
+        public RuntimeAnimatorController animatorController;
+        public bool addAnimatorIfMissing = true;
+
+        [Header("애니메이션 설정(선택)")]
+        public bool overrideWalkStates = false;
+        public string stateFront = "Front_Walk";
+        public string stateBack = "Back_Walk";
+        public string stateLeft = "Left_Walk";
+        public string stateRight = "Right_Walk";
+        public float animSpeedScale = 1f;
+    }
 
     private readonly Dictionary<string, List<NpcSpec>> _npcSpecsByKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Dictionary<string, GameObject>> _spawnedNpcByKey = new(StringComparer.OrdinalIgnoreCase);
@@ -162,9 +207,8 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         if (teleporter != null) _lastTeleporterOwnerIndex = teleporter.CurrentOwnerIndex;
 
-        // 시작 시 조건 검사: Starest 씬 + 첫 방문 플래그 false → Boss 이벤트 실행
         if (runOnStart_IfSceneAndFlag)
-            StartCoroutine(TryRunBossFirstVisitOnStart());
+            StartCoroutine(TryRunFirstVisitsOnStart());
     }
 
     private void Update()
@@ -190,41 +234,57 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
     }
 
-    // === 시작 시 1회 체크 코루틴 ===
-    private IEnumerator TryRunBossFirstVisitOnStart()
+    private IEnumerator TryRunFirstVisitsOnStart()
     {
-        // 한 프레임 대기(다른 매니저 초기화 여유)
         yield return null;
 
-        // DataManager 준비 확인
         if (DataManager.instance == null || DataManager.instance.nowPlayer == null)
             yield break;
 
-        // 씬 이름 확인
+        var pd = DataManager.instance.nowPlayer;
         string currentScene = SceneManager.GetActiveScene().name;
-        if (!string.Equals(currentScene, sceneNameToTrigger, StringComparison.Ordinal))
-            yield break;
 
-        // 이미 처리된 경우 종료
-        if (PlayerData.Starest_Frist_Visit)
-            yield break;
-
-        // 다른 이벤트가 돌고 있으면 종료될 때까지 대기
-        while (_eventRunning) yield return null;
-
-        // 이벤트 로드 & 실행
-        if (TryLoadSingle(bossOwnerName, bossEventName, out var le))
-        {
-            if (verboseLog) Debug.Log($"[NpcEventDebugLoader] 시작 조건 충족 — {bossOwnerName}/{bossEventName} 실행");
-            yield return StartCoroutine(RunEventCoroutine(bossOwnerName, bossEventName, le.json, () =>
-            {
-                // 자동 저장 제거: 값만 변경
-                PlayerData.Starest_Frist_Visit = true;
-            }));
-        }
+        List<FirstVisitEvent> list = new List<FirstVisitEvent>();
+        if (firstVisitEvents != null && firstVisitEvents.Length > 0) list.AddRange(firstVisitEvents);
         else
+            list.Add(new FirstVisitEvent
+            {
+                sceneName = sceneNameToTrigger,
+                ownerName = bossOwnerName,
+                eventName = bossEventName
+            });
+
+        var targets = list.Where(it => string.Equals(it.sceneName, currentScene, StringComparison.Ordinal)).ToList();
+        if (targets.Count == 0) yield break;
+
+        foreach (var item in targets)
         {
-            Debug.LogWarning($"[NpcEventDebugLoader] 시작 조건 충족했지만 이벤트 로드 실패: {bossOwnerName}/{bossEventName}");
+            string flagName = item.eventName;
+            if (!TryBindBool(pd, flagName, out Func<bool> getter, out Action<bool> setter))
+            {
+                Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 bool '{flagName}'를 찾지 못해 '{item.ownerName}/{item.eventName}' 스킵");
+                continue;
+            }
+            if (getter())
+            {
+                if (logWhenSkip) Debug.Log($"[NpcEventDebugLoader] 건너뜀(이미 true): {item.ownerName}/{item.eventName}");
+                continue;
+            }
+
+            while (_eventRunning) yield return null;
+
+            if (TryLoadSingle(item.ownerName, item.eventName, out var le))
+            {
+                if (verboseLog) Debug.Log($"[NpcEventDebugLoader] 시작 조건 충족 — {item.ownerName}/{item.eventName} 실행");
+                yield return StartCoroutine(RunEventCoroutine(item.ownerName, item.eventName, le.json, () =>
+                {
+                    setter(true);
+                }));
+            }
+            else
+            {
+                Debug.LogWarning($"[NpcEventDebugLoader] 시작 조건 충족했지만 이벤트 로드 실패: {item.ownerName}/{item.eventName}");
+            }
         }
     }
 
@@ -267,7 +327,6 @@ public class NpcEventDebugLoader : MonoBehaviour
 
                 StartCoroutine(RunEventCoroutine(ownerForIO, eventForIO, le.json, () =>
                 {
-                    // 자동 저장 제거: 값만 변경
                     setter(true);
                 }));
                 break;
@@ -588,7 +647,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         return DataManager.instance.nowPlayer;
     }
 
-    // ===== 파일 로드: Resources.Load(TextAsset) → 실패 시 StreamingAssets 폴백 =====
     private bool TryLoadSingle(string ownerForIO, string eventForIO, out LoadedEvent loaded)
     {
         loaded = null;
@@ -789,7 +847,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         set(newv);
         if (verboseLog) Debug.Log($"[NpcEventDebugLoader] {dataName}: {oldv} -> {newv} (delta {delta})");
 
-        // 자동 저장 제거: 여기서 저장하지 않음
         return true;
     }
 

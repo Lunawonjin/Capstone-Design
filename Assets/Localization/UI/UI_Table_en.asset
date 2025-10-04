@@ -209,6 +209,10 @@ MonoBehaviour:
     m_Localized: Cheon Hayan
     m_Metadata:
       m_Items: []
+  - m_Id: 2081703971516416
+    m_Localized: Current Location
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

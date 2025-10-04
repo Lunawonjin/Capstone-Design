@@ -60,12 +60,18 @@ public class LanguageSelectUI : MonoBehaviour
         {
             string startCode = fallbackLang;
 
-            // 최신 세이브가 있으면 그 언어를 따라감
+            // [수정됨] 최신 세이브가 있으면 그 언어를 '읽어오기만' 함 (전체 데이터 로드 X)
             if (DataManager.instance.HasAnySave())
             {
-                if (DataManager.instance.TryLoadMostRecentSave())
+                int recentSlot = DataManager.instance.GetMostRecentSaveSlot();
+                if (recentSlot >= 0)
                 {
-                    startCode = SafeNormalizeAppCode(DataManager.instance.GetLanguageCode()); // ko/en/jp
+                    // 새로 추가된 PeekLanguageFromSlot 함수를 사용
+                    string langFromFile = DataManager.instance.PeekLanguageFromSlot(recentSlot);
+                    if (!string.IsNullOrEmpty(langFromFile))
+                    {
+                        startCode = SafeNormalizeAppCode(langFromFile);
+                    }
                 }
             }
 
@@ -192,6 +198,7 @@ public class LanguageSelectUI : MonoBehaviour
             yield break;
         }
 
+        // '이어하기'에서는 데이터 전체를 로드하는 것이 맞습니다.
         if (!DataManager.instance.TryLoadMostRecentSave())
         {
             Debug.LogError("[LanguageSelectUI] 최신 세이브 로드 실패");

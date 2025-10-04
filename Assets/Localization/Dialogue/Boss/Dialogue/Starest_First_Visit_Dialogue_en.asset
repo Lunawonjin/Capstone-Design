@@ -19,54 +19,48 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 5172039680
-    m_Localized: 'Hey! Over here. {playerName}
-
-      You saw my text?
-
-      Right
-      on time.'
+    m_Localized: "Hey, you\u2019re {playerName}, right?\nGlad you found the place\nsaw
+      my message, huh!"
     m_Metadata:
       m_Items: []
   - m_Id: 238400507904
-    m_Localized: 'You got most of it from the message
-
-      I sent, right?'
+    m_Localized: Want me to walk you through the job once more?
     m_Metadata:
       m_Items: []
   - m_Id: 667238731776
-    m_Localized: Yes, I understand clearly.
+    m_Localized: "No, I\u2019m fine!"
     m_Metadata:
       m_Items: []
   - m_Id: 679607734272
-    m_Localized: "I\u2019ll read it once more."
+    m_Localized: Yes, please explain!
     m_Metadata:
       m_Items: []
   - m_Id: 7542025482240
-    m_Localized: Good. Fired up for your first day, huh.
+    m_Localized: 'Great.
+
+      If you forget anything, just check the message again.'
     m_Metadata:
       m_Items: []
   - m_Id: 7542059036672
-    m_Localized: Steady your breathing and get ready to head in.
+    m_Localized: "Shall we step into Sol\u2019s house?"
     m_Metadata:
       m_Items: []
   - m_Id: 7542059036673
-    m_Localized: "Right\u2014first day and all; getting it at once can be hard.\nI\u2019ll
-      explain it again, simple and quick."
+    m_Localized: "Spirits who\u2019ve been hurt live in this village."
     m_Metadata:
       m_Items: []
   - m_Id: 15287332106240
-    m_Localized: "Listen up. \nThe spirit we\u2019re healing is a kid named Sol."
+    m_Localized: 'We get to know them by talking
+
+      and we help heal them.'
     m_Metadata:
       m_Items: []
   - m_Id: 15287353077760
-    m_Localized: 'Learn about Sol by talking to her,
-
-      and our goal is to heal
-      her wounds.'
+    m_Localized: "Details can come later.\nwe\u2019ll learn as we go."
     m_Metadata:
       m_Items: []
   - m_Id: 15287353077761
-    m_Localized: "Got it? Let\u2019s go meet Sol."
+    m_Localized: "All right, let\u2019s head in and meet Sol."
     m_Metadata:
       m_Items: []
   - m_Id: 15287353077762
