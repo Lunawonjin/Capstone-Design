@@ -323,15 +323,6 @@ public class DataManager : MonoBehaviour
 
     public void SaveData()
     {
-        // [수정됨] 캐릭터 최초 생성 시 저장을 막는 문제가 있어 이 로직을 주석 처리합니다.
-        // 저장을 막는 로직은 SaveData를 호출하는 쪽(예: 인게임 메뉴)에서 처리하는 것이 더 안전합니다.
-        //
-        // string currentSceneName = SceneManager.GetActiveScene().name;
-        // if (nonGameplayScenes != null && nonGameplayScenes.Contains(currentSceneName))
-        // {
-        //     Debug.LogWarning($"[DataManager] 저장 불가 씬('{currentSceneName}')에서는 저장을 수행하지 않습니다.");
-        //     return;
-        // }
 
         if (nowSlot < 0)
         {
