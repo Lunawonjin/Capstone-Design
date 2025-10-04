@@ -1,5 +1,3 @@
-
-// Select.cs
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,7 +25,7 @@ public class Select : MonoBehaviour
     [Tooltip("빈 슬롯이면 프리팹/로컬라이즈 기본 라벨을 그대로 둡니다. 끄면 빈 슬롯 라벨을 공백으로 비웁니다.")]
     [SerializeField] private bool leaveEmptySlotTextUntouched = true;
 
-    private bool[] hasSave;          // 각 슬롯 세이브 존재 여부
+    private bool[] hasSave;         // 각 슬롯 세이브 존재 여부
     private string _pendingName = ""; // 입력 캐시
 
     // ---------- Unity Lifecycle ----------
@@ -91,13 +89,9 @@ public class Select : MonoBehaviour
         var dm = DataManager.instance;
         if (dm != null)
         {
-            // DataManager에 GetSlotFullPath가 있다면 그걸 쓰세요.
-            var mi = typeof(DataManager).GetMethod("GetSlotFullPath");
-            if (mi != null) return (string)mi.Invoke(dm, new object[] { slot });
-
-            if (!Directory.Exists(dm.path)) Directory.CreateDirectory(dm.path);
-            return Path.Combine(dm.path, $"slot_{slot}.json");
+            return dm.GetSlotFullPath(slot);
         }
+        // DataManager가 없는 비상 상황을 위한 폴백
         string fallback = Path.Combine(Application.persistentDataPath, "save");
         if (!Directory.Exists(fallback)) Directory.CreateDirectory(fallback);
         return Path.Combine(fallback, $"slot_{slot}.json");
@@ -109,7 +103,7 @@ public class Select : MonoBehaviour
         {
             string json = File.ReadAllText(file);
             PlayerData pd = JsonUtility.FromJson<PlayerData>(json);
-            return pd != null ? pd.Name : null;
+            return pd?.Name;
         }
         catch { return null; }
     }
@@ -124,9 +118,9 @@ public class Select : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(_pendingName))
             return _pendingName.Trim();
 
-        if (newPlayerPreview != null)
+        if (newPlayerInput != null)
         {
-            var t = newPlayerPreview.text?.Trim();
+            var t = newPlayerInput.text?.Trim();
             if (!string.IsNullOrEmpty(t)) return t;
         }
         return "";
@@ -184,10 +178,8 @@ public class Select : MonoBehaviour
 
         DataManager.instance.nowSlot = number;
 
-        // 저장 유무에 따라 GoGame()이 알아서 신규/기존 분기 처리
         if (hasSave[number])
         {
-            // 미리 SafeLoad() 하지 않고 바로 GoGame() 호출
             GoGame();
         }
         else
@@ -217,52 +209,56 @@ public class Select : MonoBehaviour
 
         if (!exists)
         {
-            // ── 신규 생성: 처음 시작할 때만 startSceneName으로 진입
-            string name = GetFinalEnteredName();
-            if (string.IsNullOrWhiteSpace(name))
+            // ── 신규 생성: 안정성 강화를 위해 try-catch 구문으로 감싸기 ──
+            try
             {
-                Debug.LogWarning("[Select] 이름이 비어 있습니다. 이름을 입력해 주세요.");
-                if (creat) creat.SetActive(true);
-                if (newPlayerInput) newPlayerInput.ActivateInputField();
-                return;
+                string name = GetFinalEnteredName();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    Debug.LogWarning("[Select] 이름이 비어 있습니다. 이름을 입력해 주세요.");
+                    if (creat) creat.SetActive(true);
+                    if (newPlayerInput) newPlayerInput.ActivateInputField();
+                    return;
+                }
+
+                DataManager.instance.nowPlayer = new PlayerData
+                {
+                    Name = name.Trim(),
+                    Level = 1,
+                    Coin = 0,
+                    Item = 0,
+                    Day = 1,
+                    Scene = startSceneName,
+                    HasSavedPosition = false
+                };
+
+                DataManager.instance.SaveData();
+                if (s < hasSave.Length) hasSave[s] = true;
+
+                RefreshSingleSlotUI(s);
+
+                if (!string.IsNullOrEmpty(startSceneName))
+                    SceneManager.LoadScene(startSceneName);
+                else
+                    Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
             }
-
-            DataManager.instance.nowPlayer = new PlayerData
+            catch (System.Exception e)
             {
-                Name = name.Trim(),
-                Level = 1,
-                Coin = 0,
-                Item = 0,
-                Day = 1,
-                Scene = startSceneName,    // 최초 시작 씬은 여기 기록
-                HasSavedPosition = false
-            };
-
-            DataManager.instance.SaveData();
-            if (s < hasSave.Length) hasSave[s] = true;
-
-            RefreshSingleSlotUI(s);
-
-            // 최초 시작은 startSceneName으로 진입
-            if (!string.IsNullOrEmpty(startSceneName))
-                SceneManager.LoadScene(startSceneName);
-            else
-                Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
+                Debug.LogError($"[Select] 새 플레이어 생성 또는 저장 중 오류 발생: {e.Message}\n{e.StackTrace}");
+            }
         }
         else
         {
-            // ── 저장이 존재: 무조건 저장된 Scene으로 이동(플레이어 위치도 적용)
-            SafeLoad(); // nowPlayer 채움
+            // ── 저장이 존재: 무조건 저장된 Scene으로 이동 ──
+            SafeLoad();
 
             string savedScene = DataManager.instance.nowPlayer?.Scene;
             if (!string.IsNullOrEmpty(savedScene))
             {
-                // 저장된 씬과 좌표를 존중하여 이동
                 StartCoroutine(DataManager.instance.LoadSavedSceneAndPlacePlayer());
             }
             else
             {
-                // 혹시 Scene이 비어 있으면 안전하게 폴백
                 Debug.LogWarning("[Select] 저장 파일에 Scene 정보가 비어 있습니다. startSceneName으로 폴백합니다.");
                 if (!string.IsNullOrEmpty(startSceneName))
                     SceneManager.LoadScene(startSceneName);
@@ -301,7 +297,6 @@ public class Select : MonoBehaviour
         {
             if (number < hasSave.Length) hasSave[number] = false;
 
-            // 삭제된 슬롯은 다시 로컬라이즈 모드로 복귀
             RefreshSingleSlotUI(number);
 
             if (DataManager.instance.nowSlot == number)
