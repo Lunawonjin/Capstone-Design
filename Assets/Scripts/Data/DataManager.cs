@@ -68,6 +68,9 @@ public class PlayerData
     public int Ryu_FriendShip;
     public int White_FriendShip;
 
+    //메신저 삭제 방지 (도착/읽음 상태 기록)
+    public List<string> MessengerDelivered = new List<string>(); // 도착한 메시지 이름들(도착 순서)
+    public List<string> MessengerReadList = new List<string>(); // 읽은 메시지 이름들
 
     // ===== 활성 씬 오브젝트 스냅샷 =====
     public string ActiveSceneName;      // 저장 시점 활성 씬명
@@ -97,6 +100,10 @@ public class PlayerData
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
+
+        // 메신저 목록은 필드 선언 시점에서 new 되어 있으나 안전하게 보강
+        MessengerDelivered = new List<string>();
+        MessengerReadList = new List<string>();
     }
 }
 
@@ -112,6 +119,7 @@ public class DataManager : MonoBehaviour
     [Header("임시 저장 (이벤트용)")]
     public string subPath; // 임시 저장 폴더 경로 (persistentDataPath/sub_save)
     private string _tempSavePath = null; // 현재 진행중인 이벤트의 임시 저장 파일 경로
+    private bool _isQuitting = false;    // 종료 감지
 
     // 인스펙터에서 저장을 막을 씬 목록을 관리합니다.
     [Header("저장 불가 씬 (메뉴 등)")]
@@ -144,7 +152,6 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string saltFriendshipObjectName = "Text_Salt_Friendship";
     [SerializeField] private string ryuFriendshipObjectName = "Text_Ryu_Friendship";
     [SerializeField] private string whiteFriendshipObjectName = "Text_White_Friendship";
-
 
     [Header("표기 형식(언어별)")]
     // {0}=일차(숫자), {1}=요일명
@@ -269,6 +276,9 @@ public class DataManager : MonoBehaviour
         subPath = Path.Combine(Application.persistentDataPath, "sub_save");
         if (!Directory.Exists(subPath)) Directory.CreateDirectory(subPath);
 
+        // 시작 시 혹시 남아 있을 수 있는 임시 파일을 청소(선택적)
+        CleanupAllSubSaves();
+
         if (dontDestroyOnLoadHUD)
         {
             if (coinText) DontDestroyOnLoad(coinText.gameObject);
@@ -290,10 +300,19 @@ public class DataManager : MonoBehaviour
         SnapshotValues();
     }
 
+    void OnApplicationQuit()
+    {
+        _isQuitting = true;
+        CleanupAllSubSaves(); // 종료 시 임시파일 일괄 삭제
+    }
+
     void OnDestroy()
     {
         if (instance == this)
             SceneManager.sceneLoaded -= OnSceneLoaded_RebindHUD_AndApplyPos;
+
+        if (_isQuitting)
+            CleanupAllSubSaves(); // 안전망
     }
 
     void Start()
@@ -861,36 +880,8 @@ public class DataManager : MonoBehaviour
 
     void OnSceneLoaded_RebindHUD_AndApplyPos(Scene scene, LoadSceneMode mode)
     {
-        if (nowSlot >= 0)
-        {
-            string tempFileName = $"slot_{nowSlot}_temp.json";
-            string potentialTempPath = Path.Combine(subPath, tempFileName);
-
-            if (File.Exists(potentialTempPath))
-            {
-                Debug.Log($"[DataManager] 임시 파일 발견, 로드 시도: {potentialTempPath}");
-                try
-                {
-                    nowPlayer = JsonUtility.FromJson<PlayerData>(File.ReadAllText(potentialTempPath)) ?? new PlayerData();
-                    File.Delete(potentialTempPath);
-                    Debug.Log($"[DataManager] 임시 파일 로드 완료 및 삭제: {potentialTempPath}");
-
-                    // ======================= [디버그 로그 추가] =======================
-                    // 파일에서 값을 성공적으로 불러온 직후의 실제 값이 얼마인지 확인합니다.
-                    Debug.Log($"[디버그] 로드 직후 Coin 값: {nowPlayer.Coin}");
-                    // =================================================================
-
-                    _tempSavePath = null;
-                    NotifyChanged();
-                    SnapshotValues();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"[DataManager] 임시 파일 로드 실패: {e}");
-                    _tempSavePath = null;
-                }
-            }
-        }
+        // ★ SubSave가 있으면 즉시 로드하고 삭제 (간결화)
+        TryLoadAndDeleteSubSave();
 
         if (autoRebindOnSceneLoaded)
         {
@@ -1152,7 +1143,129 @@ public class DataManager : MonoBehaviour
         return false;
     }
 
-    // ===== 임시 저장/로드 API (이벤트용) =====
+    // ===== 임시 저장/로드 API (SubSave) =====
+
+    string GetTempPathForSlot(int slot)
+    {
+        return Path.Combine(subPath, $"slot_{slot}_temp.json");
+    }
+
+    /// <summary>현재 nowPlayer를 SubSave에 기록</summary>
+    public void SubSaveCommit()
+    {
+        if (nowSlot < 0)
+        {
+            Debug.LogWarning("[DataManager] SubSaveCommit: nowSlot is not set. Cannot create temp save.");
+            return;
+        }
+
+        try
+        {
+            string file = GetTempPathForSlot(nowSlot);
+            string json = JsonUtility.ToJson(nowPlayer, false);
+            File.WriteAllText(file, json);
+            Debug.Log($"[DataManager] SubSaveCommit → {file}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] SubSaveCommit 실패: {e}");
+        }
+    }
+
+    /// <summary>
+    /// SubSave가 있으면 즉시 로드하고, 성공/실패와 관계없이 파일을 삭제한다.
+    /// </summary>
+    public bool TryLoadAndDeleteSubSave()
+    {
+        if (nowSlot < 0) return false;
+        string file = GetTempPathForSlot(nowSlot);
+        if (!File.Exists(file)) return false;
+
+        try
+        {
+            var json = File.ReadAllText(file);
+            var tmp = JsonUtility.FromJson<PlayerData>(json);
+            if (tmp != null) nowPlayer = tmp;
+            Debug.Log($"[DataManager] SubSave 로드 성공 → {file}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] SubSave 로드 실패: {e}");
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(file);
+                Debug.Log($"[DataManager] SubSave 파일 삭제 완료 → {file}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[DataManager] SubSave 파일 삭제 실패: {e}");
+            }
+        }
+
+        // 씬 진입 직후 HUD/스냅샷 반영
+        NotifyChanged(); SnapshotValues();
+        return true;
+    }
+
+    /// <summary>씬 바꾸기 직전에 SubSave로 커밋만 하고, LoadScene 호출</summary>
+    public void ChangeSceneWithSubSave(string sceneName)
+    {
+        SubSaveCommit();
+        SceneManager.LoadScene(sceneName);
+    }
+
+    /// <summary>sub_save 폴더의 *_temp.json 파일을 모두 삭제합니다.</summary>
+    public void CleanupAllSubSaves()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(subPath) || !Directory.Exists(subPath)) return;
+
+            var files = Directory.GetFiles(subPath, "*_temp.json", SearchOption.TopDirectoryOnly);
+            foreach (var f in files)
+            {
+                try { File.Delete(f); }
+                catch (Exception e) { Debug.LogError($"[DataManager] SubSave 삭제 실패: {f}\n{e}"); }
+            }
+            if (files.Length > 0)
+                Debug.Log($"[DataManager] SubSave 정리 완료 ({files.Length}개 삭제)");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] SubSave 정리 중 오류: {e}");
+        }
+    }
+
+    // ===== 메신저 상태 기록 도우미 =====
+
+    public bool HasMessengerDelivered(string name)
+        => nowPlayer?.MessengerDelivered != null && nowPlayer.MessengerDelivered.Contains(name);
+
+    public bool HasMessengerRead(string name)
+        => nowPlayer?.MessengerReadList != null && nowPlayer.MessengerReadList.Contains(name);
+
+    public void AddMessengerDelivered(string name, bool commitSubSave = true)
+    {
+        if (string.IsNullOrEmpty(name) || nowPlayer == null) return;
+        nowPlayer.MessengerDelivered ??= new List<string>();
+        if (!nowPlayer.MessengerDelivered.Contains(name))
+            nowPlayer.MessengerDelivered.Add(name);
+        if (commitSubSave) SubSaveCommit();
+    }
+
+    public void AddMessengerRead(string name, bool commitSubSave = true)
+    {
+        if (string.IsNullOrEmpty(name) || nowPlayer == null) return;
+        nowPlayer.MessengerReadList ??= new List<string>();
+        if (!nowPlayer.MessengerReadList.Contains(name))
+            nowPlayer.MessengerReadList.Add(name);
+        if (commitSubSave) SubSaveCommit();
+    }
+
+    // ===== 임시 저장/로드 API (이벤트용: 기존 호환) =====
 
     public void CommitDataToTempFile()
     {
@@ -1163,7 +1276,6 @@ public class DataManager : MonoBehaviour
         }
 
         // ======================= [디버그 로그 추가] =======================
-        // 파일에 저장하기 직전의 실제 값이 얼마인지 확인합니다.
         Debug.Log($"[디버그] 저장 직전 Coin 값: {nowPlayer.Coin}");
         // =================================================================
 

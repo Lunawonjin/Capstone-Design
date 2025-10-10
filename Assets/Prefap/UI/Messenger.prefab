@@ -155,6 +155,7 @@ MonoBehaviour:
   recipientNameText: {fileID: 4361994056258893811}
   previewText: {fileID: 3797829149949090877}
   grayTargetGraphics: []
+  disableOnReadTarget: {fileID: 6826795706859033671}
   unreadTextColor: {r: 0, g: 0, b: 0, a: 1}
   readTextColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   logEnabled: 1
@@ -775,7 +776,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC548\uB155 {playerName}\uC528! \uC6B0\uB9AC \uD68C\uC0AC\uC5D0 ..."
+  m_text: "\uC548\uB155, {playerName} \uC528! \uC6B0\uB9AC \uD68C\uC0AC\uC5D0 \uC628
+    \uAC78..."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}

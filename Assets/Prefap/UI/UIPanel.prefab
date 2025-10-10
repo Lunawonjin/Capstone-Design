@@ -997,7 +997,7 @@ MonoBehaviour:
   m_Content: {fileID: 1635328052148089035}
   m_Horizontal: 0
   m_Vertical: 1
-  m_MovementType: 1
+  m_MovementType: 2
   m_Elasticity: 0.1
   m_Inertia: 1
   m_DecelerationRate: 0.135
@@ -2255,7 +2255,7 @@ Transform:
   m_GameObject: {fileID: 1294998881373732605}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -94.635864, y: -134.92365, z: -10.080753}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2396,11 +2396,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e137e05c3de48234f9ab0abb7d4386fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExitWarningModal
-  openStartScale: {x: 0.9, y: 0.9, z: 1}
-  openEndScale: {x: 1, y: 1, z: 1}
+  openStartScale: {x: 0.5, y: 0.5, z: 1}
+  openEndScale: {x: 0.666, y: 0.666, z: 1}
   openDuration: 0.14
-  closeStartScale: {x: 1, y: 1, z: 1}
-  closeEndScale: {x: 0.9, y: 0.9, z: 1}
+  closeStartScale: {x: 0.666, y: 0.666, z: 1}
+  closeEndScale: {x: 0.5, y: 0.5, z: 1}
   closeDuration: 0.12
   warringExitPanel: {fileID: 1030873382884995831}
   exitRect: {fileID: 0}
@@ -6249,7 +6249,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   button: {fileID: 3846129688950036264}
-  exitButton1: {fileID: 0}
+  exitButton1: {fileID: 5350717574453473854}
   exitButton2: {fileID: 0}
   toggleTargets:
   - {fileID: 4714709473673795777}
@@ -6307,7 +6307,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: -0.5, y: -0.000076293945}
-  m_SizeDelta: {x: 683, y: 20}
+  m_SizeDelta: {x: 683, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &7233736177096782962
 MonoBehaviour:
@@ -6327,7 +6327,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 0
+  m_Spacing: -5
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
@@ -11730,7 +11730,6 @@ GameObject:
   m_Component:
   - component: {fileID: 9172626897726400747}
   - component: {fileID: 1112824166169695569}
-  - component: {fileID: 7652388038037852130}
   m_Layer: 0
   m_Name: MessengerManager
   m_TagString: Untagged
@@ -11747,7 +11746,7 @@ Transform:
   m_GameObject: {fileID: 7393689666461457811}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -93.8125, y: -135.92859, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11769,7 +11768,7 @@ MonoBehaviour:
   logPrefix: '[MessageSystem] '
   scrollRect: {fileID: 7825401970742140063}
   content: {fileID: 1635328052148089035}
-  messageItemPrefab: {fileID: 2554997173195016816, guid: 8fd2fcc242ab5ec42b66a273e7ab4a1e, type: 3}
+  messageItemPrefab: {fileID: 0}
   notReadIndicator: {fileID: 7409095005980337009}
   messengerContent: {fileID: 4119093964689273739}
   messengerContentText: {fileID: 5529520441483331317}
@@ -11779,7 +11778,6 @@ MonoBehaviour:
   - messageName: Boss_First_Messenger
     recipientName: Boss
     recipientProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
-    previewText: "\uC548\uB155 {playerName}\uC528! \uC6B0\uB9AC \uD68C\uC0AC\uC5D0..."
     localizationTable: Messenger_Content
     conditions:
     - varType: 0
@@ -11787,32 +11785,40 @@ MonoBehaviour:
       boolValue: 0
       intOp: 0
       intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
     delivered: 0
     readContent: 1
-  startGameMessageName: Boss_First_Messenger
-  autoFlipStartGameTrueOnce: 1
-  autoSaveAfterFlip: 0
+  - messageName: Sol_Meet_After
+    recipientName: Sol
+    recipientProfile: {fileID: 21300000, guid: 7395a69fb98314045af6ce9f0f37e7d3, type: 3}
+    localizationTable: Messenger_Content
+    conditions:
+    - varType: 0
+      key: Sol_First_Meet
+      boolValue: 1
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 1
+    - varType: 3
+      key: 
+      boolValue: 1
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: Player's Room
+      stringIgnoreCase: 0
+    delivered: 0
+    readContent: 1
+  applyTokensToAllTextsInMessengerContent: 1
+  previewMaxChars: 26
+  previewNormalizeWhitespace: 1
+  previewEllipsis: ' ...'
   AllReadContent: 1
---- !u!114 &7652388038037852130
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7393689666461457811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c5b55b6834cb2de48bb2b3b52f853aae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UIPanelListController
-  scrollRect: {fileID: 7825401970742140063}
-  content: {fileID: 1635328052148089035}
-  panelPrefab: {fileID: 2822488358589626170, guid: 8fd2fcc242ab5ec42b66a273e7ab4a1e, type: 3}
-  spacing: -5
-  horizontalPadding: 0
-  verticalPadding: 0
-  panelWidth: 680
-  panelHeight: 120
+  autoLoadPrefabPath: UI/Messenger
 --- !u!1 &7409095005980337009
 GameObject:
   m_ObjectHideFlags: 0
@@ -11830,7 +11836,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2070538310021509752
 RectTransform:
   m_ObjectHideFlags: 0

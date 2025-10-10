@@ -17,7 +17,30 @@ MonoBehaviour:
   m_SharedData: {fileID: 11400000, guid: 70968e83c5b612842ac74cdb8ef6ca8a, type: 2}
   m_Metadata:
     m_Items: []
-  m_TableData: []
+  m_TableData:
+  - m_Id: 272881414144
+    m_Localized: "Hi, {playerName}! Welcome aboard\u2014heard it\u2019s your first
+      shift today.\nWe heal spirits.\nSo your job is to help heal the wounded spirits
+      you meet.\nYou\u2019ll be in charge of the spirits in the village of Starest,
+      so clock in there.\nI\u2019ll be waiting for you in Starest."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80005585899520
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98652626817024
+    m_Localized: "Hello! It\u2019s Sol. Hehe.\nI\u2019m so excited for tomorrow that
+      I can\u2019t sleep\u2026 so I wanted to message you!\nIt\u2019s always been
+      my wish to run around and play with friends.\nMaybe you\u2019ll help make that
+      wish come true, {playerName}. Thump-thump!\nAh, it\u2019s late now. I\u2019m
+      going to bed.\nSee you tomorrow\u2014promise!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98652626817025
+    m_Localized: Sol
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

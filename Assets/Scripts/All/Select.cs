@@ -201,6 +201,10 @@ public class Select : MonoBehaviour
                     return;
                 }
 
+                // 현재 선택된 로케일을 코드로 가져온다. (예: "ko", "en", "ja"…)
+                var locale = LocalizationSettings.SelectedLocale;
+                string currentLocaleCode = (locale != null) ? locale.Identifier.Code : "ko";
+
                 DataManager.instance.nowPlayer = new PlayerData
                 {
                     Name = name.Trim(),
@@ -211,6 +215,9 @@ public class Select : MonoBehaviour
                     Scene = startSceneName,
                     HasSavedPosition = false
                 };
+
+                // ★ 핵심: 새 세이브에 현재 로케일을 반영 (정규화 포함)
+                DataManager.instance.SetLanguageCode(currentLocaleCode, saveImmediately: false);
 
                 DataManager.instance.SaveData();
                 if (s < hasSave.Length) hasSave[s] = true;

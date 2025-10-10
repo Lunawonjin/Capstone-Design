@@ -19,6 +19,18 @@ MonoBehaviour:
     m_Key: Boss_First_Messenger
     m_Metadata:
       m_Items: []
+  - m_Id: 80005585899520
+    m_Key: Boss_First_Messenger_Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98652626817024
+    m_Key: Sol_Meet_After
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98652626817025
+    m_Key: Sol_Meet_After_Name
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
