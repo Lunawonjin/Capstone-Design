@@ -206,7 +206,8 @@ public class TogglePanelWithPause : MonoBehaviour
 
     [Header("Exit Button")]
     [Tooltip("Exit(닫기) 버튼. 누르면 이 패널을 비활성화합니다.")]
-    [SerializeField] private Button exitButton;   // ★ 추가
+    [SerializeField] private Button exitButton1;
+    [SerializeField] private Button exitButton2;
 
     [Header("Toggle Targets")]
     [Tooltip("켜고 끌 UI 루트(들). 여러 개면 모두 같은 타이밍에 ON/OFF 됩니다.")]
@@ -333,8 +334,11 @@ public class TogglePanelWithPause : MonoBehaviour
             button.onClick.AddListener(OnButtonClicked);
 
         // ★ Exit 버튼 리스너 등록
-        if (exitButton != null)
-            exitButton.onClick.AddListener(OnClickExit);
+        if (exitButton1 != null)
+            exitButton1.onClick.AddListener(OnClickExit);
+
+        if (exitButton2!= null)
+            exitButton2.onClick.AddListener(OnClickExit);
 
         if (isEscOpener)
             RegisterEscOpener(escGroupId, this, escPriority);
@@ -346,8 +350,11 @@ public class TogglePanelWithPause : MonoBehaviour
             button.onClick.RemoveListener(OnButtonClicked);
 
         // ★ Exit 버튼 리스너 해제
-        if (exitButton != null)
-            exitButton.onClick.RemoveListener(OnClickExit);
+        if (exitButton1 != null)
+            exitButton1.onClick.RemoveListener(OnClickExit);
+
+        if (exitButton2 != null)
+            exitButton2.onClick.RemoveListener(OnClickExit);
 
         if (isEscOpener)
             UnregisterEscOpener(escGroupId, this);

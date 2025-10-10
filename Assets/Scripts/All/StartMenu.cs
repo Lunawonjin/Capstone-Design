@@ -1,8 +1,3 @@
-// StartMenu.cs
-// Unity 6 (LTS)
-// 변경점: EndPanel이 활성화된 동안 ESC(또는 Cancel 축)를 누르면
-//         OnClickExitCancel()을 호출해 No와 동일하게 EndPanel만 닫습니다.
-
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -21,9 +16,9 @@ public class StartMenu : MonoBehaviour
     public GameObject settingPanel;
 
     [Header("종료 확인 패널(EndPanel)")]
-    public GameObject endPanel;      // Exit 클릭 시 띄울 확인 패널
-    public Button endYesButton;      // EndPanel의 Yes
-    public Button endNoButton;       // EndPanel의 No
+    public GameObject endPanel;
+    public Button endYesButton;
+    public Button endNoButton;
 
     [Header("ESC 입력 옵션")]
     [Tooltip("Input.GetButtonDown(\"Cancel\")도 함께 인식 (기본 ESC 매핑)")]
@@ -39,7 +34,7 @@ public class StartMenu : MonoBehaviour
     {
         if (newGamePanel) newGamePanel.SetActive(false);
         if (settingPanel) settingPanel.SetActive(false);
-        if (endPanel) endPanel.SetActive(false); // EndPanel은 기본 비활성화
+        if (endPanel) endPanel.SetActive(false);
     }
 
     void Start()
@@ -52,25 +47,39 @@ public class StartMenu : MonoBehaviour
         if (endYesButton) endYesButton.onClick.AddListener(OnClickExitConfirm);
         if (endNoButton) endNoButton.onClick.AddListener(OnClickExitCancel);
 
-        bool hasAny = false;
-        if (DataManager.instance != null)
-        {
-            hasAny = DataManager.instance.HasAnySave(slotCount);
-        }
-        if (loadGameButton) loadGameButton.gameObject.SetActive(hasAny);
+        RefreshLoadButtonVisibility();
+    }
+
+    void OnEnable()
+    {
+        RefreshLoadButtonVisibility();
     }
 
     void Update()
     {
-        // EndPanel이 표시 중일 때만 ESC를 소비하여 "No" 동작 수행
         if (endPanel && endPanel.activeInHierarchy)
         {
             bool esc = Input.GetKeyDown(KeyCode.Escape);
             if (!esc && useCancelAxis) esc = Input.GetButtonDown("Cancel");
             if (esc)
             {
-                OnClickExitCancel();   // No와 동일: EndPanel만 닫기
+                OnClickExitCancel();
             }
+        }
+    }
+
+    // [수정됨] Select.cs에서 호출할 수 있도록 public으로 변경
+    public void RefreshLoadButtonVisibility()
+    {
+        bool hasAnySave = false;
+        if (DataManager.instance != null)
+        {
+            hasAnySave = DataManager.instance.HasAnySave(slotCount);
+        }
+
+        if (loadGameButton)
+        {
+            loadGameButton.gameObject.SetActive(hasAnySave);
         }
     }
 
@@ -88,7 +97,6 @@ public class StartMenu : MonoBehaviour
         if (endPanel) endPanel.SetActive(false);
     }
 
-    // 저장된 씬을 우선 로드하고, 포지션 적용까지 호출
     IEnumerator Co_OnClickLoadGame()
     {
         var dm = DataManager.instance;
@@ -102,12 +110,13 @@ public class StartMenu : MonoBehaviour
         if (!ok)
         {
             Debug.LogWarning("[StartMenu] 로드할 세이브가 없거나 로드 실패. NewGame을 진행하십시오.");
+            RefreshLoadButtonVisibility();
             yield break;
         }
 
         string target = dm.nowPlayer != null ? dm.nowPlayer.Scene : null;
-
         bool hasSavedScene = !string.IsNullOrEmpty(target);
+
 #if UNITY_2021_1_OR_NEWER
         if (!hasSavedScene || !Application.CanStreamedLevelBeLoaded(target))
             target = gameSceneName;
@@ -122,7 +131,6 @@ public class StartMenu : MonoBehaviour
         yield return dm.LoadSavedSceneAndPlacePlayer();
     }
 
-    // Exit 버튼: EndPanel 표시
     void OnClickExitRequest()
     {
         if (endPanel)
@@ -137,19 +145,16 @@ public class StartMenu : MonoBehaviour
         }
     }
 
-    // EndPanel -> Yes
     void OnClickExitConfirm()
     {
         QuitApplication();
     }
 
-    // EndPanel -> No
     void OnClickExitCancel()
     {
         if (endPanel) endPanel.SetActive(false);
     }
 
-    // 공통 종료 처리
     void QuitApplication()
     {
 #if UNITY_EDITOR
