@@ -2972,6 +2972,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1112824166169695569, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: messageItemPrefab
+      value: 
+      objectReference: {fileID: 1875851539}
+    - target: {fileID: 1112824166169695569, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: messages.Array.data[0].delivered
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1250882904647824351, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_fontSize
       value: 40
@@ -3211,6 +3219,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+--- !u!114 &1875851539 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 769517281949364978, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+  m_PrefabInstance: {fileID: 1875851538}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3c79163b44aab640a4010d2680892c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MessageItemUI
 --- !u!114 &1914318757 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1134321366014647661, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}

@@ -27,6 +27,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 793b04aae2fba574988cbbdc66fcd22b
+    m_Address: Messenger_Content_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 89a13a36059b73c46825d2cb1da1a40c
     m_Address: Starest_First_Visit_Dialogue_ko
     m_ReadOnly: 1

@@ -51,6 +51,9 @@ public class PlayerData
     // 언어 코드("ko","en","jp") — 기본 "ko"
     public string Language;
 
+    //문자 조건
+    public bool StartGame;
+
     //첫 방문 지역 이벤트
     public bool Starest_First_Visit;
 
@@ -77,6 +80,8 @@ public class PlayerData
         Scene = "";
         Weekday = 1;
         Language = "ko";
+
+        StartGame = false;
 
         Starest_First_Visit = false;
 

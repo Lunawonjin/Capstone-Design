@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 25a392d61674dba4e968a04e64370664
+    m_Address: Messenger_Content_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 467ced898d0e01e489f431c31bf81efc
     m_Address: Sol_First_Meet_Speaker_en
     m_ReadOnly: 1

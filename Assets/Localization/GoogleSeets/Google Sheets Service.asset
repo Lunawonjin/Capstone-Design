@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Localization.Editor::UnityEditor.Localization.Plugins.Google.SheetsServiceProvider
   m_ApiKey: 
   m_ClientId: 1078836833795-nlmm21vl7heo3ncb9a30rmp3qu1njapd.apps.googleusercontent.com
-  m_ClientSecret: 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
+  m_ClientSecret: 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
   m_AuthenticationType: 1
   m_ApplicationName: Capstone-Design
   m_NewSheetProperties:
