@@ -28,7 +28,7 @@
         { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },
         { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": -3.0 },
         { "type": "npcSetActive", "npcName": "Boss", "active": false },
-    	{ "type": "delay", "duration": 0.5 },
+        { "type": "npcMove", "npcName": "Sol", "dx": 0.0,  "dy": -1.0 },
         { "type": "dialoguePanelRestoreNow" }
       ]
     },

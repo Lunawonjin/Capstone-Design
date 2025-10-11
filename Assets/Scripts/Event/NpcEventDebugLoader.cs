@@ -41,6 +41,7 @@ public class NpcEventDebugLoader : MonoBehaviour
     }
 
     [Serializable] public class DialogueReaction { public string onKey = ""; public EventPostAction[] actions = Array.Empty<EventPostAction>(); }
+
     [Serializable]
     public class EventScript
     {
@@ -120,6 +121,12 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private string sceneNameToTrigger = "Starest";
     [SerializeField] private string bossOwnerName = "Boss";
     [SerializeField] private string bossEventName = "Starest_Frist_Visit";
+
+    [Header("특수 처리: Starest_First_Visit/Dialogue_003")]
+    [Tooltip("Dialogue_003 순간 잠시 보여줄 오브젝트(예: 연출용 프랍). 비워두면 스킵")]
+    [SerializeField] private GameObject specialObjectToActivate;
+    [Tooltip("오브젝트를 보여주는 시간(초). 0이면 즉시 다음 단계")]
+    [SerializeField] private float specialObjectShowDuration = 0.5f;
     #endregion
 
     #region 런타임 상태
@@ -189,6 +196,9 @@ public class NpcEventDebugLoader : MonoBehaviour
 
     private string _ctxOwner = "";
     private string _ctxEvent = "";
+
+    // 중복 실행 방지: Dialogue_003 특수 처리 1회만
+    private bool _special003Processed = false;
     #endregion
 
     private void Reset() { if (!playerTransform) playerTransform = transform; }
@@ -346,6 +356,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         _ctxOwner = ownerForIO;
         _ctxEvent = eventForIO;
         _spawnedDuringEvent.Clear();
+        _special003Processed = false; // 특수 분기 초기화
 
         EnterEventGuard();
 
@@ -390,7 +401,7 @@ public class NpcEventDebugLoader : MonoBehaviour
                 float durY = useFixedSpeed ? Mathf.Abs(sy) / speed : (step.duration > 0f ? step.duration * Mathf.Abs(sy) / (Mathf.Abs(sx) + Mathf.Abs(sy)) : Mathf.Max(0f, script.defaultStepDuration));
 
                 if (Mathf.Abs(sx) > 0f) yield return (script.useWorldSpace) ? MoveByWorld(new Vector2(sx, 0f), durX, script.useRigidbodyMove) : MoveByLocal(new Vector2(sx, 0f), durX, script.useRigidbodyMove);
-                if (Mathf.Abs(sy) > 0f) yield return (script.useWorldSpace) ? MoveByWorld(new Vector2(0f, sy), durY, script.useRigidbodyMove) : MoveByLocal(new Vector2(0f, sy), durY, script.useRigidbodyMove);
+                if (Mathf.Abs(sy) > 0f) yield return (script.useWorldSpace) ? MoveByWorld(new Vector2(0, sy), durY, script.useRigidbodyMove) : MoveByLocal(new Vector2(0, sy), durY, script.useRigidbodyMove);
             }
             else
             {
@@ -470,7 +481,9 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
 
+        // 페이드 중 복구(블랙 상태에서)
         yield return StartCoroutine(FadeOutInAndReturn());
+
         ExitEventGuard();
         onComplete?.Invoke();
 
@@ -488,10 +501,23 @@ public class NpcEventDebugLoader : MonoBehaviour
             yield break;
         }
 
+        _special003Processed = false; // 대화 시작 시 한번 더 초기화
+
         if (dialoguePanel) dialoguePanel.SetActive(true);
 
         void OnKeyShownHandler(string key)
         {
+            // 특수 분기: Starest_First_Visit + Dialogue_003
+            if (string.Equals(_ctxEvent, "Starest_First_Visit", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(key, "Dialogue_003", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!_special003Processed)
+                {
+                    _special003Processed = true; // 중복 방지
+                    StartCoroutine(HandleSpecial_Dialogue003());
+                }
+            }
+
             if (_currentDialogueReactions == null || _currentDialogueReactions.Length == 0) return;
 
             for (int i = 0; i < _currentDialogueReactions.Length; i++)
@@ -565,7 +591,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             else if (actionType == "affinitydown")
             {
                 string dn = ResolveAffinityDataName(act.dataName);
-                if (!AffinityDown(dn, (int)act.delta, act.clamp, act.min, act.max)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
+                if (!AffinityDown(dn, (int)act.delta, act.clamp, act.min, int.MaxValue)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
             }
             else if (actionType == "datadelta")
             {
@@ -1291,13 +1317,24 @@ public class NpcEventDebugLoader : MonoBehaviour
         _tempDeactivatedMapNpcs.Clear();
 
         DestroyEventSpawnedNpcs();
-        ReactivateOwnersDeactivatedOnEnter();
+
+        // ❌ 여기서 오너 복구를 호출하던 코드를 제거했습니다.
+        // ReactivateOwnersDeactivatedOnEnter();  // <-- 삭제 (페이드아웃 직후로 이동)
     }
 
     private IEnumerator FadeOutInAndReturn()
     {
+        // 1) 어둡게 (완전 블랙)
         yield return FadeTo(1f, fadeOutDuration);
+
+        // 2) 블랙 상태에서 복구/위치 스냅
+        ReactivateOwnersDeactivatedOnEnter();                 // ★ 오너 복구를 여기서 수행
         SnapPlayerWorld(_savedPlayerPosition, useRbIntent: false);
+
+        // Transform/Active 반영 안정화를 위해 한 프레임 유예(권장)
+        yield return null;
+
+        // 3) 밝아지기
         yield return FadeTo(0f, fadeInDuration);
     }
 
@@ -1478,6 +1515,115 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
         _ownersDeactivatedOnEnter.Clear();
+    }
+
+    // ===== 특수 처리 유틸 =====
+
+    private bool HasValidPlayerName()
+    {
+        if (DataManager.instance == null || DataManager.instance.nowPlayer == null) return false;
+
+        // 직접 접근 우선
+        try
+        {
+            var direct = DataManager.instance.nowPlayer.Name;
+            if (!string.IsNullOrWhiteSpace(direct)) return true;
+        }
+        catch { /* 폴백 진행 */ }
+
+        // 리플렉션 폴백(대소문자 무시)
+        var pd = DataManager.instance.nowPlayer;
+        var t = pd.GetType();
+        var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase;
+
+        var f = t.GetField("Name", flags) ?? t.GetField("playerName", flags) ?? t.GetField("name", flags);
+        if (f != null)
+        {
+            var val = f.GetValue(pd) as string;
+            return !string.IsNullOrWhiteSpace(val);
+        }
+
+        var p = t.GetProperty("Name", flags) ?? t.GetProperty("playerName", flags) ?? t.GetProperty("name", flags);
+        if (p != null && p.CanRead)
+        {
+            var val = p.GetValue(pd, null) as string;
+            return !string.IsNullOrWhiteSpace(val);
+        }
+
+        return false;
+    }
+
+    private IEnumerator TryAdvanceDialogueOneStepCo(float initialDelay = 0.0f)
+    {
+        if (initialDelay > 0f) yield return new WaitForSeconds(initialDelay);
+        yield return null; // 한 프레임 유예
+        yield return new WaitForEndOfFrame();
+
+        if (dialogueManager == null) yield break;
+
+        var dm = dialogueManager.GetType();
+        var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase;
+
+        string[] methodCandidates =
+        {
+            "Continue", "ContinueDialogue", "Next", "Advance", "Proceed",
+            "ShowNext", "ShowNextLine", "OnClickNext", "ContinueClicked",
+            "Step", "AdvanceLine"
+        };
+
+        foreach (var name in methodCandidates)
+        {
+            var m = dm.GetMethod(name, flags, null, Type.EmptyTypes, null);
+            if (m != null)
+            {
+                try
+                {
+                    m.Invoke(dialogueManager, null);
+                    yield break;
+                }
+                catch { /* 다음 후보 시도 */ }
+            }
+        }
+
+        try
+        {
+            var go = (dialogueManager as Component)?.gameObject;
+            if (go) go.SendMessage("OnClickNext", SendMessageOptions.DontRequireReceiver);
+        }
+        catch { /* 무시 */ }
+    }
+
+    private IEnumerator HandleSpecial_Dialogue003()
+    {
+        HandleDialoguePanelActive(false);
+
+        if (specialObjectToActivate)
+        {
+            bool prev = specialObjectToActivate.activeSelf;
+            specialObjectToActivate.SetActive(true);
+
+            if (specialObjectShowDuration > 0f)
+                yield return new WaitForSeconds(specialObjectShowDuration);
+
+            // 연출 종료 시 원복이 필요하면 주석 해제
+            // specialObjectToActivate.SetActive(prev);
+        }
+        else
+        {
+            yield return null;
+        }
+
+        if (HasValidPlayerName())
+        {
+            // 패널 복구 → 프레임 유예 → 다음 대사
+            ForceActivateDialoguePanelNow();
+            yield return StartCoroutine(TryAdvanceDialogueOneStepCo(0.0f));
+        }
+        else
+        {
+            // 이름이 없으면 설계에 따라 여기서 이름 입력 UI 호출 가능
+            // ForceActivateDialoguePanelNow(); // 필요 시 즉시 복구
+        }
     }
     #endregion
 }

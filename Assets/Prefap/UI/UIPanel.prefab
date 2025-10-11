@@ -656,7 +656,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "1\uC77C (\uC6D4)"
+  m_text: Day 1 (Mon)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -683,8 +683,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45
-  m_fontSizeBase: 45
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2317,6 +2317,19 @@ MonoBehaviour:
   arrowBobSpeed: 0.01
   hideArrowWhenClosed: 1
   preferBuildIndexMatch: 1
+  blockWhileRequiredMessageUnread: 1
+  requiredMessageName: Boss_First_Messenger
+  guideArrow: {fileID: 5350146619300445033}
+  guideArrowOffset: {x: 0, y: 120}
+  guideBobAmplitude: 10
+  guideBobSpeed: 2.2
+  showGuideWhenClosed: 0
+  PlayerGoPlayerRoom: 0
+  PlayerGoStarest: 0
+  PlayerGoShopping: 0
+  guideIndexPlayerRoom: 0
+  guideIndexStarest: 1
+  guideIndexShopping: 2
 --- !u!114 &4198364525068548763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2720,7 +2733,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8501073371016605611
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4521,7 +4534,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD638\uAC10\uB3C4 : 0"
+  m_text: 'Salt Affinity: 0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -4548,8 +4561,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45
-  m_fontSizeBase: 45
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4930,7 +4943,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD638\uAC10\uB3C4 : 0"
+  m_text: 'Sol Affinity: 0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -4957,8 +4970,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45
-  m_fontSizeBase: 45
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -6272,6 +6285,7 @@ MonoBehaviour:
   isEscOpener: 1
   escPriority: 0
   escGroupId: MainUI
+  messengerContent: {fileID: 0}
 --- !u!1 &4161687458641207561
 GameObject:
   m_ObjectHideFlags: 0
@@ -9397,7 +9411,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD638\uAC10\uB3C4 : 0"
+  m_text: 'Ryu Affinity: 0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -9424,8 +9438,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45
-  m_fontSizeBase: 45
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9597,6 +9611,7 @@ RectTransform:
   - {fileID: 1115208030896599863}
   - {fileID: 6329511448911565835}
   - {fileID: 3311513720241876658}
+  - {fileID: 5350146619300445033}
   m_Father: {fileID: 4811221198659072402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -10686,6 +10701,7 @@ MonoBehaviour:
   isEscOpener: 0
   escPriority: 0
   escGroupId: MainUI
+  messengerContent: {fileID: 4119093964689273739}
 --- !u!1 &6663737908804892261
 GameObject:
   m_ObjectHideFlags: 0
@@ -10894,7 +10910,7 @@ GameObject:
   - component: {fileID: 6485549047566080056}
   - component: {fileID: 4220479278787490453}
   m_Layer: 5
-  m_Name: Arrow
+  m_Name: CurrentArrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10941,7 +10957,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0.09332228, a: 1}
+  m_Color: {r: 0.4811321, g: 0.4811321, b: 0.4811321, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -11434,7 +11450,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uD638\uAC10\uB3C4 : 0"
+  m_text: 'White Affinity: 0'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
   m_sharedMaterial: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -11461,8 +11477,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45
-  m_fontSizeBase: 45
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -11720,6 +11736,81 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &7352600104820615203
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5350146619300445033}
+  - component: {fileID: 2953405692828892120}
+  - component: {fileID: 6410693260511055946}
+  m_Layer: 5
+  m_Name: MissonArrow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5350146619300445033
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7352600104820615203}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9071745782035259026}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &2953405692828892120
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7352600104820615203}
+  m_CullTransparentMesh: 1
+--- !u!114 &6410693260511055946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7352600104820615203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 1834953801, guid: 35033022c23e3ca4499ec6cb55c65d8d, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &7393689666461457811
 GameObject:
   m_ObjectHideFlags: 0
@@ -11730,6 +11821,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9172626897726400747}
   - component: {fileID: 1112824166169695569}
+  - component: {fileID: 1871668177535166574}
   m_Layer: 0
   m_Name: MessengerManager
   m_TagString: Untagged
@@ -11813,12 +11905,124 @@ MonoBehaviour:
       stringIgnoreCase: 0
     delivered: 0
     readContent: 1
+  - messageName: Boss_Sol_Meet_After
+    recipientName: Boss
+    recipientProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+    localizationTable: Messenger_Content
+    conditions:
+    - varType: 1
+      key: Day
+      boolValue: 0
+      intOp: 0
+      intValue: 1
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 1
+    - varType: 3
+      key: 
+      boolValue: 0
+      intOp: 0
+      intValue: 1
+      stringOp: 0
+      stringValue: Starest
+      stringIgnoreCase: 1
+    - varType: 0
+      key: Sol_ExitedToVillage
+      boolValue: 1
+      intOp: 0
+      intValue: 1
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    delivered: 0
+    readContent: 1
   applyTokensToAllTextsInMessengerContent: 1
   previewMaxChars: 26
   previewNormalizeWhitespace: 1
   previewEllipsis: ' ...'
   AllReadContent: 1
   autoLoadPrefabPath: UI/Messenger
+  messageIcon: {fileID: 1609183466851415095}
+  shakeByRotation: 1
+  shakeFrequency: 4
+  shakeAmplitude: 12
+  shakeDuration: 0.9
+  shakeBursts: 2
+  shakeInterBurstDelay: 0.7
+  shakeInterBurstRandomJitter: {x: 0.15, y: 0.35}
+  shakeEnvelope:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1871668177535166574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7393689666461457811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f100eb802599c48b17b0e5e23b19ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MessengerEventManager
+  logLevel: 3
+  logPrefix: '[MessengerEventManager] '
+  targetMessageName: Boss_First_Messenger
+  messengerRoot: {fileID: 5415553418937256653}
+  dialoguePanel: {fileID: 0}
+  dialogueText: {fileID: 0}
+  dialogueAnimRoot: {fileID: 0}
+  localizationTable: Messenger_Content
+  noticeKey: Boss_First_Messenger_Notice
+  charsPerSecond: 30
+  typeRichTextPerChar: 0
+  useClickOrSpaceToSkipThenClose: 1
+  anyMouseButton: 1
+  extraKeys: 0d0000000f010000
+  showDelay: 0
+  replaceTokens: 1
+  triggerOnce: 1
+  autoStart: 1
+  pollInterval: 0.2
+  openStartScale: {x: 0.9, y: 0.9, z: 1}
+  openEndScale: {x: 1, y: 1, z: 1}
+  openDuration: 0.14
+  openUseAlphaFade: 1
+  openStartAlpha: 0
+  openEndAlpha: 1
+  startTypingAfterOpenTween: 1
+  closeStartScale: {x: 1, y: 1, z: 1}
+  closeEndScale: {x: 0.9, y: 0.9, z: 1}
+  closeDuration: 0.12
+  closeUseAlphaFade: 1
+  closeStartAlpha: 1
+  closeEndAlpha: 0
+  mapMenu: {fileID: 5440313760984733646}
+  suppressOnSceneLoadSeconds: 1.5
+  lockPlayerWhileOpen: 1
+  autoFindPlayers: 1
+  extraPlayers: []
 --- !u!1 &7409095005980337009
 GameObject:
   m_ObjectHideFlags: 0

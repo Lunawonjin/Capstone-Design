@@ -41,6 +41,23 @@ MonoBehaviour:
     m_Localized: Sol
     m_Metadata:
       m_Items: []
+  - m_Id: 394936105504768
+    m_Localized: "Had a good talk with Sol? For a first day, you did well\u2014even
+      if you were nervous.\nToday, don\u2019t push yourself; take a slow lap around
+      the village.\nAlong the way, it\u2019s good to trade a few greetings with the
+      other spirits.\nEveryone here carries their own story. Don\u2019t chase the
+      \u201Cright answer\u201D; listen to their hearts first.\nAll right, {playerName}.
+      I\u2019m rooting for your path."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936113893376
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936038395904
+    m_Localized: "Let\u2019s go outside."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

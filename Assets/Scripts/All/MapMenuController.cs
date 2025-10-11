@@ -5,6 +5,8 @@
 // - 현재 씬과 메뉴 항목의 씬을 비교해 "현재 위치 화살표"를 해당 버튼 위에 표시
 // - 맵이 열려 있는 동안 화살표가 UnscaledTime 기준으로 위아래로 천천히 흔들림
 // - 주말이 아닌 평일에는 상점가(Shopping Center) 입장 시 안내 알림 표시
+// - [추가] requiredMessageName(기본 Boss_Sol_Meet_After)를 읽지 않았다면 맵 열기(M키/외부 호출) 무반응
+// - [추가] PlayerGoPlayerRoom / PlayerGoStarest / PlayerGoShopping 플래그로 가이드 화살표 표시(메뉴 인덱스 0/1/2)
 
 using System;
 using System.Linq;
@@ -95,6 +97,37 @@ public class MapMenuController : MonoBehaviour
     [Tooltip("씬 이름 대신 빌드 인덱스 매칭이 가능할 때 우선 사용")]
     [SerializeField] private bool preferBuildIndexMatch = true;
 
+    // ───────────── 추가: 맵 열기 차단 조건 ─────────────
+    [Header("맵 열기 차단(문자 읽기 전엔 열 수 없음)")]
+    [SerializeField] private bool blockWhileRequiredMessageUnread = true;
+    [SerializeField] private string requiredMessageName = "Boss_Sol_Meet_After";
+
+    // === 가이드 화살표(목표 유도) ===
+    [Header("가이드 화살표(목표 위치 유도)")]
+    [Tooltip("목표로 안내할 때 표시되는 화살표(현재 위치 화살표와 별개)")]
+    [SerializeField] private RectTransform guideArrow;
+    [Tooltip("가이드 화살표 기준 위치 오프셋")]
+    [SerializeField] private Vector2 guideArrowOffset = new Vector2(0f, 72f);
+    [Tooltip("가이드 화살표 바운스 진폭")]
+    [SerializeField, Min(0f)] private float guideBobAmplitude = 10f;
+    [Tooltip("가이드 화살표 바운스 속도")]
+    [SerializeField, Min(0.01f)] private float guideBobSpeed = 2.2f;
+    [Tooltip("맵이 닫혀 있어도 가이드 화살표를 표시할지")]
+    [SerializeField] private bool showGuideWhenClosed = false;
+
+    [Header("가이드 대상 플래그(인스펙터 수정 가능)")]
+    [Tooltip("True면 메뉴 인덱스 guideIndexPlayerRoom 위에 가이드 화살표 표시")]
+    public bool PlayerGoPlayerRoom = false;
+    [Tooltip("True면 메뉴 인덱스 guideIndexStarest 위에 가이드 화살표 표시")]
+    public bool PlayerGoStarest = false;
+    [Tooltip("True면 메뉴 인덱스 guideIndexShopping 위에 가이드 화살표 표시")]
+    public bool PlayerGoShopping = false;
+
+    [Header("가이드 대상 인덱스(기본 0/1/2)")]
+    [SerializeField] private int guideIndexPlayerRoom = 0;
+    [SerializeField] private int guideIndexStarest = 1;
+    [SerializeField] private int guideIndexShopping = 2;
+
     // 내부 캐시
     RectTransform _mapRT;
     CanvasGroup _mapCG;
@@ -106,10 +139,15 @@ public class MapMenuController : MonoBehaviour
 
     Coroutine _openCo, _closeCo, _notifOpenCo, _notifCloseCo;
 
-    // 화살표 애니메이션용 내부 상태
+    // 화살표 애니메이션용 내부 상태(현재 위치)
     RectTransform _arrowParentRT;     // 현재 부착된 버튼의 RectTransform
     Vector2 _arrowBaseAnchoredPos;    // 바운스 기준점
     int _arrowBoundIndex = -1;        // 화살표가 연결된 메뉴 인덱스
+
+    // 가이드 화살표 내부 상태
+    RectTransform _guideParentRT;
+    Vector2 _guideBaseAnchoredPos;
+    int _guideBoundIndex = -1;
 
     void Awake()
     {
@@ -176,12 +214,20 @@ public class MapMenuController : MonoBehaviour
         // Exit 버튼 연결
         if (exitButton) exitButton.onClick.AddListener(OnClickExit);
 
-        // 화살표 초기 설정
+        // 현재 위치 화살표 초기 설정
         if (currentArrow)
         {
             currentArrow.gameObject.SetActive(false);
             _arrowParentRT = null;
             _arrowBoundIndex = -1;
+        }
+
+        // 가이드 화살표 초기 설정
+        if (guideArrow)
+        {
+            guideArrow.gameObject.SetActive(false);
+            _guideParentRT = null;
+            _guideBoundIndex = -1;
         }
     }
 
@@ -200,8 +246,13 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // 맵 열기
-        if (Input.GetKeyDown(openKey)) OpenMap();
+        // ── [중요] M키로 열기 가드 ─────────────────────────────
+        if (Input.GetKeyDown(openKey))
+        {
+            if (CanOpenMapNow())
+                OpenMap();
+            // else: 무반응
+        }
 
         // 맵 닫기 토글
         if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown))
@@ -214,14 +265,22 @@ public class MapMenuController : MonoBehaviour
             else if (!mapPanel.activeSelf && (_isOpen || _animating)) ForceCloseImmediately();
         }
 
-        // 맵이 열려 있고 화살표가 연결되어 있으면 바운스 애니메이션
+        // 맵이 열려 있고 화살표들이 연결되어 있으면 바운스 애니메이션
         if (_isOpen && currentArrow && currentArrow.gameObject.activeSelf)
         {
-            float t = Time.unscaledTime * arrowBobSpeed * Mathf.PI * 2f; // 주파수
+            float t = Time.unscaledTime * arrowBobSpeed * Mathf.PI * 2f;
             float dy = Mathf.Sin(t) * arrowBobAmplitude;
-            var pos = _arrowBaseAnchoredPos;
-            pos.y += dy;
+            var pos = _arrowBaseAnchoredPos; pos.y += dy;
             currentArrow.anchoredPosition = pos;
+        }
+
+        // 가이드 화살표 바운스 (맵이 닫혀있으면 옵션에 따라 표시)
+        if ((showGuideWhenClosed || _isOpen) && guideArrow && guideArrow.gameObject.activeSelf)
+        {
+            float t2 = Time.unscaledTime * guideBobSpeed * Mathf.PI * 2f;
+            float dy2 = Mathf.Sin(t2) * guideBobAmplitude;
+            var pos2 = _guideBaseAnchoredPos; pos2.y += dy2;
+            guideArrow.anchoredPosition = pos2;
         }
     }
 
@@ -244,9 +303,7 @@ public class MapMenuController : MonoBehaviour
             if (!weekend) { ShowNotification(); return; }
         }
 
-        // [MODIFIED] 씬을 로드하기 전에, 현재 게임 상태(PlayerData)를 임시 파일에 저장합니다.
-        // 이렇게 하면 씬 이동 중에 발생할 수 있는 데이터 손실을 방지하고,
-        // NpcEventDebugLoader 등 다른 스크립트에 의해 변경된 사항이 다음 씬에 반영됩니다.
+        // 씬 이동 전 임시 저장
         if (DataManager.instance != null)
         {
             DataManager.instance.CommitDataToTempFile();
@@ -289,6 +346,9 @@ public class MapMenuController : MonoBehaviour
     // 외부에서 호출 가능한 맵 열기
     public void OpenMap(bool fromPanelWatchdog = false)
     {
+        // 외부 호출에도 동일 가드 적용
+        if (!fromPanelWatchdog && !CanOpenMapNow()) return;
+
         if (_animating || _isOpen) return;
         if (!fromPanelWatchdog && uiGroup != null && !uiGroup.TryActivate(mapPanel)) return;
 
@@ -321,6 +381,9 @@ public class MapMenuController : MonoBehaviour
 
         // 화살표 처리
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
+
+        // 가이드 화살표: 기본은 숨김(옵션에 따라 유지 가능)
+        if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
     }
 
     IEnumerator Co_OpenMap()
@@ -345,8 +408,9 @@ public class MapMenuController : MonoBehaviour
 
         _animating = false;
 
-        // 맵이 열린 직후 현재 위치 화살표 갱신
+        // 맵이 열린 직후 현재 위치/가이드 화살표 갱신
         RefreshCurrentLocationArrow();
+        RefreshGuideArrowBinding();
     }
 
     IEnumerator Co_CloseMap()
@@ -375,6 +439,7 @@ public class MapMenuController : MonoBehaviour
 
         // 맵 닫힘 시 화살표 처리
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
+        if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
     }
 
     // 알림 표시
@@ -502,9 +567,6 @@ public class MapMenuController : MonoBehaviour
         currentArrow.SetParent(targetRT, worldPositionStays: false);
 
         // 기준 위치 계산
-        // 버튼의 상단 중앙 위로 offset 만큼 올려 배치하는 느낌으로 설정
-        // anchoredPosition은 버튼의 피벗과 앵커 설정에 따라 달라질 수 있으므로
-        // 단순 offset 적용 후, 필요 시 인스펙터에서 arrowAnchorOffset을 조정
         _arrowBaseAnchoredPos = arrowAnchorOffset;
         currentArrow.anchoredPosition = _arrowBaseAnchoredPos;
 
@@ -512,6 +574,53 @@ public class MapMenuController : MonoBehaviour
         currentArrow.gameObject.SetActive(true);
         _arrowParentRT = targetRT;
         _arrowBoundIndex = matchIdx;
+    }
+
+    // === 가이드 화살표 갱신 ===
+    void RefreshGuideArrowBinding()
+    {
+        if (!guideArrow || menuItems == null || menuItems.Length == 0)
+        {
+            return;
+        }
+
+        // 어떤 플래그가 켜졌는지 확인(우선순위: PlayerRoom → Starest → Shopping)
+        int targetIndex = -1;
+
+        if (PlayerGoPlayerRoom) targetIndex = guideIndexPlayerRoom;
+        if (PlayerGoStarest) targetIndex = guideIndexStarest;
+        if (PlayerGoShopping) targetIndex = guideIndexShopping;
+
+        // 메뉴 범위 체크
+        if (targetIndex < 0 || targetIndex >= menuItems.Length || menuItems[targetIndex] == null)
+        {
+            guideArrow.gameObject.SetActive(false);
+            _guideParentRT = null;
+            _guideBoundIndex = -1;
+            return;
+        }
+
+        // 해당 버튼의 RectTransform
+        var targetRT = menuItems[targetIndex].GetComponent<RectTransform>();
+        if (!targetRT)
+        {
+            guideArrow.gameObject.SetActive(false);
+            _guideParentRT = null;
+            _guideBoundIndex = -1;
+            return;
+        }
+
+        // 부착 및 위치
+        guideArrow.SetParent(targetRT, worldPositionStays: false);
+        _guideBaseAnchoredPos = guideArrowOffset;
+        guideArrow.anchoredPosition = _guideBaseAnchoredPos;
+
+        // 표시(맵이 닫혀 있으면 옵션에 따라 숨김)
+        bool shouldShow = showGuideWhenClosed || _isOpen;
+        guideArrow.gameObject.SetActive(shouldShow);
+
+        _guideParentRT = targetRT;
+        _guideBoundIndex = targetIndex;
     }
 
     // 빌드 인덱스 자동 해석
@@ -560,6 +669,20 @@ public class MapMenuController : MonoBehaviour
         if (string.IsNullOrEmpty(s)) return string.Empty;
         s = s.Trim();
         return new string(s.Where(ch => ch != ' ' && ch != '\'' && ch != '’').ToArray());
+    }
+
+    // ───────────── 추가: 맵 열기 가능 여부 ─────────────
+    private bool CanOpenMapNow()
+    {
+        if (!blockWhileRequiredMessageUnread) return true;
+        if (string.IsNullOrEmpty(requiredMessageName)) return true;
+
+        var dm = DataManager.instance;
+        var pd = dm != null ? dm.nowPlayer : null;
+        if (pd == null) return false;
+
+        var list = pd.MessengerReadList;
+        return list != null && list.Contains(requiredMessageName);
     }
 }
 
