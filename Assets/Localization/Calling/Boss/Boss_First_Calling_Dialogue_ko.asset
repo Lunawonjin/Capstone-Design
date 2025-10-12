@@ -29,8 +29,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15475631190016
-    m_Localized: "\uC601\uD63C\uB4E4\uACFC \uB300\uD654\uD558\uBA74\uC11C \uCE5C\uD574\uC9C0\uACE0,
-      \uB3C4\uC6C0\uC744 \uC8FC\uBA74\uC11C \uCE58\uC720\uD560 \uC218 \uC788\uC5B4!"
+    m_Localized: "\uC601\uD63C\uB4E4\uACFC \uB300\uD654\uB85C \uCE5C\uD574\uC9C0\uACE0,\n\uB3C4\uC6C0\uC744
+      \uAC74\uB124\uB2E4 \uBCF4\uBA74 \uCE58\uC720\uD560 \uC218 \uC788\uC5B4!"
     m_Metadata:
       m_Items: []
   - m_Id: 15475660550144
@@ -45,8 +45,17 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15475664744449
-    m_Localized: "\u2018\uBCC4\uBB34\uB9AC\uD130\u2019\uC5D0 \uC624\uBA74 \uB0B4\uAC00
-      \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC744\uAC8C. \n\uACE7 \uBCF4\uC790~!"
+    m_Localized: "\uC544, '\uBCC4\uBB34\uB9AC\uD130'\uB294 \uC9D1\uC55E\uC5D0 \uC788\uB294
+      \uBC84\uC2A4\uB97C \uD0C0\uACE0 \uC624\uBA74 \uB3FC ."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108719480705024
+    m_Localized: "\uC138\uB85C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 155652454813696
+    m_Localized: "\uADF8\uB7FC \u2018\uBCC4\uBB34\uB9AC\uD130\u2019\uC5D0 \uC624\uBA74
+      \uB0B4\uAC00 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC744\uAC8C. \n\uACE7 \uBCF4\uC790~!"
     m_Metadata:
       m_Items: []
   references:

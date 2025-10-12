@@ -2033,7 +2033,8 @@ MonoBehaviour:
     Weekday: 1
     Language: ko
     StartGame: 1
-    Starest_First_Visit: 1
+    CanFirstSleep: 0
+    Starest_First_Visit: 0
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
@@ -2997,6 +2998,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   npcTag: NPC
+  objectTag: Object
   findInterval: 0.25
   searchRadius: 0
   aboveOffset: 2

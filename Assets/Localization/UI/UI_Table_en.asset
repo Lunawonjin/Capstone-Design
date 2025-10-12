@@ -213,6 +213,10 @@ MonoBehaviour:
     m_Localized: Current Location
     m_Metadata:
       m_Items: []
+  - m_Id: 5164889727766528
+    m_Localized: You still have things to do!
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

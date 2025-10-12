@@ -5,8 +5,8 @@
 // - 현재 씬과 메뉴 항목의 씬을 비교해 "현재 위치 화살표"를 해당 버튼 위에 표시
 // - 맵이 열려 있는 동안 화살표가 UnscaledTime 기준으로 위아래로 천천히 흔들림
 // - 주말이 아닌 평일에는 상점가(Shopping Center) 입장 시 안내 알림 표시
-// - [추가] requiredMessageName(기본 Boss_Sol_Meet_After)를 읽지 않았다면 맵 열기(M키/외부 호출) 무반응
-// - [추가] PlayerGoPlayerRoom / PlayerGoStarest / PlayerGoShopping 플래그로 가이드 화살표 표시(메뉴 인덱스 0/1/2)
+// - [변경] 오브젝트 여러 개와 "충돌 중"일 때 F를 누르면 맵 열기
+// - [변경] 맵 열기 차단(requiredMessageName) 로직 제거
 
 using System;
 using System.Linq;
@@ -97,10 +97,14 @@ public class MapMenuController : MonoBehaviour
     [Tooltip("씬 이름 대신 빌드 인덱스 매칭이 가능할 때 우선 사용")]
     [SerializeField] private bool preferBuildIndexMatch = true;
 
-    // ───────────── 추가: 맵 열기 차단 조건 ─────────────
-    [Header("맵 열기 차단(문자 읽기 전엔 열 수 없음)")]
-    [SerializeField] private bool blockWhileRequiredMessageUnread = true;
-    [SerializeField] private string requiredMessageName = "Boss_Sol_Meet_After";
+    // === 충돌 열기 ===
+    [Header("충돌로 맵 열기(F)")]
+    [Tooltip("F 키")]
+    [SerializeField] private KeyCode interactKey = KeyCode.F;
+    [Tooltip("플레이어 Collider2D (IsTrigger/Collider 모두 가능)")]
+    [SerializeField] private Collider2D playerCollider;
+    [Tooltip("이 콜라이더들과 '충돌 중'일 때 F를 누르면 맵이 열립니다.")]
+    [SerializeField] private Collider2D[] openMapColliders = Array.Empty<Collider2D>();
 
     // === 가이드 화살표(목표 유도) ===
     [Header("가이드 화살표(목표 위치 유도)")]
@@ -246,12 +250,16 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // ── [중요] M키로 열기 가드 ─────────────────────────────
+        // M 키 열기 (제한 없음)
         if (Input.GetKeyDown(openKey))
         {
-            if (CanOpenMapNow())
-                OpenMap();
-            // else: 무반응
+            OpenMap();
+        }
+
+        // F 키: 충돌 중일 때만 열기
+        if (Input.GetKeyDown(interactKey) && IsTouchingAnyOpenable())
+        {
+            OpenMap();
         }
 
         // 맵 닫기 토글
@@ -346,9 +354,6 @@ public class MapMenuController : MonoBehaviour
     // 외부에서 호출 가능한 맵 열기
     public void OpenMap(bool fromPanelWatchdog = false)
     {
-        // 외부 호출에도 동일 가드 적용
-        if (!fromPanelWatchdog && !CanOpenMapNow()) return;
-
         if (_animating || _isOpen) return;
         if (!fromPanelWatchdog && uiGroup != null && !uiGroup.TryActivate(mapPanel)) return;
 
@@ -671,18 +676,20 @@ public class MapMenuController : MonoBehaviour
         return new string(s.Where(ch => ch != ' ' && ch != '\'' && ch != '’').ToArray());
     }
 
-    // ───────────── 추가: 맵 열기 가능 여부 ─────────────
-    private bool CanOpenMapNow()
+    // 플레이어가 등록된 어떤 콜라이더와도 "충돌 중"인지 검사
+    bool IsTouchingAnyOpenable()
     {
-        if (!blockWhileRequiredMessageUnread) return true;
-        if (string.IsNullOrEmpty(requiredMessageName)) return true;
+        if (!playerCollider || openMapColliders == null || openMapColliders.Length == 0) return false;
 
-        var dm = DataManager.instance;
-        var pd = dm != null ? dm.nowPlayer : null;
-        if (pd == null) return false;
-
-        var list = pd.MessengerReadList;
-        return list != null && list.Contains(requiredMessageName);
+        for (int i = 0; i < openMapColliders.Length; i++)
+        {
+            var c = openMapColliders[i];
+            if (!c) continue;
+            // IsTouching은 서로의 ContactFilter 조건에 따라 다릅니다.
+            // Trigger/NonTrigger 조합 모두 지원되도록 Physics2D 설정을 확인하세요.
+            if (c.IsTouching(playerCollider)) return true;
+        }
+        return false;
     }
 }
 

@@ -5,48 +5,38 @@ using Vector2 = UnityEngine.Vector2;
 public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggle
 {
     [Header("이동 설정 / Movement")]
-    [Tooltip("초당 이동 속도")]
     public float moveSpeed = 1f;
 
     [Header("컨트롤 잠금 / Control Lock")]
-    [Tooltip("끄면 입력/이동이 정지합니다(단, 외부 연출용 애니는 허용 가능)")]
+    [Tooltip("외부(패널/이벤트)에서 이 값을 false로 만들면 플레이어가 멈춥니다.")]
     public bool controlEnabled = true;
 
     [Header("UI 잠금 연동 / UI Lock Integration")]
-    [Tooltip("여기에 UIExclusiveManager를 할당하면, UI가 열릴 때 자동으로 이동을 잠급니다")]
     [SerializeField] private UIExclusiveManager uiLock;
-    private bool _lockedByUI = false;
 
     private Rigidbody2D rb;
     private Animator animator;
     private Vector2 moveDirection;
 
-    // 외부(연출) 애니 구동 허용 플래그
+    // 외부 연출이 애니를 구동할 때 true
     private bool externalAnimDriving = false;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        if (uiLock == null) uiLock = FindFirstObjectByType<UIExclusiveManager>();
         if (rb == null) Debug.LogWarning("[PlayerMove] Rigidbody2D가 없습니다.");
         if (animator == null) Debug.LogWarning("[PlayerMove] Animator가 없습니다.");
-
-        if (uiLock == null)
-            uiLock = FindFirstObjectByType<UIExclusiveManager>();
     }
 
     void Update()
     {
-        // UI 잠금 변화 감지 → 컨트롤 토글
-        bool shouldLock = (uiLock != null && uiLock.IsAnyActive);
-        if (shouldLock != _lockedByUI)
-        {
-            SetControlEnabled(!shouldLock);
-            _lockedByUI = shouldLock;
-        }
+        // ✅ 최종 이동 가능 여부를 매 프레임 계산
+        bool uiLocked = (uiLock != null && uiLock.IsAnyActive);
+        bool effectiveEnabled = controlEnabled && !uiLocked;
 
-        // 컨트롤 잠금: 입력/애니 차단(외부 구동 제외)
-        if (!controlEnabled)
+        if (!effectiveEnabled)
         {
             moveDirection = Vector2.zero;
 
@@ -88,8 +78,12 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
     {
         if (rb == null) return;
 
-        if (!controlEnabled)
+        bool uiLocked = (uiLock != null && uiLock.IsAnyActive);
+        bool effectiveEnabled = controlEnabled && !uiLocked;
+
+        if (!effectiveEnabled)
         {
+            // Rigidbody2D는 velocity 프로퍼티를 사용합니다.
             rb.linearVelocity = Vector2.zero;
             rb.MovePosition(rb.position);
             return;
@@ -99,12 +93,11 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
     }
 
     // ==== 외부/이벤트 제어용 유틸리티 ====
-
-    // IPlayerControlToggle 구현
     public void SetControlEnabled(bool enabled)
     {
-        if (enabled) Unfreeze(keepAnimatorState: true); // 복원 시 애니 상태 유지
-        else Freeze();
+        controlEnabled = enabled;
+        if (!enabled) Freeze();
+        else Unfreeze(keepAnimatorState: true);
     }
 
     public void Freeze()
@@ -123,7 +116,6 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
 
     public void Unfreeze() => Unfreeze(false);
 
-    // keepAnimatorState=true면 현재 애니 상태/속도를 건드리지 않음
     public void Unfreeze(bool keepAnimatorState)
     {
         externalAnimDriving = false;
@@ -168,10 +160,8 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
         animator.speed = 0f;
     }
 
-    // 내부/외부 공용: 방향 벡터로 워크 애니 선택
     private void PlayWalkByVector(Vector2 dir)
     {
-        // X↓ Left_Walk, X↑ Right_Walk, Y↓ Front_Walk, Y↑ Back_Walk
         if (Mathf.Abs(dir.x) >= Mathf.Abs(dir.y))
         {
             if (dir.x < 0f) animator.Play("Left_Walk");

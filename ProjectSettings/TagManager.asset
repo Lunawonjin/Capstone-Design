@@ -15,6 +15,7 @@ TagManager:
   - HUD
   - Bed
   - House
+  - Object
   layers:
   - Default
   - TransparentFX

@@ -1,23 +1,27 @@
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Localization.Settings;
 
 [DisallowMultipleComponent]
 public class CallingSystem : MonoBehaviour
 {
+    // ─────────────────────────────────────────────────────────────
+    // 로깅
+    // ─────────────────────────────────────────────────────────────
     public enum LogVerbosity { Off, Errors, Warnings, Info, Verbose }
-    [Header("로깅")]
-    public LogVerbosity logLevel = LogVerbosity.Info;
+    [Header("로깅")] public LogVerbosity logLevel = LogVerbosity.Info;
     string Pfx => "[CallingSystem] ";
     bool L(LogVerbosity lv) => logLevel >= lv && logLevel != LogVerbosity.Off;
     void LogI(string m) { if (L(LogVerbosity.Info)) Debug.Log(Pfx + m); }
     void LogW(string m) { if (L(LogVerbosity.Warnings)) Debug.LogWarning(Pfx + m); }
     void LogE(string m) { if (L(LogVerbosity.Errors)) Debug.LogError(Pfx + m); }
-    void LogV(string m) { if (L(LogVerbosity.Verbose)) Debug.Log(Pfx + m); }
 
+    // ─────────────────────────────────────────────────────────────
+    // 조건(데이터 매니저 값 등) 평가용
+    // ─────────────────────────────────────────────────────────────
     [Serializable]
     public class Condition
     {
@@ -46,7 +50,6 @@ public class CallingSystem : MonoBehaviour
                     return false;
                 case VarType.Int:
                     if (TryInt(dm?.nowPlayer, key, out var i))
-                    {
                         return intOp switch
                         {
                             IntOp.Equal => i == intValue,
@@ -57,7 +60,6 @@ public class CallingSystem : MonoBehaviour
                             IntOp.LessOrEqual => i <= intValue,
                             _ => false
                         };
-                    }
                     return false;
                 case VarType.String:
                     if (TryString(dm?.nowPlayer, key, out var s))
@@ -93,22 +95,28 @@ public class CallingSystem : MonoBehaviour
         static bool TryBool(object o, string n, out bool v)
         {
             v = default; if (o == null) return false;
-            var t = o.GetType(); var f = t.GetField(n); if (f != null && f.FieldType == typeof(bool)) { v = (bool)f.GetValue(o); return true; }
-            var p = t.GetProperty(n); if (p != null && p.PropertyType == typeof(bool) && p.CanRead) { v = (bool)p.GetValue(o); return true; }
+            var t = o.GetType(); var f = t.GetField(n);
+            if (f != null && f.FieldType == typeof(bool)) { v = (bool)f.GetValue(o); return true; }
+            var p = t.GetProperty(n);
+            if (p != null && p.PropertyType == typeof(bool) && p.CanRead) { v = (bool)p.GetValue(o); return true; }
             return false;
         }
         static bool TryInt(object o, string n, out int v)
         {
             v = default; if (o == null) return false;
-            var t = o.GetType(); var f = t.GetField(n); if (f != null && f.FieldType == typeof(int)) { v = (int)f.GetValue(o); return true; }
-            var p = t.GetProperty(n); if (p != null && p.PropertyType == typeof(int) && p.CanRead) { v = (int)p.GetValue(o); return true; }
+            var t = o.GetType(); var f = t.GetField(n);
+            if (f != null && f.FieldType == typeof(int)) { v = (int)f.GetValue(o); return true; }
+            var p = t.GetProperty(n);
+            if (p != null && p.PropertyType == typeof(int) && p.CanRead) { v = (int)p.GetValue(o); return true; }
             return false;
         }
         static bool TryString(object o, string n, out string v)
         {
             v = default; if (o == null) return false;
-            var t = o.GetType(); var f = t.GetField(n); if (f != null && f.FieldType == typeof(string)) { v = (string)f.GetValue(o); return true; }
-            var p = t.GetProperty(n); if (p != null && p.PropertyType == typeof(string) && p.CanRead) { v = (string)p.GetValue(o); return true; }
+            var t = o.GetType(); var f = t.GetField(n);
+            if (f != null && f.FieldType == typeof(string)) { v = (string)f.GetValue(o); return true; }
+            var p = t.GetProperty(n);
+            if (p != null && p.PropertyType == typeof(string) && p.CanRead) { v = (string)p.GetValue(o); return true; }
             return false;
         }
     }
@@ -117,9 +125,9 @@ public class CallingSystem : MonoBehaviour
     public class CallDef
     {
         [Header("식별/표시")]
-        public string callingName;
-        public string callerName;
-        public Sprite callerProfile;
+        public string callingName;      // 이벤트/테이블 접두
+        public string callerName;       // 폴백 표시 이름
+        public Sprite callerProfile;    // 발신자 아이콘
 
         [Header("조건(AND)")]
         public List<Condition> conditions = new();
@@ -133,6 +141,9 @@ public class CallingSystem : MonoBehaviour
     [Header("전화 정의들")]
     public List<CallDef> calls = new();
 
+    // ─────────────────────────────────────────────────────────────
+    // 아이콘/진동
+    // ─────────────────────────────────────────────────────────────
     [Header("아이콘/버튼 자동연결")]
     public Button phoneIconButton;
     public string phoneIconButtonName = "Phone_icon_BT";
@@ -145,6 +156,9 @@ public class CallingSystem : MonoBehaviour
     public float shakeOffscreenJitterMin = 0.15f;
     public float shakeOffscreenJitterMax = 0.35f;
 
+    // ─────────────────────────────────────────────────────────────
+    // Dialogue
+    // ─────────────────────────────────────────────────────────────
     [Header("Dialogue 자동연결/활성")]
     public GameObject dialoguePanel;
     public string dialoguePanelName = "Dialogue";
@@ -156,6 +170,9 @@ public class CallingSystem : MonoBehaviour
     public float phoneBodyFontSize = 48f;
     public float phoneSpeakerFontSize = 40f;
 
+    // ─────────────────────────────────────────────────────────────
+    // PhonePanel
+    // ─────────────────────────────────────────────────────────────
     [Header("PhonePanel UI")]
     public GameObject phonePanel;
     public RectTransform phone;
@@ -175,17 +192,33 @@ public class CallingSystem : MonoBehaviour
     public TMP_Text callingTimeText;
     public GameObject callingEndObject;
 
+    [Header("PhonePanel 활성 중 끄는 오브젝트들")]
+    public GameObject[] disableWhilePhoneActive;
+
     [Header("탐색 옵션")]
     public bool autoFindInactive = true;
 
-    // PlayerMove 제어
+    // ─────────────────────────────────────────────────────────────
+    // Player 제어(완전 하드락 + 애니메이터까지 Off)
+    // ─────────────────────────────────────────────────────────────
     [Header("Player Move Freeze (PhonePanel 활성 시)")]
     public PlayerMove playerMove;
     public bool autoFindPlayerMove = true;
     public bool includeInactiveOnFind = true;
-    bool _prevControlEnabled = true;
-    bool _frozenByPhone = false;
 
+    [Tooltip("PhonePanel이 열려있는 동안 LateUpdate에서 강제로 조작/애니메이션을 잠급니다.")]
+    public bool hardLockWhilePhoneOpen = true;
+    [Tooltip("하드락 시 Animator.enabled를 꺼서 방향키 입력에도 프레임이 바뀌지 않도록 함")]
+    public bool alsoDisableAnimatorWhilePhoneOpen = true;
+
+    bool _frozenByPhone = false;
+    bool _prevControlEnabled = true;
+    Animator _playerAnimator;
+    bool _animWasEnabled = false;
+
+    // ─────────────────────────────────────────────────────────────
+    // 내부 상태
+    // ─────────────────────────────────────────────────────────────
     bool _autoBound;
     Coroutine _shakeLoop;
     RectTransform _iconRT;
@@ -210,15 +243,16 @@ public class CallingSystem : MonoBehaviour
             dialogueRunner.OnDialogueEnded -= OnRunnerEnded;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Update / LateUpdate
+    // ─────────────────────────────────────────────────────────────
     void Update()
     {
         if (_callingTimerOn && callingTimeText)
         {
             float t = Mathf.Max(0f, Time.time - _callingStartTime);
             int sec = Mathf.FloorToInt(t);
-            int m = sec / 60;
-            int s = sec % 60;
-            callingTimeText.text = $"{m:D2}:{s:D2}";
+            callingTimeText.text = $"{sec / 60:D2}:{sec % 60:D2}";
         }
 
         for (int i = 0; i < calls.Count; i++)
@@ -234,12 +268,77 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        if (!hardLockWhilePhoneOpen || playerMove == null) return;
+
+        bool phoneOpen = phonePanel && phonePanel.activeInHierarchy;
+
+        if (phoneOpen)
+        {
+            if (!_frozenByPhone)
+            {
+                _prevControlEnabled = playerMove.controlEnabled;
+                _frozenByPhone = true;
+            }
+
+            if (playerMove.controlEnabled) playerMove.controlEnabled = false;
+            playerMove.Freeze();
+
+            if (alsoDisableAnimatorWhilePhoneOpen)
+            {
+                if (_playerAnimator == null && playerMove)
+                    _playerAnimator = playerMove.GetComponentInChildren<Animator>(true);
+
+                if (_playerAnimator && _playerAnimator.enabled)
+                {
+                    _animWasEnabled = true;
+                    _playerAnimator.enabled = false;
+                }
+            }
+        }
+        else if (_frozenByPhone)
+        {
+            playerMove.controlEnabled = _prevControlEnabled;
+            playerMove.Unfreeze(keepAnimatorState: true);
+            _frozenByPhone = false;
+
+            if (alsoDisableAnimatorWhilePhoneOpen && _playerAnimator && _animWasEnabled)
+            {
+                _playerAnimator.enabled = true;
+                _animWasEnabled = false;
+
+                var st = _playerAnimator.GetCurrentAnimatorStateInfo(0);
+                _playerAnimator.Play(st.shortNameHash, 0, 0f);
+                _playerAnimator.speed = 0f;
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RING 시작
+    // ─────────────────────────────────────────────────────────────
     void BeginRinging(int callIndex)
     {
         _currentCallIndex = callIndex;
         var call = calls[callIndex];
         call.ringing = true;
+        call.answered = false;
         LogI($"RING RING… '{call.callingName}'");
+
+        EnsurePhonePanelObjects();
+
+        if (selectObject) selectObject.SetActive(true);
+        if (callingObject) callingObject.SetActive(false);
+        if (callingEndObject) callingEndObject.SetActive(false);
+
+        _callingTimerOn = false;
+        _callingStartTime = 0f;
+        if (callingTimeText)
+        {
+            callingTimeText.text = "00:00";
+            callingTimeText.gameObject.SetActive(false);
+        }
 
         if (phoneIconButton == null) TryAutoFindPhoneButton();
         if (phoneIconButton)
@@ -266,16 +365,23 @@ public class CallingSystem : MonoBehaviour
         EnsurePhonePanelObjects();
         SetupPhonePanel(call);
 
-        // 패널 열리기 직전 플레이어 조작 잠금
-        FreezePlayerMove(true);
-
-        ShowPhonePanel();
+        ShowPhonePanel(); // 이동/애니는 LateUpdate에서 하드락
     }
 
     void SetupPhonePanel(CallDef call)
     {
         if (callerProfileImage) callerProfileImage.sprite = call.callerProfile;
-        if (callerNameText) callerNameText.text = call.callerName;
+
+        string localizedCaller = null;
+        try
+        {
+            localizedCaller = LocalizationSettings.StringDatabase
+                .GetLocalizedString($"{call.callingName}_Dialogue", "CallerName");
+        }
+        catch { }
+
+        if (callerNameText)
+            callerNameText.text = !string.IsNullOrEmpty(localizedCaller) ? localizedCaller : call.callerName;
 
         if (selectObject) selectObject.SetActive(true);
         if (callingObject) callingObject.SetActive(false);
@@ -297,19 +403,23 @@ public class CallingSystem : MonoBehaviour
     void ShowPhonePanel()
     {
         if (!phonePanel || !phone) return;
+
+        SetExtraObjectsActive(false);
         phonePanel.SetActive(true);
+
         StopAllCoroutines();
-        StartCoroutine(CoSlide(phone, slideFromY, slideToY, slideDuration, true));
+        StartCoroutine(CoSlide(phone, slideFromY, slideToY, slideDuration, keepActiveAtEnd: true));
     }
 
     void HidePhonePanelAndDeactivate()
     {
         if (!phonePanel || !phone) return;
+
         StopAllCoroutines();
-        StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, false));
+        StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, keepActiveAtEnd: false));
     }
 
-    IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool setActiveOnEnd)
+    System.Collections.IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool keepActiveAtEnd)
     {
         Vector2 a = rt.anchoredPosition; a.y = fromY; rt.anchoredPosition = a;
         float t = 0f;
@@ -324,11 +434,11 @@ public class CallingSystem : MonoBehaviour
         }
         var posF = rt.anchoredPosition; posF.y = toY; rt.anchoredPosition = posF;
 
-        if (!setActiveOnEnd)
+        if (!keepActiveAtEnd)
         {
             phonePanel.SetActive(false);
-            // 패널 완전 닫힘 → 플레이어 조작 복원
-            FreezePlayerMove(false);
+            SetExtraObjectsActive(true);
+            // 이동/애니 복구는 LateUpdate가 담당(패널 비활성 감지)
         }
     }
 
@@ -345,16 +455,6 @@ public class CallingSystem : MonoBehaviour
         }
 
         StartCoroutine(CoReenableIconWithShake(1f));
-    }
-
-    IEnumerator CoReenableIconWithShake(float delaySec)
-    {
-        yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySec));
-        if (phoneIconButton)
-        {
-            phoneIconButton.gameObject.SetActive(true);
-            StartShake();
-        }
     }
 
     void OnClickAnswer()
@@ -374,13 +474,8 @@ public class CallingSystem : MonoBehaviour
         _callingTimerOn = true;
 
         EnsureDialogueObjects();
-        if (!dialogueRunner)
-        {
-            LogE("DialogueRunnerStringTables를 찾지 못했습니다.");
-            return;
-        }
+        if (!dialogueRunner) { LogE("DialogueRunnerStringTables를 찾지 못했습니다."); return; }
 
-        dialogueRunner.loadSpeakerTable = false;
         ApplyPhoneFontOverrideIfNeeded();
 
         dialogueRunner.OnDialogueEnded -= OnRunnerEnded;
@@ -400,12 +495,15 @@ public class CallingSystem : MonoBehaviour
         if (dialoguePanel && dialoguePanel.activeSelf)
             dialoguePanel.SetActive(false);
 
-        _callingTimerOn = false; // 타이머 정지
+        _callingTimerOn = false;
 
-        // ★ Calling은 유지 (비활성화하지 않음)
         if (callingEndObject) callingEndObject.SetActive(true);
 
-        // ★★★ 여기 추가: Boss_First_Calling 통화가 끝났다면 StartGame = true 로 플립 + 저장
+        // ─────────────────────────────────────────────────────────
+        // Boss_First_Calling 종료 시:
+        // - DataManager.nowPlayer.StartGame = true
+        // - MapMenuController.PlayerGoStarest = true  ← ★ 추가
+        // ─────────────────────────────────────────────────────────
         if (_currentCallIndex >= 0 && _currentCallIndex < calls.Count)
         {
             var endedCall = calls[_currentCallIndex];
@@ -415,8 +513,24 @@ public class CallingSystem : MonoBehaviour
                 if (dm?.nowPlayer != null)
                 {
                     dm.nowPlayer.StartGame = true;
-                    try { dm.CommitDataToTempFile(); } catch { /* 저장 실패 무시 */ }
+                    try { dm.CommitDataToTempFile(); } catch { }
                     LogI("StartGame -> true (after Boss_First_Calling)");
+                }
+
+                // ★ MapMenuController의 PlayerGoStarest 활성화
+#if UNITY_2023_1_OR_NEWER
+                var map = UnityEngine.Object.FindAnyObjectByType<MapMenuController>(FindObjectsInactive.Include);
+#else
+                var map = UnityEngine.Object.FindObjectOfType<MapMenuController>(true);
+#endif
+                if (map != null)
+                {
+                    map.PlayerGoStarest = true;
+                    LogI("MapMenuController.PlayerGoStarest -> true");
+                }
+                else
+                {
+                    LogW("MapMenuController를 찾지 못해 PlayerGoStarest를 설정하지 못했습니다.");
                 }
             }
         }
@@ -425,7 +539,7 @@ public class CallingSystem : MonoBehaviour
         StartCoroutine(CoEndAndDismissPhone());
     }
 
-    IEnumerator CoEndAndDismissPhone()
+    System.Collections.IEnumerator CoEndAndDismissPhone()
     {
         yield return new WaitForSecondsRealtime(1f);
 
@@ -455,8 +569,16 @@ public class CallingSystem : MonoBehaviour
         dialogueRunner.speakerFontSize = phoneSpeakerFontSize;
         _fontsOverridden = true;
 
-        if (dialogueRunner.bodyText) { dialogueRunner.bodyText.enableAutoSizing = false; dialogueRunner.bodyText.fontSize = dialogueRunner.bodyFontSize; }
-        if (dialogueRunner.speakerText) { dialogueRunner.speakerText.enableAutoSizing = false; dialogueRunner.speakerText.fontSize = dialogueRunner.speakerFontSize; }
+        if (dialogueRunner.bodyText)
+        {
+            dialogueRunner.bodyText.enableAutoSizing = false;
+            dialogueRunner.bodyText.fontSize = dialogueRunner.bodyFontSize;
+        }
+        if (dialogueRunner.speakerText)
+        {
+            dialogueRunner.speakerText.enableAutoSizing = false;
+            dialogueRunner.speakerText.fontSize = dialogueRunner.speakerFontSize;
+        }
     }
 
     void RestoreFontsIfOverridden()
@@ -498,7 +620,7 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
-    IEnumerator CoShakeLoop()
+    System.Collections.IEnumerator CoShakeLoop()
     {
         while (HasAnyRinging())
         {
@@ -536,6 +658,19 @@ public class CallingSystem : MonoBehaviour
         return false;
     }
 
+    System.Collections.IEnumerator CoReenableIconWithShake(float delaySec)
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySec));
+        if (phoneIconButton)
+        {
+            phoneIconButton.gameObject.SetActive(true);
+            StartShake();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 오브젝트 자동 바인딩/토글
+    // ─────────────────────────────────────────────────────────────
     void AutoBindIfNeeded()
     {
         if (_autoBound) return;
@@ -549,7 +684,6 @@ public class CallingSystem : MonoBehaviour
     void TryAutoFindPhoneButton()
     {
         if (phoneIconButton) return;
-
         var all = Resources.FindObjectsOfTypeAll<Button>();
         foreach (var b in all)
         {
@@ -576,8 +710,8 @@ public class CallingSystem : MonoBehaviour
             GameObject mngrGO = FindActiveInScene(dialogueManagerObjectName) ?? FindByHierarchy("Dialogue UI/DialogueManager");
             if (mngrGO)
             {
-                dialogueRunner = mngrGO.GetComponent<DialogueRunnerStringTables>();
-                if (!dialogueRunner) dialogueRunner = mngrGO.GetComponentInChildren<DialogueRunnerStringTables>(true);
+                dialogueRunner = mngrGO.GetComponent<DialogueRunnerStringTables>()
+                               ?? mngrGO.GetComponentInChildren<DialogueRunnerStringTables>(true);
                 LogI($"DialogueManager auto-bound → {GetPath(mngrGO.transform)}");
             }
         }
@@ -587,8 +721,7 @@ public class CallingSystem : MonoBehaviour
 
     void EnsurePhonePanelObjects()
     {
-        if (!phonePanel)
-            phonePanel = FindActiveInScene("PhonePanel");
+        if (!phonePanel) phonePanel = FindActiveInScene("PhonePanel");
         if (phonePanel && !phone)
         {
             var t = phonePanel.transform.Find("Phone");
@@ -596,7 +729,6 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
-    // PlayerMove 찾기/동결/복원
     void EnsurePlayerMove()
     {
         if (playerMove || !autoFindPlayerMove) return;
@@ -604,33 +736,24 @@ public class CallingSystem : MonoBehaviour
         playerMove = includeInactiveOnFind
             ? FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include)
             : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
-        if (playerMove) LogI($"PlayerMove auto-bound → {GetPath(playerMove.transform)}");
+
+        if (playerMove)
+        {
+            LogI($"PlayerMove auto-bound → {GetPath(playerMove.transform)}");
+            _playerAnimator = playerMove.GetComponentInChildren<Animator>(true);
+        }
     }
 
-    void FreezePlayerMove(bool freeze)
+    void SetExtraObjectsActive(bool active)
     {
-        EnsurePlayerMove();
-        if (!playerMove) return;
-
-        if (freeze)
-        {
-            if (!_frozenByPhone)
-            {
-                _prevControlEnabled = playerMove.controlEnabled;
-                _frozenByPhone = true;
-            }
-            playerMove.controlEnabled = false;
-        }
-        else
-        {
-            if (_frozenByPhone)
-            {
-                playerMove.controlEnabled = _prevControlEnabled;
-                _frozenByPhone = false;
-            }
-        }
+        if (disableWhilePhoneActive == null) return;
+        for (int i = 0; i < disableWhilePhoneActive.Length; i++)
+            if (disableWhilePhoneActive[i]) disableWhilePhoneActive[i].SetActive(active);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 유틸
+    // ─────────────────────────────────────────────────────────────
     static GameObject FindActiveInScene(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
@@ -643,6 +766,7 @@ public class CallingSystem : MonoBehaviour
         }
         return null;
     }
+
     static GameObject FindByHierarchy(string path)
     {
         if (string.IsNullOrEmpty(path)) return null;
@@ -664,6 +788,7 @@ public class CallingSystem : MonoBehaviour
         }
         return null;
     }
+
     static string GetPath(Transform t)
     {
         if (!t) return "(null)";

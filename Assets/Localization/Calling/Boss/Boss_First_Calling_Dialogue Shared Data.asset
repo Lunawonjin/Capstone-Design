@@ -15,6 +15,10 @@ MonoBehaviour:
   m_TableCollectionName: Boss_First_Calling_Dialogue
   m_TableCollectionNameGuidString: 986d28bc8e3e2b84385e904f752db2bf
   m_Entries:
+  - m_Id: 108719480705024
+    m_Key: CallerName
+    m_Metadata:
+      m_Items: []
   - m_Id: 5172039680
     m_Key: Dialogue_001
     m_Metadata:
@@ -37,6 +41,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 15475664744449
     m_Key: Dialogue_006
+    m_Metadata:
+      m_Items: []
+  - m_Id: 155652454813696
+    m_Key: Dialogue_007
     m_Metadata:
       m_Items: []
   m_Metadata:

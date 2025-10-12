@@ -324,7 +324,7 @@ MonoBehaviour:
   phoneSpeakerFontSize: 40
   phonePanel: {fileID: 0}
   phone: {fileID: 0}
-  slideFromY: -800
+  slideFromY: -1200
   slideToY: 0
   slideDuration: 0.35
   slideCurve:
