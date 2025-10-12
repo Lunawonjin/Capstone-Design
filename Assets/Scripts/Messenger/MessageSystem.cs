@@ -259,6 +259,9 @@ public class MessageSystem : MonoBehaviour
     public Vector2 shakeInterBurstRandomJitter = new Vector2(0.15f, 0.35f);
     public AnimationCurve shakeEnvelope = AnimationCurve.EaseInOut(0, 1, 1, 0);
 
+    [Tooltip("흔들림이 끝날 때 Z를 무조건 0도로 되돌릴지 여부")]
+    public bool resetZToZeroOnStop = true;
+
     // ─────────── 텔레포터 연동 ───────────
     [Header("텔레포터(HouseDoorTeleporter) 연동")]
     [SerializeField] private HouseDoorTeleporter teleporter;
@@ -554,10 +557,10 @@ public class MessageSystem : MonoBehaviour
                 // ── 즉시 UI 반영: 읽지 않음 ON + 흔들기
                 if (!isRead)
                 {
-                    AllReadContent = false;               // 읽지 않은 게 확실히 존재
-                    ApplyNotReadIndicator(false);         // 표시 ON
-                    EnsureIconShakeLoopIfUnread();        // 루프 보장
-                    TriggerMessageIconShakeOnce();        // 도착 피드백 1회 버스트
+                    AllReadContent = false;
+                    ApplyNotReadIndicator(false);
+                    EnsureIconShakeLoopIfUnread();
+                    TriggerMessageIconShakeOnce();
                 }
 
                 newUnreadArrived = newUnreadArrived || !isRead;
@@ -628,14 +631,11 @@ public class MessageSystem : MonoBehaviour
             return true;
         }
 
-        // Messenger 내부 읽음키 → HouseDoorTeleporter Bool 순으로 폴백 조회
         bool? FallbackBoolGetter(string k)
         {
-            // 1) Messenger 내부 읽음 키(e.g., "{MessageName}_ReadContent")
             var rf = GetReadFlagByRawKey(k);
             if (rf.HasValue) return rf;
 
-            // 2) HouseDoorTeleporter Bool들 (IsVillage / <Owner>_InHouse / <Owner>_ExitedToVillage)
             var v = GetTeleporterFlagNullable(k);
             if (v.HasValue) return v;
 
@@ -917,8 +917,23 @@ public class MessageSystem : MonoBehaviour
             _iconBaseCaptured = true;
         }
 
+        // 위치 복원
         messageIcon.anchoredPosition = _iconBaseAnchoredPos;
-        var e = messageIcon.localEulerAngles; e.z = _iconBaseRotZ; messageIcon.localEulerAngles = e;
+
+        // 회전 복원 (옵션에 따라 Z=0 고정)
+        if (shakeByRotation)
+        {
+            if (resetZToZeroOnStop)
+            {
+                messageIcon.localRotation = Quaternion.Euler(0f, 0f, 0f);
+            }
+            else
+            {
+                var e = messageIcon.localEulerAngles;
+                e.z = _iconBaseRotZ;
+                messageIcon.localEulerAngles = e;
+            }
+        }
     }
 
     IEnumerator CoShakeLoopWhileUnread()
@@ -983,8 +998,20 @@ public class MessageSystem : MonoBehaviour
                 yield return null;
             }
 
+            // 버스트 끝날 때 복원
             messageIcon.anchoredPosition = _iconBaseAnchoredPos;
-            var e1 = messageIcon.localEulerAngles; e1.z = _iconBaseRotZ; messageIcon.localEulerAngles = e1;
+
+            if (shakeByRotation)
+            {
+                if (resetZToZeroOnStop)
+                    messageIcon.localRotation = Quaternion.Euler(0f, 0f, 0f);
+                else
+                {
+                    var e1 = messageIcon.localEulerAngles;
+                    e1.z = _iconBaseRotZ;
+                    messageIcon.localEulerAngles = e1;
+                }
+            }
 
             if (b < bursts - 1)
             {

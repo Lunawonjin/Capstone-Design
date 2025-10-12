@@ -11949,7 +11949,7 @@ MonoBehaviour:
   shakeDuration: 0.9
   shakeBursts: 2
   shakeInterBurstDelay: 0.7
-  shakeInterBurstRandomJitter: {x: 0.15, y: 0.35}
+  shakeInterBurstRandomJitter: {x: 0, y: 0.35}
   shakeEnvelope:
     serializedVersion: 2
     m_Curve:
@@ -11974,6 +11974,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  teleporter: {fileID: 0}
+  autoFindTeleporter: 1
 --- !u!114 &1871668177535166574
 MonoBehaviour:
   m_ObjectHideFlags: 0
