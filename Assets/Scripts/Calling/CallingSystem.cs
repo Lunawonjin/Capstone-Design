@@ -402,10 +402,24 @@ public class CallingSystem : MonoBehaviour
 
         _callingTimerOn = false; // 타이머 정지
 
-        // ★ 바뀜: Calling은 유지한다 (비활성화하지 않음)
-        // if (callingObject) callingObject.SetActive(false);
-
+        // ★ Calling은 유지 (비활성화하지 않음)
         if (callingEndObject) callingEndObject.SetActive(true);
+
+        // ★★★ 여기 추가: Boss_First_Calling 통화가 끝났다면 StartGame = true 로 플립 + 저장
+        if (_currentCallIndex >= 0 && _currentCallIndex < calls.Count)
+        {
+            var endedCall = calls[_currentCallIndex];
+            if (endedCall != null && string.Equals(endedCall.callingName, "Boss_First_Calling", StringComparison.Ordinal))
+            {
+                var dm = DataManager.instance;
+                if (dm?.nowPlayer != null)
+                {
+                    dm.nowPlayer.StartGame = true;
+                    try { dm.CommitDataToTempFile(); } catch { /* 저장 실패 무시 */ }
+                    LogI("StartGame -> true (after Boss_First_Calling)");
+                }
+            }
+        }
 
         StopAllCoroutines();
         StartCoroutine(CoEndAndDismissPhone());

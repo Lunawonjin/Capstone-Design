@@ -360,3 +360,6 @@ MonoBehaviour:
   callingTimeText: {fileID: 0}
   callingEndObject: {fileID: 0}
   autoFindInactive: 1
+  playerMove: {fileID: 0}
+  autoFindPlayerMove: 1
+  includeInactiveOnFind: 1

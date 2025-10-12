@@ -2366,9 +2366,9 @@ MonoBehaviour:
   map: {fileID: 6203303924829514641}
   mapPanel: {fileID: 5056729450066786646}
   uiGroup: {fileID: 6701223701166394042}
-  openKey: 109
+  openKey: 0
   closeKey: 27
-  extraCloseKeys: 6d0000001b000000
+  extraCloseKeys: 000000001b000000
   exitButton: {fileID: 8076865373978485624}
   openStartScale: {x: 0.8, y: 0.8, z: 1}
   openEndScale: {x: 0.9, y: 0.9, z: 1}
