@@ -48,6 +48,26 @@ MonoBehaviour:
     m_Localized: "\uC194\uC774"
     m_Metadata:
       m_Items: []
+  - m_Id: 394936105504768
+    m_Localized: "\uC194\uC774\uB791 \uC774\uC57C\uAE30 \uC798\uD588\uC9C0? \uCC98\uC74C\uC774\uB77C
+      \uAE34\uC7A5\uD588\uC744 \uD150\uB370, \uC218\uACE0 \uB9CE\uC558\uC5B4.\n\uC624\uB298\uC740
+      \uBB34\uB9AC\uD558\uC9C0 \uB9D0\uACE0, \uB9C8\uC744\uC744 \uCC9C\uCC9C\uD788
+      \uD55C \uBC14\uD034 \uB3CC\uC544\uBD10.\n\uADF8\uB7EC\uBA74\uC11C \uB2E4\uB978
+      \uC601\uD63C\uB4E4\uACFC\uB3C4 \uAC00\uBCCD\uAC8C \uC548\uBD80 \uB098\uB204\uB294\uAC83\uB3C4
+      \uC88B\uC544\n\uC5EC\uAE34 \uAC01\uC790 \uC0AC\uC5F0\uC774 \uB9CE\uC544. \uC815\uB2F5\uC744
+      \uCC3E\uAE30\uBCF4\uB2E4, \uB9C8\uC74C\uC744 \uBA3C\uC800 \uB4E4\uC5B4\uC8FC\uB294
+      \uAC8C \uC911\uC694\uD574.\n\uADF8\uB7FC {playerName}. \uB108\uC758 \uC55E\uAE38\uC744
+      \uC751\uC6D0\uD574"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936113893376
+    m_Localized: "\uC0C1\uC0AC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936038395904
+    m_Localized: "\uBC16\uC73C\uB85C \uB098\uAC00\uBCF4\uC790"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

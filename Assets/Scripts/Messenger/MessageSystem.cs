@@ -7,12 +7,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
 [DisallowMultipleComponent]
 public class MessageSystem : MonoBehaviour
 {
-    // ───────────── 로깅 ─────────────
+    // ───────────────── 로깅 ─────────────────
     public enum LogVerbosity { Off, Errors, Warnings, Info, Verbose }
 
     [Header("로깅")]
@@ -26,14 +27,14 @@ public class MessageSystem : MonoBehaviour
     void LogWarn(string msg) { if (LogEnabled(LogVerbosity.Warnings)) Debug.LogWarning(logPrefix + msg); }
     void LogError(string msg) { if (LogEnabled(LogVerbosity.Errors)) Debug.LogError(logPrefix + msg); }
 
-    // ───────────── 조건/정의 ─────────────
+    // ───────────────── 조건/정의 ─────────────────
     [Serializable]
     public class MessageCondition
     {
-        public enum VarType { Bool, Int, String, SceneName }   // String, SceneName 포함
+        public enum VarType { Bool, Int, String, SceneName }
         public VarType varType = VarType.Bool;
 
-        [Tooltip("DataManager.instance.nowPlayer의 필드명, 혹은 '{메시지}_ReadContent' 키")]
+        [Tooltip("DataManager.instance.nowPlayer의 필드명, Messenger내부읽음키, 또는 HouseDoorTeleporter Bool키")]
         public string key;
 
         // Bool
@@ -202,8 +203,8 @@ public class MessageSystem : MonoBehaviour
     public class MessageDef
     {
         [Header("식별/표시")]
-        public string messageName;     // Localization Entry 키
-        public string recipientName;   // 폴백용(키 없을 때만 사용)
+        public string messageName;
+        public string recipientName;
         public Sprite recipientProfile;
 
         [Header("Localization")]
@@ -214,10 +215,10 @@ public class MessageSystem : MonoBehaviour
 
         [Header("상태(디버그)")]
         public bool delivered = false;
-        public bool readContent = false; // 실제 판정은 읽음 키 참조
+        public bool readContent = false;
     }
 
-    // ───────────── 인스펙터 ─────────────
+    // ───────────────── 인스펙터 ─────────────────
     [Header("외부 참조")]
     public ScrollRect scrollRect;
     public RectTransform content;
@@ -234,46 +235,77 @@ public class MessageSystem : MonoBehaviour
     public List<MessageDef> messages = new List<MessageDef>();
 
     [Header("토큰 치환 옵션")]
-    [Tooltip("MessengerContent 하위의 모든 TMP_Text에 토큰을 적용할지 여부")]
     public bool applyTokensToAllTextsInMessengerContent = true;
 
     [Header("미리보기(Preview) 옵션")]
-    [Tooltip("미리보기에 허용할 최대 글자 수(치환 후 기준). 초과 시 공백 기준으로 잘라 ' ...'을 붙입니다.")]
     public int previewMaxChars = 32;
-    [Tooltip("미리보기 앞뒤·중복 공백 정리")]
     public bool previewNormalizeWhitespace = true;
-    [Tooltip("말줄임표 문자열(앞에 공백을 포함해 ' ...' 권장)")]
     public string previewEllipsis = " ...";
 
     [Header("종합 읽힘 상태")]
     public bool AllReadContent = true;
 
     [Header("자동 프리팹 로드(선택)")]
-    [Tooltip("Resources/<이 경로>에서 MessageItemUI 프리팹을 자동 로드합니다. 예: UI/Messenger")]
     public string autoLoadPrefabPath = "UI/Messenger";
 
-    // ───────────── 내부 상태 ─────────────
-    // 규칙: "{messageName}_ReadContent" → true/false
+    [Header("메시지 아이콘(흔들기)")]
+    public RectTransform messageIcon;
+    public bool shakeByRotation = true;
+    public float shakeFrequency = 4.0f;
+    public float shakeAmplitude = 8f;
+    public float shakeDuration = 0.9f;
+    public int shakeBursts = 2;
+    public float shakeInterBurstDelay = 0.7f;
+    public Vector2 shakeInterBurstRandomJitter = new Vector2(0.15f, 0.35f);
+    public AnimationCurve shakeEnvelope = AnimationCurve.EaseInOut(0, 1, 1, 0);
+
+    [Tooltip("흔들림이 끝날 때 Z를 무조건 0도로 되돌릴지 여부")]
+    public bool resetZToZeroOnStop = true;
+
+    // ─────────── 텔레포터 연동 ───────────
+    [Header("텔레포터(HouseDoorTeleporter) 연동")]
+    [SerializeField] private HouseDoorTeleporter teleporter;
+    [SerializeField] private bool autoFindTeleporter = true;
+
+    // ───────────────── 내부 상태 ─────────────────
     readonly Dictionary<string, bool> _readFlags = new(StringComparer.Ordinal);
     readonly List<MessageItemUI> _spawned = new();
-    Coroutine _blinkRoutine;
+
     bool _wasAllReadCached;
 
-    // 로케일 변경 시 본문도 다시 로드하기 위해 마지막으로 연 메시지 이름 기억
-    private string _lastOpenedMessageName = null;
+    private Coroutine _iconShakeRoutine;
+    private Coroutine _iconShakeLoopRoutine;
 
-    // ───────────── 라이프사이클 ─────────────
+    private Vector2 _iconBaseAnchoredPos;
+    private float _iconBaseRotZ;
+    private bool _iconBaseCaptured = false;
+
+    private string _openMessageName = null;
+
     void Awake()
     {
         if (scrollRect && !content) content = scrollRect.content;
         _wasAllReadCached = CalcAllRead();
         ApplyNotReadIndicator(_wasAllReadCached);
 
+        if (messageIcon)
+        {
+            _iconBaseAnchoredPos = messageIcon.anchoredPosition;
+            _iconBaseRotZ = messageIcon.localEulerAngles.z;
+            _iconBaseCaptured = true;
+        }
+
+        if (autoFindTeleporter && !teleporter)
+            teleporter = FindFirstObjectByType<HouseDoorTeleporter>(FindObjectsInactive.Include);
+
         LogInfo("Awake");
         if (!messageItemPrefab) LogWarn("messageItemPrefab가 비어 있습니다.");
         if (!content) LogWarn("content가 비어 있습니다.");
         if (!messengerContent) LogWarn("messengerContent가 비어 있습니다.");
         if (!messengerContentText) LogWarn("messengerContentText가 비어 있습니다.");
+        if (!teleporter) LogVerbose("teleporter가 비어 있음(필수는 아님).");
+        if (!notReadIndicator) LogWarn("notReadIndicator가 비어있습니다(읽지 않음 아이콘이 안 켜질 수 있음).");
+        if (!messageIcon) LogWarn("messageIcon이 비어있습니다(흔들기 효과 미작동).");
     }
 
     void OnEnable()
@@ -286,14 +318,16 @@ public class MessageSystem : MonoBehaviour
         LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
     }
 
-    // UI가 모두 올라온 다음 한 프레임 뒤에 자동 바인딩 및 복원
     IEnumerator Start()
     {
         yield return null;
         AutoBindUI();
 
         if (!messageItemPrefab)
-            LogError("Start: messageItemPrefab이 여전히 null입니다. Resources 경로 또는 프리팹 구성을 확인하세요.");
+            LogError("Start: messageItemPrefab이 여전히 null. Resources 경로 또는 프리팹 구성을 확인하세요.");
+
+        if (autoFindTeleporter && !teleporter)
+            teleporter = FindFirstObjectByType<HouseDoorTeleporter>(FindObjectsInactive.Include);
 
         RestoreFromSaveAndRebuild();
     }
@@ -306,29 +340,14 @@ public class MessageSystem : MonoBehaviour
         EvaluateAndDispatch();
     }
 
-    // ───────────── 로케일 변경 처리 ─────────────
-    private void OnLocaleChanged(UnityEngine.Localization.Locale _)
+    private void OnLocaleChanged(Locale _)
     {
-        LogInfo("Locale changed → RefreshAllSpawnedItemTexts & refresh opened content");
-
-        // 리스트 아이템(수신자/프리뷰) 전부 새 언어로 갱신
-        RefreshAllSpawnedItemTexts();
-
-        // 메시지 본문 창이 열려 있으면 그 내용도 갱신
-        if (messengerContent && messengerContent.activeSelf && messengerContentText && !string.IsNullOrEmpty(_lastOpenedMessageName))
-        {
-            var def = FindDef(_lastOpenedMessageName);
-            if (def != null)
-            {
-                string localized = LocalizationSettings.StringDatabase
-                    .GetLocalizedString(def.localizationTable, def.messageName);
-                messengerContentText.text = ReplaceTokens(localized);
-                ApplyTokensToAllTextsUnderMessenger();
-            }
-        }
+        LogInfo("Locale changed → refreshing localized texts");
+        RefreshSpawnedItemLocalizedTexts();
+        RefreshOpenContentLocalizedText();
     }
 
-    private void RefreshAllSpawnedItemTexts()
+    private void RefreshSpawnedItemLocalizedTexts()
     {
         for (int i = 0; i < _spawned.Count; i++)
         {
@@ -338,27 +357,40 @@ public class MessageSystem : MonoBehaviour
             var def = FindDef(ui.messageName);
             if (def == null) continue;
 
-            // 수신자 이름: <테이블>/<키: {MessageName}_Name>
             string recipientLoc = LocalizationSettings.StringDatabase
                 .GetLocalizedString(def.localizationTable, def.messageName + "_Name");
             if (string.IsNullOrEmpty(recipientLoc)) recipientLoc = def.recipientName;
             string recipient = ReplaceTokens(recipientLoc);
+            if (ui.recipientNameText) ui.recipientNameText.text = recipient;
 
-            // 프리뷰: 본문에서 잘라 생성
             string localizedFull = LocalizationSettings.StringDatabase
                 .GetLocalizedString(def.localizationTable, def.messageName);
             string preview = BuildPreviewFromLocalized(localizedFull);
-
-            if (ui.recipientNameText) ui.recipientNameText.text = recipient;
             if (ui.previewText) ui.previewText.text = preview;
         }
     }
 
-    // ───────────── 자동 바인딩 & 진단 ─────────────
+    private void RefreshOpenContentLocalizedText()
+    {
+        if (!messengerContent || !messengerContent.activeInHierarchy) return;
+        if (string.IsNullOrEmpty(_openMessageName)) return;
+
+        var def = FindDef(_openMessageName);
+        if (def == null) return;
+
+        if (messengerContentText)
+        {
+            string localized = LocalizationSettings.StringDatabase
+                .GetLocalizedString(def.localizationTable, def.messageName);
+            messengerContentText.text = ReplaceTokens(localized);
+        }
+
+        ApplyTokensToAllTextsUnderMessenger();
+    }
+
     [ContextMenu("MessageSystem/AutoBindUI")]
     void AutoBindUI()
     {
-        // 1) ScrollRect 자동 탐색
         if (!scrollRect)
         {
             scrollRect = GetComponentInChildren<ScrollRect>(true);
@@ -366,7 +398,6 @@ public class MessageSystem : MonoBehaviour
             else LogInfo($"AutoBindUI: ScrollRect='{scrollRect.name}' 바인딩");
         }
 
-        // 2) Content 자동 탐색
         if (!content)
         {
             if (scrollRect && scrollRect.content) content = scrollRect.content;
@@ -395,13 +426,10 @@ public class MessageSystem : MonoBehaviour
             else LogInfo($"AutoBindUI: Content='{content.name}' 경로='{GetPath(content)}'");
         }
 
-        // 3) Prefab 확인 + 자동 로드
         if (!messageItemPrefab && !string.IsNullOrEmpty(autoLoadPrefabPath))
         {
-            // MessageItemUI 타입으로 직접 로드 시도
             messageItemPrefab = Resources.Load<MessageItemUI>(autoLoadPrefabPath);
 
-            // 루트에 MessageItemUI가 없으면 GameObject 로드 후 컴포넌트 탐색
             if (!messageItemPrefab)
             {
                 var go = Resources.Load<GameObject>(autoLoadPrefabPath);
@@ -416,13 +444,13 @@ public class MessageSystem : MonoBehaviour
             if (messageItemPrefab)
                 LogInfo($"AutoBindUI: Resources.Load(\"{autoLoadPrefabPath}\") 성공 → '{messageItemPrefab.name}'");
             else
-                LogWarn($"AutoBindUI: Resources에서 '{autoLoadPrefabPath}' 프리팹을 찾지 못했습니다. 경로/파일 확인 요망.");
+                LogWarn($"AutoBindUI: Resources에서 '{autoLoadPrefabPath}' 프리팹을 찾지 못했습니다.");
         }
 
         if (messageItemPrefab)
             LogInfo($"AutoBindUI: MessageItemPrefab='{messageItemPrefab.name}' OK");
         else
-            LogError("AutoBindUI: Message Item Prefab이 비어 있습니다. (MessageItemUI 컴포넌트가 붙은 프리팹 에셋을 할당하거나 autoLoadPrefabPath를 사용하세요)");
+            LogError("AutoBindUI: Message Item Prefab 누락");
     }
 
     static string GetPath(Transform t)
@@ -433,7 +461,6 @@ public class MessageSystem : MonoBehaviour
         return string.Join("/", stack);
     }
 
-    // ───────────── Back 버튼 ─────────────
     public void OnBackFromMessenger()
     {
         LogInfo("Back pressed: clearing texts & disabling messengerContent");
@@ -447,12 +474,12 @@ public class MessageSystem : MonoBehaviour
         if (innerScroll) innerScroll.verticalNormalizedPosition = 1f;
 
         messengerContent.SetActive(false);
+        _openMessageName = null;
 
-        // 현재 열린 본문 추적 초기화
-        _lastOpenedMessageName = null;
+        if (!AllReadContent || HasAnyUnread())
+            EnsureIconShakeLoopIfUnread();
     }
 
-    // ───────────── 토큰 치환 & 미리보기 ─────────────
     private string ReplaceTokens(string input)
     {
         if (string.IsNullOrEmpty(input)) return input;
@@ -503,7 +530,6 @@ public class MessageSystem : MonoBehaviour
         }
     }
 
-    // ───────────── 메인 평가/전달 ─────────────
     public void EvaluateAndDispatch()
     {
         bool newUnreadArrived = false;
@@ -525,11 +551,17 @@ public class MessageSystem : MonoBehaviour
                 LogInfo($"조건 충족 → '{def.messageName}' 도착 (isRead={isRead})");
                 CreateItemAtTop(def);
 
-                // StartGame == false 조건을 포함했다면 1회만 true로 전환
                 MaybeFlipStartGameTrue(def);
-
-                // 도착 기록 + SubSave 커밋
                 RecordDeliveredAndSubSave(def.messageName);
+
+                // ── 즉시 UI 반영: 읽지 않음 ON + 흔들기
+                if (!isRead)
+                {
+                    AllReadContent = false;
+                    ApplyNotReadIndicator(false);
+                    EnsureIconShakeLoopIfUnread();
+                    TriggerMessageIconShakeOnce();
+                }
 
                 newUnreadArrived = newUnreadArrived || !isRead;
             }
@@ -547,20 +579,22 @@ public class MessageSystem : MonoBehaviour
             AllReadContent = nowAllRead;
 
             LogInfo($"AllReadContent 갱신 → {AllReadContent}");
-            if (AllReadContent) { if (notReadIndicator) notReadIndicator.SetActive(false); }
-            else { BlinkNotReadThenStayOn(); }
+            ApplyNotReadIndicator(AllReadContent);
+
+            if (AllReadContent)
+                StopMessageIconShake();
+            else
+                EnsureIconShakeLoopIfUnread();
         }
         else
         {
             if (newUnreadArrived && !AllReadContent)
             {
-                LogInfo("새 미읽음 도착 → NotRead 점멸");
-                BlinkNotReadThenStayOn();
+                EnsureIconShakeLoopIfUnread();
             }
         }
     }
 
-    // 메시지 '도착' 직후, 이 메시지의 조건에 StartGame==false가 포함되어 있었다면 1회만 true로 전환
     void MaybeFlipStartGameTrue(MessageDef def)
     {
         var dm = DataManager.instance;
@@ -587,7 +621,6 @@ public class MessageSystem : MonoBehaviour
 
         dm.nowPlayer.StartGame = true;
         LogInfo("StartGame -> true (message delivered & StartGame==false condition matched)");
-        // 필요 시: if (dm.nowSlot >= 0) dm.SaveData();
     }
 
     bool CheckAllConditions(MessageDef def, Action<string> log = null)
@@ -598,7 +631,16 @@ public class MessageSystem : MonoBehaviour
             return true;
         }
 
-        bool? FallbackBoolGetter(string k) => GetReadFlagByRawKey(k);
+        bool? FallbackBoolGetter(string k)
+        {
+            var rf = GetReadFlagByRawKey(k);
+            if (rf.HasValue) return rf;
+
+            var v = GetTeleporterFlagNullable(k);
+            if (v.HasValue) return v;
+
+            return null;
+        }
 
         for (int i = 0; i < def.conditions.Count; i++)
         {
@@ -628,7 +670,7 @@ public class MessageSystem : MonoBehaviour
         }
 
         LogVerbose($"CreateItemAtTop: parent='{GetPath(content)}' def='{def.messageName}'");
-        var item = Instantiate(messageItemPrefab, content); // Content 하위에 붙음
+        var item = Instantiate(messageItemPrefab, content);
         item.transform.SetAsFirstSibling();
 
         var rt = item.GetComponent<RectTransform>();
@@ -636,13 +678,11 @@ public class MessageSystem : MonoBehaviour
 
         bool isRead = GetReadFlag(def.messageName) ?? false;
 
-        // 1) 수신자 이름: localizationTable에서 {MessageName}_Name 키 사용 (없으면 폴백)
         string recipientLoc = LocalizationSettings.StringDatabase
             .GetLocalizedString(def.localizationTable, def.messageName + "_Name");
         if (string.IsNullOrEmpty(recipientLoc)) recipientLoc = def.recipientName;
         string recipient = ReplaceTokens(recipientLoc);
 
-        // 2) 미리보기: 본문에서 생성
         string localizedFull = LocalizationSettings.StringDatabase
             .GetLocalizedString(def.localizationTable, def.messageName);
         string preview = BuildPreviewFromLocalized(localizedFull);
@@ -680,10 +720,11 @@ public class MessageSystem : MonoBehaviour
         }
         if (messengerContent) messengerContent.SetActive(true);
 
-        // 마지막으로 연 메시지 이름 기억 (로케일 변경 시 본문 재로딩)
-        _lastOpenedMessageName = def.messageName;
+        _openMessageName = def.messageName;
 
         ApplyTokensToAllTextsUnderMessenger();
+
+        StopMessageIconShake();
 
         if (!IsRead(def.messageName))
         {
@@ -692,12 +733,15 @@ public class MessageSystem : MonoBehaviour
             def.readContent = true;
             ui.ApplyReadVisual(true);
 
-            // 읽음 기록 + SubSave 커밋
             RecordReadAndSubSave(def.messageName);
 
             AllReadContent = CalcAllRead();
-            if (AllReadContent && notReadIndicator)
-                notReadIndicator.SetActive(false);
+            ApplyNotReadIndicator(AllReadContent);
+
+            if (AllReadContent)
+                StopMessageIconShake();
+            else
+                EnsureIconShakeLoopIfUnread();
         }
         else
         {
@@ -705,7 +749,6 @@ public class MessageSystem : MonoBehaviour
         }
     }
 
-    // ───────────── SubSave 기록 함수 ─────────────
     void RecordDeliveredAndSubSave(string messageName)
     {
         var dm = DataManager.instance;
@@ -718,7 +761,7 @@ public class MessageSystem : MonoBehaviour
             dm.nowPlayer.MessengerDelivered.Add(messageName);
             LogVerbose($"Delivered 기록 추가: {messageName}");
         }
-        dm.CommitDataToTempFile(); // SubSave 즉시 커밋
+        dm.CommitDataToTempFile();
     }
 
     void RecordReadAndSubSave(string messageName)
@@ -733,16 +776,14 @@ public class MessageSystem : MonoBehaviour
             dm.nowPlayer.MessengerReadList.Add(messageName);
             LogVerbose($"Read 기록 추가: {messageName}");
         }
-        dm.CommitDataToTempFile(); // SubSave 즉시 커밋
+        dm.CommitDataToTempFile();
     }
 
-    // 저장된 상태 기반으로 UI 재구성
     void RestoreFromSaveAndRebuild()
     {
         var dm = DataManager.instance;
         if (dm?.nowPlayer == null) { LogWarn("Restore: DataManager.nowPlayer가 없습니다."); return; }
 
-        // 기존 UI/캐시 정리
         for (int i = 0; i < _spawned.Count; i++)
             if (_spawned[i]) Destroy(_spawned[i].gameObject);
         _spawned.Clear();
@@ -756,14 +797,13 @@ public class MessageSystem : MonoBehaviour
         {
             AllReadContent = true;
             ApplyNotReadIndicator(AllReadContent);
+            StopMessageIconShake();
             LogInfo("Restore: delivered 기록 없음");
             return;
         }
 
-        // 읽음 캐시 셋업
         HashSet<string> readSet = new(readList ?? new List<string>(), StringComparer.Ordinal);
 
-        // delivered 저장 순서를 유지하고, 최신이 위로 오도록 뒤에서부터 생성
         for (int i = delivered.Count - 1; i >= 0; i--)
         {
             string name = delivered[i];
@@ -781,10 +821,15 @@ public class MessageSystem : MonoBehaviour
 
         AllReadContent = CalcAllRead();
         ApplyNotReadIndicator(AllReadContent);
+
+        if (!AllReadContent || HasAnyUnread())
+            EnsureIconShakeLoopIfUnread();
+        else
+            StopMessageIconShake();
+
         LogInfo($"Restore: delivered={delivered.Count}, allRead={AllReadContent}");
     }
 
-    // ───────────── 읽음 키 유틸 ─────────────
     string KeyOf(string messageName) => $"{messageName}_ReadContent";
     bool IsRead(string messageName) => GetReadFlag(messageName) ?? false;
 
@@ -811,7 +856,6 @@ public class MessageSystem : MonoBehaviour
         LogVerbose($"SetReadFlag → key='{key}', value={value}");
     }
 
-    // ───────────── 보조 ─────────────
     MessageDef FindDef(string name)
     {
         for (int i = 0; i < messages.Count; i++)
@@ -844,24 +888,151 @@ public class MessageSystem : MonoBehaviour
         LogVerbose($"ApplyNotReadIndicator → setActive={!allRead}");
     }
 
-    void BlinkNotReadThenStayOn()
+    void TriggerMessageIconShakeOnce()
     {
-        if (!notReadIndicator) return;
-        if (_blinkRoutine != null) StopCoroutine(_blinkRoutine);
-        _blinkRoutine = StartCoroutine(CoBlink3TimesThenOn(notReadIndicator, 0.2f));
-        LogVerbose("BlinkNotReadThenStayOn 시작");
+        if (!messageIcon) return;
+        if (_iconShakeRoutine != null) StopCoroutine(_iconShakeRoutine);
+        _iconShakeRoutine = StartCoroutine(CoShakeBursts());
     }
 
-    IEnumerator CoBlink3TimesThenOn(GameObject go, float interval)
+    void EnsureIconShakeLoopIfUnread()
     {
-        for (int i = 0; i < 3; i++)
+        if (!messageIcon) return;
+        if (_iconShakeLoopRoutine != null) return;
+        if (!HasAnyUnread()) return;
+        _iconShakeLoopRoutine = StartCoroutine(CoShakeLoopWhileUnread());
+    }
+
+    void StopMessageIconShake()
+    {
+        if (!messageIcon) return;
+
+        if (_iconShakeRoutine != null) { StopCoroutine(_iconShakeRoutine); _iconShakeRoutine = null; }
+        if (_iconShakeLoopRoutine != null) { StopCoroutine(_iconShakeLoopRoutine); _iconShakeLoopRoutine = null; }
+
+        if (!_iconBaseCaptured)
         {
-            go.SetActive(true); yield return new WaitForSecondsRealtime(interval);
-            go.SetActive(false); yield return new WaitForSecondsRealtime(interval);
+            _iconBaseAnchoredPos = messageIcon.anchoredPosition;
+            _iconBaseRotZ = messageIcon.localEulerAngles.z;
+            _iconBaseCaptured = true;
         }
-        go.SetActive(true);
-        _blinkRoutine = null;
-        LogVerbose("BlinkNotReadThenStayOn 종료 -> ON 유지");
+
+        // 위치 복원
+        messageIcon.anchoredPosition = _iconBaseAnchoredPos;
+
+        // 회전 복원 (옵션에 따라 Z=0 고정)
+        if (shakeByRotation)
+        {
+            if (resetZToZeroOnStop)
+            {
+                messageIcon.localRotation = Quaternion.Euler(0f, 0f, 0f);
+            }
+            else
+            {
+                var e = messageIcon.localEulerAngles;
+                e.z = _iconBaseRotZ;
+                messageIcon.localEulerAngles = e;
+            }
+        }
+    }
+
+    IEnumerator CoShakeLoopWhileUnread()
+    {
+        _iconBaseAnchoredPos = messageIcon.anchoredPosition;
+        _iconBaseRotZ = messageIcon.localEulerAngles.z;
+        _iconBaseCaptured = true;
+
+        while (HasAnyUnread())
+        {
+            if (messengerContent && messengerContent.activeInHierarchy)
+            {
+                yield return null;
+                continue;
+            }
+
+            yield return CoShakeBursts();
+
+            float jitter = UnityEngine.Random.Range(shakeInterBurstRandomJitter.x, shakeInterBurstRandomJitter.y);
+            float wait = Mathf.Max(0f, shakeInterBurstDelay + jitter);
+            yield return new WaitForSecondsRealtime(wait);
+        }
+
+        _iconShakeLoopRoutine = null;
+    }
+
+    IEnumerator CoShakeBursts()
+    {
+        if (!messageIcon) yield break;
+
+        _iconBaseAnchoredPos = messageIcon.anchoredPosition;
+        _iconBaseRotZ = messageIcon.localEulerAngles.z;
+        _iconBaseCaptured = true;
+
+        int bursts = Mathf.Max(1, shakeBursts);
+        for (int b = 0; b < bursts; b++)
+        {
+            float t = 0f;
+            while (t < shakeDuration)
+            {
+                t += Time.unscaledDeltaTime;
+
+                float norm = Mathf.Clamp01(t / shakeDuration);
+                float env = shakeEnvelope != null ? Mathf.Clamp01(shakeEnvelope.Evaluate(norm)) : (1f - norm);
+
+                float phase = t * shakeFrequency * Mathf.PI * 2f;
+                float s = Mathf.Sin(phase) * shakeAmplitude * env;
+
+                if (shakeByRotation)
+                {
+                    var e = messageIcon.localEulerAngles;
+                    e.z = _iconBaseRotZ + s;
+                    messageIcon.localEulerAngles = e;
+                }
+                else
+                {
+                    var pos = messageIcon.anchoredPosition;
+                    pos.x = _iconBaseAnchoredPos.x + s;
+                    messageIcon.anchoredPosition = pos;
+                }
+
+                yield return null;
+            }
+
+            // 버스트 끝날 때 복원
+            messageIcon.anchoredPosition = _iconBaseAnchoredPos;
+
+            if (shakeByRotation)
+            {
+                if (resetZToZeroOnStop)
+                    messageIcon.localRotation = Quaternion.Euler(0f, 0f, 0f);
+                else
+                {
+                    var e1 = messageIcon.localEulerAngles;
+                    e1.z = _iconBaseRotZ;
+                    messageIcon.localEulerAngles = e1;
+                }
+            }
+
+            if (b < bursts - 1)
+            {
+                float jitter = UnityEngine.Random.Range(shakeInterBurstRandomJitter.x, shakeInterBurstRandomJitter.y);
+                float wait = Mathf.Max(0f, shakeInterBurstDelay + jitter);
+                yield return new WaitForSecondsRealtime(wait);
+            }
+        }
+
+        _iconShakeRoutine = null;
+    }
+
+    bool HasAnyUnread()
+    {
+        for (int i = 0; i < messages.Count; i++)
+        {
+            var m = messages[i];
+            if (m.delivered && !IsRead(m.messageName))
+                return true;
+        }
+        return false;
     }
 
     public void ForceRefreshIndicators()
@@ -869,6 +1040,63 @@ public class MessageSystem : MonoBehaviour
         bool nowAllRead = CalcAllRead();
         AllReadContent = nowAllRead;
         ApplyNotReadIndicator(nowAllRead);
+
+        if (!AllReadContent || HasAnyUnread())
+            EnsureIconShakeLoopIfUnread();
+        else
+            StopMessageIconShake();
+
         LogInfo($"ForceRefreshIndicators -> AllRead={AllReadContent}");
+    }
+
+    // ───────────────── 외부 트리거용: 조건 만족 시 즉시 전달 ─────────────────
+    public bool TryDeliver(string messageName)
+    {
+        var def = FindDef(messageName);
+        if (def == null) { LogWarn($"TryDeliver: '{messageName}' 정의 없음"); return false; }
+        if (def.delivered) { LogVerbose($"TryDeliver: '{messageName}' 이미 전달됨"); return false; }
+
+        if (!CheckAllConditions(def, null))
+        {
+            LogVerbose($"TryDeliver: '{messageName}' 조건 미충족");
+            return false;
+        }
+
+        def.delivered = true;
+
+        CreateItemAtTop(def);
+        RecordDeliveredAndSubSave(def.messageName);
+
+        // 즉시 갱신/흔들기
+        AllReadContent = CalcAllRead();
+        ApplyNotReadIndicator(AllReadContent);
+        if (!AllReadContent || HasAnyUnread())
+        {
+            EnsureIconShakeLoopIfUnread();
+            TriggerMessageIconShakeOnce();
+        }
+        else
+        {
+            StopMessageIconShake();
+        }
+
+        LogInfo($"TryDeliver → '{messageName}' 전달 완료");
+        return true;
+    }
+
+    // ─────────── HouseDoorTeleporter Bool 폴백 조회 ───────────
+    private bool? GetTeleporterFlagNullable(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return null;
+
+        if (!teleporter && autoFindTeleporter)
+            teleporter = FindFirstObjectByType<HouseDoorTeleporter>(FindObjectsInactive.Include);
+
+        if (!teleporter) return null;
+
+        if (teleporter.TryGetFlag(key, out var v))
+            return v;
+
+        return null;
     }
 }

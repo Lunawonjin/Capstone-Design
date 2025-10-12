@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using TMPro;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
@@ -131,6 +131,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
     [Header("Player Name Token")]
     public string fallbackPlayerName = "Player";
 
+    // ===== 재활성화 복원용 =====
+    [Header("재활성화 복원")]
+    [Tooltip("비활성화됐다가 다시 활성화될 때 현재 문장을 처음부터 다시 타이핑할지 여부")]
+    public bool retypeOnResume = true;
+    private bool _resumePending = false;
+    private bool _wasTypingWhenHidden = false;
+    private string _lastKeyShown = "";
+
     // ===== 내부 상태 =====
     private RectTransform _choiceRoot;
     private VerticalLayoutGroup _vlg;
@@ -187,10 +195,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
         }
 
-        // ===== Locale 변경 이벤트 구독 =====
         HookLocaleChange();
-
-        // 시작 시 현재 언어의 폰트 크기 즉시 반영
         ApplyCurrentFontSizes();
 
         if (!string.IsNullOrEmpty(_pendingEventName))
@@ -205,6 +210,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         HookLocaleChange();
         ApplyCurrentFontSizes();
+
+        // 비활성화→활성화 복원
+        ResumeFromHiddenIfNeeded();
 
         if (!string.IsNullOrEmpty(_pendingEventName))
         {
@@ -228,6 +236,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
             StopCoroutine(_typingRoutine);
             _typingRoutine = null;
         }
+
+        // 다시 켜질 때 복원하도록 표시
+        _resumePending = (_mode != Mode.Done);
+        _wasTypingWhenHidden = _isTyping;
+
         _isTyping = false;
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
@@ -320,7 +333,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             Input.GetKeyDown(KeyCode.Return) ||
             Input.GetKeyDown(KeyCode.KeypadEnter) ||
             Input.GetMouseButtonDown(0) ||
-            Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began;
+            (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began);
 
         if (!pressed) return;
 
@@ -600,7 +613,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== 변경: NamePanel 제어 + 언어별 폰트 크기 적용 =====
+    // ===== NamePanel 제어 + 언어별 폰트 크기 적용 + 마지막 라인 기억 =====
     private void ShowKey(string key)
     {
         if (promptText) promptText.gameObject.SetActive(false);
@@ -624,11 +637,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (speakerText != null)
         {
             speakerText.enableAutoSizing = false;
-            speakerText.fontSize = GetSpeakerFontSize();  // 언어별 적용
+            speakerText.fontSize = GetSpeakerFontSize();
             speakerText.text = isSystem ? "" : sp;
         }
 
         string full = LBody(key);
+
+        _lastKeyShown = key;
+        _currentFullText = full;
 
         OnKeyShown?.Invoke(key);
 
@@ -646,7 +662,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             if (bodyText)
             {
                 bodyText.enableAutoSizing = false;
-                bodyText.fontSize = GetBodyFontSize();     // 언어별 적용
+                bodyText.fontSize = GetBodyFontSize();
                 bodyText.text = full;
             }
             _isTyping = false;
@@ -666,7 +682,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (bodyText)
         {
             bodyText.enableAutoSizing = false;
-            bodyText.fontSize = GetBodyFontSize(); // 언어별 적용
+            bodyText.fontSize = GetBodyFontSize();
             bodyText.text = "";
         }
 
@@ -820,12 +836,18 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         ReleaseAllButtons();
 
-        // ← 여기 추가: 텍스트 비우기
+        // 텍스트 정리
         if (speakerText) { speakerText.text = ""; speakerText.ForceMeshUpdate(); }
         if (bodyText) { bodyText.text = ""; bodyText.ForceMeshUpdate(); }
-        if (namePanel) { namePanel.SetActive(false); } // 원하면 이름판도 숨김
+        if (namePanel) { namePanel.SetActive(false); }
 
         _mode = Mode.Done;
+
+        // 복원 관련 초기화
+        _resumePending = false;
+        _wasTypingWhenHidden = false;
+        _lastKeyShown = "";
+
         OnDialogueEnd();
 
         if (deactivateOnEnd) gameObject.SetActive(false);
@@ -833,7 +855,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
     }
-
 
     // ===== 언어별 폰트 크기 유틸 =====
 
@@ -862,7 +883,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private void OnLocaleChanged(Locale loc)
     {
         ApplyCurrentFontSizes();
-        // 진행 중인 타이핑이 있으면 즉시 반영
         if (_isTyping && bodyText != null)
         {
             bodyText.fontSize = GetBodyFontSize();
@@ -909,5 +929,98 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         var loc = LocalizationSettings.SelectedLocale;
         return loc != null ? loc.Identifier.Code : "";
+    }
+
+    // ===== 비활성화→활성화 복원 =====
+    private void ResumeFromHiddenIfNeeded()
+    {
+        if (!_resumePending) return;
+
+        if (_mode == Mode.ChoiceSelect)
+        {
+            if (_choiceRoot) _choiceRoot.gameObject.SetActive(true);
+            if (promptText) promptText.gameObject.SetActive(true);
+            if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
+            _inputUnlocked = false; // 선택은 버튼으로 처리
+            _resumePending = false;
+            _wasTypingWhenHidden = false;
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_lastKeyShown))
+        {
+            if (speakerText) { speakerText.enableAutoSizing = false; speakerText.fontSize = GetSpeakerFontSize(); }
+            if (bodyText) { bodyText.enableAutoSizing = false; bodyText.fontSize = GetBodyFontSize(); }
+
+            string sp = LSpeakerRaw(_lastKeyShown).Trim();
+            bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
+            if (namePanel) namePanel.SetActive(!isSystem);
+            else if (speakerText) speakerText.gameObject.SetActive(!isSystem);
+            if (speakerText) speakerText.text = isSystem ? "" : sp;
+
+            if (retypeOnResume)
+            {
+                if (_typingRoutine != null) StopCoroutine(_typingRoutine);
+                _typingRoutine = StartCoroutine(TypeLine(_currentFullText ?? ""));
+            }
+            else
+            {
+                if (bodyText) bodyText.text = _currentFullText ?? "";
+                _isTyping = false;
+                if (nextIndicator) nextIndicator.SetActive(true);
+                _inputUnlocked = true;
+            }
+        }
+
+        _resumePending = false;
+        _wasTypingWhenHidden = false;
+    }
+
+    // ===== 현재 보이는 라인을 최신 {playerName}으로 즉시 새로고침 =====
+    public void RefreshPlayerNameNow()
+    {
+        if (_waitingChoice || string.IsNullOrEmpty(_lastKeyShown)) return;
+
+        string sp = LSpeakerRaw(_lastKeyShown).Trim();
+        string latestBody = LBody(_lastKeyShown); // ReplaceTokens 통해 최신 이름 반영
+
+        bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
+        if (namePanel) namePanel.SetActive(!isSystem);
+        else if (speakerText) speakerText.gameObject.SetActive(!isSystem);
+
+        if (speakerText)
+        {
+            speakerText.enableAutoSizing = false;
+            speakerText.fontSize = GetSpeakerFontSize();
+            speakerText.text = isSystem ? "" : sp;
+        }
+
+        if (_typingRoutine != null && isActiveAndEnabled)
+        {
+            StopCoroutine(_typingRoutine);
+            _typingRoutine = null;
+        }
+
+        _currentFullText = latestBody;
+
+        if (retypeOnResume && isActiveAndEnabled)
+        {
+            _typingRoutine = StartCoroutine(TypeLine(_currentFullText));
+            _isTyping = true;
+            _inputUnlocked = false;
+            if (nextIndicator) nextIndicator.SetActive(false);
+        }
+        else
+        {
+            if (bodyText)
+            {
+                bodyText.enableAutoSizing = false;
+                bodyText.fontSize = GetBodyFontSize();
+                bodyText.text = _currentFullText;
+            }
+            _isTyping = false;
+            _inputUnlocked = true;
+            if (nextIndicator) nextIndicator.SetActive(true);
+        }
     }
 }

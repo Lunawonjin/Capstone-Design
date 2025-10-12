@@ -68,6 +68,9 @@ public class PlayerData
     public int Ryu_FriendShip;
     public int White_FriendShip;
 
+    //다이어리 해금 함수
+    public bool DiaryOpen;
+
     //메신저 삭제 방지 (도착/읽음 상태 기록)
     public List<string> MessengerDelivered = new List<string>(); // 도착한 메시지 이름들(도착 순서)
     public List<string> MessengerReadList = new List<string>(); // 읽은 메시지 이름들
@@ -97,6 +100,8 @@ public class PlayerData
         Salt_FriendShip = 0;
         Ryu_FriendShip = 0;
         White_FriendShip = 0;
+
+        DiaryOpen= false;
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
