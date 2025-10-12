@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7764090142450322797, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
+      propertyPath: m_Name
+      value: Dialogue_Text
+      objectReference: {fileID: 0}
     - target: {fileID: 8540524868463256527, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -550

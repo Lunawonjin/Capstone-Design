@@ -54,6 +54,9 @@ public class PlayerData
     //문자 조건
     public bool StartGame;
 
+    //첫날밤 잘수잇는 조건
+    public bool CanFirstSleep;
+
     //첫 방문 지역 이벤트
     public bool Starest_First_Visit;
 
@@ -88,6 +91,8 @@ public class PlayerData
         Language = "ko";
 
         StartGame = false;
+
+        CanFirstSleep  = false;
 
         Starest_First_Visit = false;
 

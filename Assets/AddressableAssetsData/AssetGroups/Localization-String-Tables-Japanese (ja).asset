@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2d05518455e2eb642876804932625bfc
+    m_Address: Boss_First_Calling_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d7b434bb54046148b4bf2eb03bbfad9
     m_Address: Starest_First_Visit_Dialogue_ja
     m_ReadOnly: 1
