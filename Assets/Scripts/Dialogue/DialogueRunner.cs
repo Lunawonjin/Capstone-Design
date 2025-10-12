@@ -1,3 +1,5 @@
+// DialogueRunnerStringTables.cs
+// 전화/메신저 공용 러너. *_Dialogue 테이블은 필수, *_Speaker 테이블은 옵션(loadSpeakerTable=false면 로드/표시 안 함)
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,8 +20,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     // ===== UI =====
     [Header("UI")]
-    public TextMeshProUGUI speakerText;  // {Event}_Speaker
-    public TextMeshProUGUI bodyText;     // {Event}_Dialogue
+    public TextMeshProUGUI speakerText;   // *_Speaker (옵션)
+    public TextMeshProUGUI bodyText;      // *_Dialogue
     public TextMeshProUGUI promptText;
     public GameObject nextIndicator;
     public Button choiceButtonPrefab;
@@ -38,30 +40,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
     [Header("폰트/버튼 크기 (기본값)")]
-    public float bodyFontSize = 52f;     // 기본 본문 크기
-    public float speakerFontSize = 46f;  // 기본 화자명 크기
+    public float bodyFontSize = 52f;
+    public float speakerFontSize = 46f;
     public float promptFontSize = 52f;
     public float choiceFontSize = 44f;
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
 
-    // ===== 추가: 언어별 폰트 크기 설정 =====
     [Header("언어별 폰트 크기")]
-    [Tooltip("언어별 Speaker/Body 폰트 크기를 사용할지 여부")]
     public bool useLanguageFontSizes = true;
-
-    [Serializable]
-    public class LangFont
-    {
-        [Tooltip("Locale code (예: ko, en, ja)")]
-        public string localeCode = "ko";
-        [Tooltip("이 언어에서 Speaker 텍스트 크기")]
-        public float speakerSize = 46f;
-        [Tooltip("이 언어에서 Dialogue 텍스트 크기")]
-        public float bodySize = 52f;
-    }
-
-    [Tooltip("언어별 폰트 크기 테이블")]
+    [Serializable] public class LangFont { public string localeCode = "ko"; public float speakerSize = 46f; public float bodySize = 52f; }
     public List<LangFont> languageFonts = new()
     {
         new LangFont { localeCode = "ko", speakerSize = 46f, bodySize = 52f },
@@ -69,52 +57,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
         new LangFont { localeCode = "ja", speakerSize = 44f, bodySize = 50f },
     };
 
-    [Header("Custom Choice Layouts")]
-    public bool useCustomLayouts = true;
-
-    [Serializable]
-    public class ChoiceLayout
-    {
-        public int optionCount = 2;
-        public Vector2[] positions = Array.Empty<Vector2>();
-        public Vector2 buttonSize = new(900, 100);
-        public bool centerRoot = true;
-    }
-
-    public List<ChoiceLayout> layouts = new()
-    {
-        new ChoiceLayout {
-            optionCount = 2,
-            positions = new [] { new Vector2(-250, 100), new Vector2( 250, 100) },
-            buttonSize = new Vector2(900, 100),
-            centerRoot = true
-        },
-        new ChoiceLayout {
-            optionCount = 3,
-            positions = new [] { new Vector2(-360, 120), new Vector2(0, 120), new Vector2(360, 120) },
-            buttonSize = new Vector2(820, 100),
-            centerRoot = true
-        },
-        new ChoiceLayout {
-            optionCount = 4,
-            positions = new [] {
-                new Vector2(-300, 160), new Vector2(300, 160),
-                new Vector2(-300,  40), new Vector2(300,  40),
-            },
-            buttonSize = new Vector2(740, 92),
-            centerRoot = true
-        },
-    };
-
     [Header("타이핑/입력")]
     [Range(0f, 0.1f)] public float charDelay = 0.03f;
     public bool respectRichText = true;
     public KeyCode advanceKey = KeyCode.Space;
-
-    [Tooltip("패널/대사가 나타난 직후 광클로 스킵되는 것 방지(초)")]
     [Range(0f, 0.5f)] public float advanceCooldownSec = 0.12f;
-
-    [Tooltip("입력 디버그 로그(키/마우스 감지 시 콘솔 출력)")]
     public bool debugInputLog = false;
 
     [Header("동작")]
@@ -131,23 +78,17 @@ public class DialogueRunnerStringTables : MonoBehaviour
     [Header("Player Name Token")]
     public string fallbackPlayerName = "Player";
 
-    // ===== 재활성화 복원용 =====
-    [Header("재활성화 복원")]
-    [Tooltip("비활성화됐다가 다시 활성화될 때 현재 문장을 처음부터 다시 타이핑할지 여부")]
-    public bool retypeOnResume = true;
-    private bool _resumePending = false;
-    private bool _wasTypingWhenHidden = false;
-    private string _lastKeyShown = "";
+    // ── 스피커 테이블 로딩 제어 ──
+    [Header("Speaker 테이블 사용")]
+    [Tooltip("false면 *_Speaker 테이블을 전혀 로드하지 않고 이름패널을 숨깁니다.")]
+    public bool loadSpeakerTable = false;
 
     // ===== 내부 상태 =====
     private RectTransform _choiceRoot;
     private VerticalLayoutGroup _vlg;
     private ContentSizeFitter _csf;
 
-    private readonly List<Button> _activeButtons = new();
-    private readonly Stack<Button> _buttonPool = new();
-
-    private StringTable _speakerTable;
+    private StringTable _speakerTable;   // loadSpeakerTable=false면 null 유지
     private StringTable _dialogueTable;
 
     private Coroutine _typingRoutine;
@@ -167,12 +108,20 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private int _sameLine = 1;
 
     private string _pendingEventName;
-
     private bool _inputUnlocked = false;
     private float _advanceCooldownLeft = 0f;
 
     // ===== Locale 변경 감지용 =====
     private bool _localeHooked = false;
+
+    // ===== 비활성화→활성화 복원 =====
+    [Header("재활성화 복원")]
+    public bool retypeOnResume = true;
+    private bool _resumePending = false;
+    private bool _wasTypingWhenHidden = false;
+    private string _lastKeyShown = "";
+
+    // ─────────────────────────────
 
     private void Awake()
     {
@@ -251,6 +200,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         UnhookLocaleChange();
     }
 
+    // ───────────────── 시작/테이블 로딩 ─────────────────
     public void BeginWithEventName(string eventName)
     {
         if (string.IsNullOrWhiteSpace(eventName))
@@ -269,20 +219,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
         StartCoroutine(Co_InitAndStart(eventName.Trim()));
     }
 
-    private IEnumerator LoadTableMultiTry(string primary, string fallback, Action<StringTable> setter)
+    private IEnumerator LoadTable(string tableName, Action<StringTable> setter)
     {
-        var op1 = LocalizationSettings.StringDatabase.GetTableAsync(primary);
-        yield return op1;
-        var table = op1.Result;
-
-        if (table == null && !string.IsNullOrEmpty(fallback))
-        {
-            var op2 = LocalizationSettings.StringDatabase.GetTableAsync(fallback);
-            yield return op2;
-            table = op2.Result;
-        }
-
-        setter?.Invoke(table);
+        var op = LocalizationSettings.StringDatabase.GetTableAsync(tableName);
+        yield return op;
+        setter?.Invoke(op.Result);
     }
 
     private IEnumerator Co_InitAndStart(string eventName)
@@ -301,18 +242,19 @@ public class DialogueRunnerStringTables : MonoBehaviour
         var initOp = LocalizationSettings.InitializationOperation;
         if (!initOp.IsDone) yield return initOp;
 
-        StringTable sp = null, bo = null;
-        yield return LoadTableMultiTry($"{_eventName}_Speaker", $"{_eventName}_Speaker table", t => sp = t);
-        yield return LoadTableMultiTry($"{_eventName}_Dialogue", $"{_eventName}_Dialogue table", t => bo = t);
+        _speakerTable = null;
+        _dialogueTable = null;
 
-        _speakerTable = sp;
-        _dialogueTable = bo;
+        // ── Dialogue 테이블만 필수 ──
+        yield return LoadTable($"{_eventName}_Dialogue", t => _dialogueTable = t);
 
-        if (_speakerTable == null || _dialogueTable == null)
+        // Speaker 테이블은 옵션
+        if (loadSpeakerTable)
+            yield return LoadTable($"{_eventName}_Speaker", t => _speakerTable = t);
+
+        if (_dialogueTable == null)
         {
-            Debug.LogError($"[DialogueRunnerStringTables] Missing tables.\n" +
-                           $"  Speaker candidates:  {_eventName}_Speaker / {_eventName}_Speaker table\n" +
-                           $"  Dialogue candidates: {_eventName}_Dialogue / {_eventName}_Dialogue table");
+            Debug.LogError($"[DialogueRunnerStringTables] Missing dialogue table: '{_eventName}_Dialogue'");
             yield break;
         }
 
@@ -320,6 +262,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         Next();
     }
 
+    // ───────────────── 입력/진행 ─────────────────
     private void Update()
     {
         if (_advanceCooldownLeft > 0f)
@@ -364,7 +307,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     }
     private string LSpeakerRaw(string key)
     {
-        if (_speakerTable == null) return "";
+        if (_speakerTable == null) return ""; // 스피커 테이블 미사용
         var e = _speakerTable.GetEntry(key);
         return e == null ? "" : ReplaceTokens(e.GetLocalizedString());
     }
@@ -509,6 +452,35 @@ public class DialogueRunnerStringTables : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
     }
 
+    // ===== Custom Choice Layouts =====
+    [Header("Custom Choice Layouts")]
+    public bool useCustomLayouts = true;
+    [Serializable] public class ChoiceLayout { public int optionCount = 2; public Vector2[] positions = Array.Empty<Vector2>(); public Vector2 buttonSize = new(900, 100); public bool centerRoot = true; }
+    public List<ChoiceLayout> layouts = new()
+    {
+        new ChoiceLayout {
+            optionCount = 2,
+            positions = new [] { new Vector2(-250, 100), new Vector2( 250, 100) },
+            buttonSize = new Vector2(900, 100),
+            centerRoot = true
+        },
+        new ChoiceLayout {
+            optionCount = 3,
+            positions = new [] { new Vector2(-360, 120), new Vector2(0, 120), new Vector2(360, 120) },
+            buttonSize = new Vector2(820, 100),
+            centerRoot = true
+        },
+        new ChoiceLayout {
+            optionCount = 4,
+            positions = new [] {
+                new Vector2(-300, 160), new Vector2(300, 160),
+                new Vector2(-300,  40), new Vector2(300,  40),
+            },
+            buttonSize = new Vector2(740, 92),
+            centerRoot = true
+        },
+    };
+
     private bool TryApplyCustomLayout(int count)
     {
         var layout = layouts.Find(l => l.optionCount == count && l.positions != null && l.positions.Length == count);
@@ -553,8 +525,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (_csf) _csf.enabled = enabled;
     }
 
+    private readonly List<Button> _activeButtons = new();
+    private readonly Stack<Button> _buttonPool = new();
+
     private Button GetButton()
     {
+        // 풀링 단순화: 필요 시 프리팹에서 새로 만든다
         Button btn = _buttonPool.Count > 0 ? _buttonPool.Pop() : Instantiate(choiceButtonPrefab);
         btn.gameObject.SetActive(true);
         btn.interactable = true;
@@ -623,22 +599,22 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (nextIndicator) nextIndicator.SetActive(false);
 
         string sp = LSpeakerRaw(key).Trim();
-        bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
+        bool hasSpeaker = !string.IsNullOrEmpty(sp); // 스피커 테이블 미사용이면 항상 false
 
         if (namePanel != null)
         {
-            namePanel.SetActive(!isSystem);
+            namePanel.SetActive(hasSpeaker);
         }
         else if (speakerText != null)
         {
-            speakerText.gameObject.SetActive(!isSystem);
+            speakerText.gameObject.SetActive(hasSpeaker);
         }
 
         if (speakerText != null)
         {
             speakerText.enableAutoSizing = false;
             speakerText.fontSize = GetSpeakerFontSize();
-            speakerText.text = isSystem ? "" : sp;
+            speakerText.text = hasSpeaker ? sp : "";
         }
 
         string full = LBody(key);
@@ -742,6 +718,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _advanceCooldownLeft = advanceCooldownSec;
     }
 
+    // ===== 캔버스/선택지 루트 =====
     private void EnsureCanvas()
     {
         if (targetCanvas == null)
@@ -804,6 +781,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _choiceRoot.gameObject.SetActive(false);
     }
 
+    // ===== 토큰 치환 =====
     private string ReplaceTokens(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
@@ -817,9 +795,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return s.Replace("{playerName}", name);
     }
 
+    // ===== 대화 시작/종료 콜백 =====
     private void OnDialogueBegin()
     {
         if (playerMove != null) playerMove.controlEnabled = false;
+        // 전화처럼 speaker 미사용이면 패널 숨김
+        if (!loadSpeakerTable)
+        {
+            if (namePanel) namePanel.SetActive(false);
+            if (speakerText) speakerText.gameObject.SetActive(false);
+        }
     }
 
     private void OnDialogueEnd()
@@ -857,7 +842,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
     }
 
     // ===== 언어별 폰트 크기 유틸 =====
-
     private void HookLocaleChange()
     {
         if (_localeHooked) return;
@@ -953,10 +937,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
             if (bodyText) { bodyText.enableAutoSizing = false; bodyText.fontSize = GetBodyFontSize(); }
 
             string sp = LSpeakerRaw(_lastKeyShown).Trim();
-            bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
-            if (namePanel) namePanel.SetActive(!isSystem);
-            else if (speakerText) speakerText.gameObject.SetActive(!isSystem);
-            if (speakerText) speakerText.text = isSystem ? "" : sp;
+            bool hasSpeaker = !string.IsNullOrEmpty(sp);
+            if (namePanel) namePanel.SetActive(hasSpeaker);
+            else if (speakerText) speakerText.gameObject.SetActive(hasSpeaker);
+            if (speakerText) speakerText.text = hasSpeaker ? sp : "";
 
             if (retypeOnResume)
             {
@@ -984,15 +968,15 @@ public class DialogueRunnerStringTables : MonoBehaviour
         string sp = LSpeakerRaw(_lastKeyShown).Trim();
         string latestBody = LBody(_lastKeyShown); // ReplaceTokens 통해 최신 이름 반영
 
-        bool isSystem = string.Equals(sp, "{System}", StringComparison.OrdinalIgnoreCase);
-        if (namePanel) namePanel.SetActive(!isSystem);
-        else if (speakerText) speakerText.gameObject.SetActive(!isSystem);
+        bool hasSpeaker = !string.IsNullOrEmpty(sp);
+        if (namePanel) namePanel.SetActive(hasSpeaker);
+        else if (speakerText) speakerText.gameObject.SetActive(hasSpeaker);
 
         if (speakerText)
         {
             speakerText.enableAutoSizing = false;
             speakerText.fontSize = GetSpeakerFontSize();
-            speakerText.text = isSystem ? "" : sp;
+            speakerText.text = hasSpeaker ? sp : "";
         }
 
         if (_typingRoutine != null && isActiveAndEnabled)

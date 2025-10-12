@@ -39,6 +39,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 99ea8975099a8384c8dad8b42a1f7ce8
+    m_Address: Boss_First_Calling_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b2d1d11b134c94243a3fdbc082a17187
     m_Address: Starest_First_Visit_Speaker_en
     m_ReadOnly: 1

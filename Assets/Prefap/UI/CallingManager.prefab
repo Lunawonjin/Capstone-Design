@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5562122335272404905
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 367155716415035640}
+  - component: {fileID: 7784901950932666150}
+  m_Layer: 0
+  m_Name: CallingManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &367155716415035640
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5562122335272404905}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7784901950932666150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5562122335272404905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48128bea5ccdfb9418e2fb082218c364, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CallingSystem
+  logLevel: 3
+  logPrefix: '[CallingSystem] '
+  calls:
+  - callingName: Boss_First_Calling
+    callerName: Boss
+    callerProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+    conditions: []
+    ringing: 0
+    answered: 0
+  notAnsweredIndicator: {fileID: 6825097154964455723, guid: 44e265059382df240aabe17b5774aa93, type: 3}
+  phoneIcon: {fileID: 0}
+  phoneIconButton: {fileID: 0}
+  shakeByRotation: 1
+  shakeFrequency: 4
+  shakeAmplitude: 10
+  shakeDuration: 1
+  shakeBursts: 2
+  shakeInterBurstDelay: 0.6
+  shakeInterBurstRandomJitter: {x: 0.15, y: 0.35}
+  shakeEnvelope:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  resetZToZeroOnStop: 1
+  dialoguePanel: {fileID: 0}
+  dialogueRunner: {fileID: 0}
+  autoFindDialogueRunner: 1
+  teleporter: {fileID: 0}
+  autoFindTeleporter: 1

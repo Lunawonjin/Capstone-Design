@@ -39,6 +39,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a5b2039a6dd43e34899bc275296dccd9
+    m_Address: Boss_First_Calling_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c2abab3656c07054a957981bb239911a
     m_Address: UI_Table_ko
     m_ReadOnly: 1
