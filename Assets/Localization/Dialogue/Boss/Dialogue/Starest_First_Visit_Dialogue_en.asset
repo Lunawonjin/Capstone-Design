@@ -64,10 +64,6 @@ MonoBehaviour:
     m_Localized: "I\u2019ll go in first, so follow me at your pace."
     m_Metadata:
       m_Items: []
-  - m_Id: 17311670988800
-    m_Localized: "(Let\u2019s follow Sol into her home.)"
-    m_Metadata:
-      m_Items: []
   - m_Id: 2852931410268161
     m_Localized: "Want me to go over what you\u2019ll be doing one more time?"
     m_Metadata:
