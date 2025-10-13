@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -38,7 +39,7 @@ public class HouseDoorTeleporter : MonoBehaviour
     [SerializeField] private bool verboseLog = true;
 
     // ─────────────────────────────────────────────
-    // ★ Starest 한정 불린 상태 (총 1 + 2 * ownerNames.Length)
+    // ★ Starest 한정 불린 상태
     // ─────────────────────────────────────────────
     [Header("Starest 전용 상태 플래그")]
     [SerializeField] private string starestSceneName = "Starest";
@@ -57,8 +58,12 @@ public class HouseDoorTeleporter : MonoBehaviour
         public bool ExitedToVillage;
     }
 
+    // ✅ Unity 직렬화: 리스트로 저장
     [Tooltip("ownerNames와 같은 길이로 자동 정렬됩니다.")]
-    public OwnerFlags[] ownerFlags = Array.Empty<OwnerFlags>();
+    [SerializeField] private List<OwnerFlags> ownerFlagsList = new List<OwnerFlags>();
+
+    // ✅ 런타임 조회: 이름 → 플래그 맵(대소문자 무시)
+    private Dictionary<string, OwnerFlags> ownerFlagsMap;
 
     // ─────────────────────────────────────────────
     // 상태/런타임
@@ -78,7 +83,9 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (playerTransform == null) playerTransform = transform;
         playerRb2D = playerTransform.GetComponent<Rigidbody2D>();
 
-        EnsureOwnerFlagsSized();
+        EnsureOwnerFlagsSized();     // 리스트 길이 동기화
+        RebuildOwnerMap();           // 맵 구성
+
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -89,6 +96,10 @@ public class HouseDoorTeleporter : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        // 씬 로드시 혹시 에디터에서 값이 바뀌었을 수 있으므로 재동기화
+        EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
+
         // Starest 씬 진입 시 초기 상태: 마을=true, 나머지=false
         if (!starestOnly || string.Equals(scene.name, starestSceneName, StringComparison.Ordinal))
         {
@@ -170,14 +181,14 @@ public class HouseDoorTeleporter : MonoBehaviour
         // ★ Starest 불린 상태 갱신: 집 "입장"
         if (ShouldUseStarestFlags())
         {
-            SetState_OnEnterHouse(index);
+            SetState_OnEnterHouseByName(CurrentOwnerName);
         }
     }
 
     // ───────────────── 텔레포트: House → Door ─────────────────
     private void TeleportToDoorIndex(int index)
     {
-        Transform door = doors[index];
+        Transform door = (index >= 0 && index < doors.Length) ? doors[index] : null;
         if (!door) { if (verboseLog) Debug.LogWarning($"[Teleporter] Doors[{index}] 없음"); return; }
 
         Vector2 offset = (index >= 0 && index < doorOffsets.Length) ? doorOffsets[index] : Vector2.zero;
@@ -191,7 +202,7 @@ public class HouseDoorTeleporter : MonoBehaviour
     // ───────────────── 텔레포트: Door → House (마을로 나감) ─────────────────
     private void Teleport_DoorToHouse(int index)
     {
-        GameObject house = houses[index];
+        GameObject house = (index >= 0 && index < houses.Length) ? houses[index] : null;
         if (!house) { if (verboseLog) Debug.LogWarning($"[Teleporter] Houses[{index}] 없음"); return; }
 
         Vector2 offset = (index >= 0 && index < houseReturnOffsets.Length) ? houseReturnOffsets[index] : Vector2.zero;
@@ -212,7 +223,9 @@ public class HouseDoorTeleporter : MonoBehaviour
         // ★ Starest 불린 상태 갱신: 집 "퇴장 → 마을"
         if (ShouldUseStarestFlags())
         {
-            SetState_OnExitToVillage(index);
+            // index 기준 → 이름으로 변환 후 처리(안전)
+            string owner = (index >= 0 && index < ownerNames.Length) ? ownerNames[index] : "";
+            SetState_OnExitToVillageByName(owner);
         }
     }
 
@@ -284,24 +297,46 @@ public class HouseDoorTeleporter : MonoBehaviour
         return string.Equals(scn, starestSceneName, StringComparison.Ordinal);
     }
 
+    /// <summary>ownerNames 길이에 맞춰 ownerFlagsList 길이/이름을 동기화</summary>
     private void EnsureOwnerFlagsSized()
     {
-        if (ownerFlags == null) ownerFlags = Array.Empty<OwnerFlags>();
+        if (ownerFlagsList == null) ownerFlagsList = new List<OwnerFlags>(ownerNames?.Length ?? 0);
 
-        if (ownerFlags.Length != ownerNames.Length)
+        int want = ownerNames?.Length ?? 0;
+
+        // 늘려야 하면 생성
+        while (ownerFlagsList.Count < want)
+            ownerFlagsList.Add(new OwnerFlags());
+
+        // 줄여야 하면 뒤에서 제거
+        while (ownerFlagsList.Count > want)
+            ownerFlagsList.RemoveAt(ownerFlagsList.Count - 1);
+
+        // 이름 동기화
+        for (int i = 0; i < want; i++)
         {
-            var newArr = new OwnerFlags[ownerNames.Length];
-            for (int i = 0; i < newArr.Length; i++)
-            {
-                newArr[i] = (i < ownerFlags.Length && ownerFlags[i] != null) ? ownerFlags[i] : new OwnerFlags();
-                newArr[i].ownerName = (i < ownerNames.Length) ? ownerNames[i] : "";
-            }
-            ownerFlags = newArr;
+            if (ownerFlagsList[i] == null) ownerFlagsList[i] = new OwnerFlags();
+            ownerFlagsList[i].ownerName = ownerNames[i] ?? "";
         }
+    }
+
+    /// <summary>런타임 조회용 딕셔너리 재구성(대소문자 무시)</summary>
+    private void RebuildOwnerMap()
+    {
+        if (ownerFlagsMap == null)
+            ownerFlagsMap = new Dictionary<string, OwnerFlags>(StringComparer.OrdinalIgnoreCase);
         else
+            ownerFlagsMap.Clear();
+
+        for (int i = 0; i < ownerFlagsList.Count; i++)
         {
-            for (int i = 0; i < ownerFlags.Length; i++)
-                if (ownerFlags[i] != null) ownerFlags[i].ownerName = (i < ownerNames.Length) ? ownerNames[i] : ownerFlags[i].ownerName;
+            var of = ownerFlagsList[i];
+            if (of == null) continue;
+            var key = of.ownerName ?? "";
+            if (string.IsNullOrWhiteSpace(key)) continue;
+
+            // 중복 이름은 마지막 것으로 덮어쓰기(인덱스 변경 시 안전)
+            ownerFlagsMap[key.Trim()] = of;
         }
     }
 
@@ -309,11 +344,14 @@ public class HouseDoorTeleporter : MonoBehaviour
     private void ClearAllFlags()
     {
         EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
+
         IsVillage = false;
-        for (int i = 0; i < ownerFlags.Length; i++)
+        foreach (var of in ownerFlagsList)
         {
-            ownerFlags[i].InHouse = false;
-            ownerFlags[i].ExitedToVillage = false;
+            if (of == null) continue;
+            of.InHouse = false;
+            of.ExitedToVillage = false;
         }
     }
 
@@ -321,48 +359,51 @@ public class HouseDoorTeleporter : MonoBehaviour
     private void SetVillageOnlyState()
     {
         EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
+
         IsVillage = true;
-        for (int i = 0; i < ownerFlags.Length; i++)
+        foreach (var of in ownerFlagsList)
         {
-            ownerFlags[i].InHouse = false;
-            ownerFlags[i].ExitedToVillage = false;
+            if (of == null) continue;
+            of.InHouse = false;
+            of.ExitedToVillage = false;
         }
     }
 
-    // 집 "입장" 시 상태
-    private void SetState_OnEnterHouse(int index)
+    // 집 "입장" 시 상태 (이름 기반)
+    private void SetState_OnEnterHouseByName(string ownerName)
     {
         EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
 
-        IsVillage = false;                         // 마을 false
-        for (int i = 0; i < ownerFlags.Length; i++)
+        IsVillage = false;
+        foreach (var of in ownerFlagsList)
         {
-            ownerFlags[i].InHouse = (i == index);  // 해당 집만 true
-            ownerFlags[i].ExitedToVillage = false; // 입장 순간엔 전부 false
+            if (of == null) continue;
+            of.InHouse = (string.Equals(of.ownerName, ownerName, StringComparison.OrdinalIgnoreCase));
+            of.ExitedToVillage = false;
         }
 
         if (verboseLog)
-        {
-            Debug.Log($"[Teleporter] EnterHouse → Village=false, InHouse[{index}]=true, ExitedToVillage[*]=false");
-        }
+            Debug.Log($"[Teleporter] EnterHouse → Village=false, InHouse='{ownerName}', ExitedToVillage[*]=false");
     }
 
-    // 집에서 "마을로 퇴장" 시 상태
-    private void SetState_OnExitToVillage(int index)
+    // 집에서 "마을로 퇴장" 시 상태 (이름 기반)
+    private void SetState_OnExitToVillageByName(string ownerName)
     {
         EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
 
-        IsVillage = true;                           // 마을 true
-        for (int i = 0; i < ownerFlags.Length; i++)
+        IsVillage = true;
+        foreach (var of in ownerFlagsList)
         {
-            ownerFlags[i].InHouse = false;          // 이제 집 내부 아님
-            ownerFlags[i].ExitedToVillage = (i == index); // 방금 나온 집만 true
+            if (of == null) continue;
+            of.InHouse = false;
+            of.ExitedToVillage = string.Equals(of.ownerName, ownerName, StringComparison.OrdinalIgnoreCase);
         }
 
         if (verboseLog)
-        {
-            Debug.Log($"[Teleporter] ExitToVillage ← from index {index} → Village=true, ExitedToVillage[{index}]=true");
-        }
+            Debug.Log($"[Teleporter] ExitToVillage ← from '{ownerName}' → Village=true, ExitedToVillage['{ownerName}']=true");
     }
 
     // ───────────────── 외부 조회 API ─────────────────
@@ -376,45 +417,55 @@ public class HouseDoorTeleporter : MonoBehaviour
         value = false;
         if (string.IsNullOrWhiteSpace(key)) return false;
 
+        // 모든 접근 전에 동기화 (안전)
+        EnsureOwnerFlagsSized();
+        RebuildOwnerMap();
+
         string k = key.Trim();
 
-        // IsVillage
+        // 단일 키
         if (string.Equals(k, "IsVillage", StringComparison.OrdinalIgnoreCase))
         {
             value = IsVillage;
             return true;
         }
 
-        // Owner-based
+        // "Owner_Suffix" 형식
         int under = k.IndexOf('_');
-        if (under > 0 && under < k.Length - 1)
+        if (under <= 0 || under >= k.Length - 1) return false;
+
+        string owner = k.Substring(0, under);
+        string suffix = k.Substring(under + 1);
+
+        if (!ownerFlagsMap.TryGetValue(owner, out var of) || of == null)
         {
-            string owner = k.Substring(0, under);
-            string suffix = k.Substring(under + 1);
-
-            int idx = IndexOfOwner(owner);
-            if (idx < 0) return false;
-
-            var of = ownerFlags[idx];
-            if (of == null) return false;
-
-            if (string.Equals(suffix, "InHouse", StringComparison.OrdinalIgnoreCase))
-            {
-                value = of.InHouse;
-                return true;
-            }
-            if (string.Equals(suffix, "ExitedToVillage", StringComparison.OrdinalIgnoreCase))
-            {
-                value = of.ExitedToVillage;
-                return true;
-            }
+            if (verboseLog) Debug.LogWarning($"[Teleporter] TryGetFlag: unknown owner '{owner}' (key='{key}')");
+            return false;
         }
+
+        if (string.Equals(suffix, "InHouse", StringComparison.OrdinalIgnoreCase))
+        {
+            value = of.InHouse;
+            return true;
+        }
+        if (string.Equals(suffix, "ExitedToVillage", StringComparison.OrdinalIgnoreCase))
+        {
+            value = of.ExitedToVillage;
+            return true;
+        }
+
+        // 알 수 없는 suffix
+        if (verboseLog) Debug.LogWarning($"[Teleporter] TryGetFlag: unknown suffix '{suffix}' (key='{key}')");
         return false;
     }
 
-    // 편의용(못 찾으면 false 반환)
-    public bool GetFlag(string key) => TryGetFlag(key, out var v) && v;
+    // 편의용(못 찾으면 false)
+    public bool GetFlag(string key)
+    {
+        return TryGetFlag(key, out var v) && v;
+    }
 
+    // (참고) 더 이상 사용하지 않지만, 필요하면 유지
     private int IndexOfOwner(string owner)
     {
         if (string.IsNullOrWhiteSpace(owner) || ownerNames == null) return -1;

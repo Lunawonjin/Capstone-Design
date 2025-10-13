@@ -2446,11 +2446,12 @@ MonoBehaviour:
   closeKey: 27
   extraCloseKeys: 000000001b000000
   exitButton: {fileID: 8076865373978485624}
-  openStartScale: {x: 0.8, y: 0.8, z: 1}
-  openEndScale: {x: 0.9, y: 0.9, z: 1}
+  keepOriginalScale: 1
+  openStartMul: {x: 1, y: 1, z: 1}
+  openEndMul: {x: 1, y: 1, z: 1}
   openDuration: 0.14
-  closeStartScale: {x: 0.9, y: 0.9, z: 1}
-  closeEndScale: {x: 0.8, y: 0.8, z: 1}
+  closeStartMul: {x: 1, y: 1, z: 1}
+  closeEndMul: {x: 1, y: 1, z: 1}
   closeDuration: 0.12
   useAlphaFade: 1
   syncWithPanelActive: 1
@@ -2483,6 +2484,114 @@ MonoBehaviour:
   guideIndexPlayerRoom: 0
   guideIndexStarest: 1
   guideIndexShopping: 2
+  depart_PlayerRoom:
+    sceneName: Player's Room
+    playerStart: {x: 14.8, y: -22}
+    playerEndY: -21.1
+    riseDuration: 1
+    departBusSpeed: 6
+    busTargetX: 24
+    enabled: 1
+  depart_Starest:
+    sceneName: Starest
+    playerStart: {x: -20.6, y: -22}
+    playerEndY: -21.1
+    riseDuration: 1
+    departBusSpeed: 6
+    busTargetX: -37
+    enabled: 1
+  depart_Shopping:
+    sceneName: Shopping Center
+    playerStart: {x: 0, y: 0}
+    playerEndY: 1
+    riseDuration: 1
+    departBusSpeed: 6
+    busTargetX: 24
+    enabled: 1
+  playerTransform: {fileID: 0}
+  playerRootToDisable: {fileID: 0}
+  playerMove: {fileID: 0}
+  playerAnimator: {fileID: 0}
+  departWalkState: Back_Walk
+  departAnimFade: 0.05
+  departAnimSpeed: 0.85
+  busTransform: {fileID: 0}
+  playerRiseEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  arrive_PlayerRoom:
+    sceneName: Player's Room
+    busPrefab: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+    busStartX: -37
+    busStopX: -15
+    busFinalX: -1
+    busY: -18.8
+    playerDropPos: {x: -14.5, y: -18.5}
+    busArriveDuration: 1
+    stopWait: 1
+    busLeaveDuration: 1
+    arriveSpeed: 6
+    leaveSpeed: 6
+    enabled: 1
+  arrive_Starest:
+    sceneName: Starest
+    busPrefab: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+    busStartX: -37
+    busStopX: -15
+    busFinalX: -1
+    busY: -18.8
+    playerDropPos: {x: -14.5, y: -18.5}
+    busArriveDuration: 1
+    stopWait: 1
+    busLeaveDuration: 1
+    arriveSpeed: 6
+    leaveSpeed: 6
+    enabled: 1
+  arrive_Shopping:
+    sceneName: Shopping Center
+    busPrefab: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+    busStartX: -37
+    busStopX: -15
+    busFinalX: -1
+    busY: -18.8
+    playerDropPos: {x: -14.5, y: -18.5}
+    busArriveDuration: 0.5
+    stopWait: 1
+    busLeaveDuration: 1
+    arriveSpeed: 6
+    leaveSpeed: 6
+    enabled: 1
+  playerTag: Player
+  playerNameIfNoTag: Player
+  arrivalPlayerCandidateNames:
+  - Player
+  forceEnableParentHierarchy: 1
+  arrivalLockControls: 1
+  arrivalCameras: []
+  arrivalCameraOffset: {x: 0, y: 0, z: 0}
+  arrivalCameraSmoothTime: 0.15
+  addTempFollowerIfMissing: 1
 --- !u!114 &4198364525068548763
 MonoBehaviour:
   m_ObjectHideFlags: 0

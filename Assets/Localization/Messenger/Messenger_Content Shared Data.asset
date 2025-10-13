@@ -15,14 +15,6 @@ MonoBehaviour:
   m_TableCollectionName: Messenger_Content
   m_TableCollectionNameGuidString: 70968e83c5b612842ac74cdb8ef6ca8a
   m_Entries:
-  - m_Id: 272881414144
-    m_Key: Boss_First_Messenger
-    m_Metadata:
-      m_Items: []
-  - m_Id: 80005585899520
-    m_Key: Boss_First_Messenger_Name
-    m_Metadata:
-      m_Items: []
   - m_Id: 394936038395904
     m_Key: Boss_First_Messenger_Notice
     m_Metadata:

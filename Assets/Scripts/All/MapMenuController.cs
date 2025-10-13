@@ -1,13 +1,10 @@
 // MapMenuController.cs
-// Unity 6 (LTS)
-// 기능 요약:
-// - M/Esc로 맵 열고 닫기, Exit 버튼으로 닫기
-// - 현재 씬과 메뉴 항목의 씬을 비교해 "현재 위치 화살표"를 해당 버튼 위에 표시
-// - 맵이 열려 있는 동안 화살표가 UnscaledTime 기준으로 위아래로 천천히 흔들림
-// - 주말이 아닌 평일에는 상점가(Shopping Center) 입장 시 안내 알림 표시
-// - [변경] 오브젝트 여러 개와 "충돌 중"일 때 F를 누르면 맵 열기
-// - [변경] 맵 열기 차단(requiredMessageName) 로직 제거
-// - [핵심] 원래 RectTransform 스케일을 보존하고, 애니메이션은 '곱셈 계수'로만 적용
+// 핵심: 도착 연출(Co_RunArrival)에서
+//   1) 버스 생성 직후  -> 모든 arrivalCameras가 버스를 팔로우
+//   2) 버스가 -15에 정차 -> 플레이어 활성화 & 모든 arrivalCameras가 플레이어로 팔로우 전환
+//   3) 버스가 떠남     -> 이후는 플레이어 팔로우 유지
+//
+// 나머지(맵 토글/화살표/출발-도착 연출/상수속도 이동/플레이어 강제 활성화/입력락 해제)는 이전 버전 그대로 유지
 
 using System;
 using System.Linq;
@@ -41,8 +38,8 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool revertToOriginalColor = true;
 
     [Header("맵 루트 / 맵 패널")]
-    [SerializeField] private GameObject map;      // 애니메이션으로 ON/OFF
-    [SerializeField] private GameObject mapPanel; // 즉시 ON/OFF (레이아웃 루트)
+    [SerializeField] private GameObject map;
+    [SerializeField] private GameObject mapPanel;
 
     [Header("UI 배타 그룹(선택)")]
     [SerializeField] private UIExclusiveManager uiGroup;
@@ -53,19 +50,14 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private KeyCode[] extraCloseKeys = { KeyCode.M, KeyCode.Escape };
 
     [Header("버튼")]
-    [SerializeField] private Button exitButton;   // 클릭 시 맵 닫기
+    [SerializeField] private Button exitButton;
 
-    // ▼▼▼ 스케일 보존형 애니메이션 파라미터(곱셈 계수) ▼▼▼
-    [Header("맵 열기/닫기 애니메이션 (Unscaled Time) - 스케일 보존")]
-    [Tooltip("원래 RectTransform.localScale을 그대로 보존할지 여부")]
+    // ===== 맵 열기/닫기 애니 (스케일 보존) =====
+    [Header("맵 애니메이션 (Unscaled) - 스케일 보존")]
     [SerializeField] private bool keepOriginalScale = true;
-
-    [Tooltip("열기 시작/끝 곱셈 계수(원래 스케일 × 계수). 모두 (1,1,1)이면 크기 변화 없음")]
     [SerializeField] private Vector3 openStartMul = new Vector3(1f, 1f, 1f);
     [SerializeField] private Vector3 openEndMul = new Vector3(1f, 1f, 1f);
     [SerializeField, Min(0.01f)] private float openDuration = 0.14f;
-
-    [Tooltip("닫기 시작/끝 곱셈 계수(원래 스케일 × 계수). 모두 (1,1,1)이면 크기 변화 없음")]
     [SerializeField] private Vector3 closeStartMul = new Vector3(1f, 1f, 1f);
     [SerializeField] private Vector3 closeEndMul = new Vector3(1f, 1f, 1f);
     [SerializeField, Min(0.01f)] private float closeDuration = 0.12f;
@@ -92,42 +84,28 @@ public class MapMenuController : MonoBehaviour
 
     // 현재 위치 화살표
     [Header("현재 위치 화살표")]
-    [Tooltip("메뉴 버튼 위에 표시할 화살표 오브젝트(RectTransform). 프리팹 또는 씬상의 오브젝트를 할당")]
     [SerializeField] private RectTransform currentArrow;
-    [Tooltip("화살표 기준 위치 오프셋(부모 버튼의 로컬 상단 등 적절히 조정)")]
     [SerializeField] private Vector2 arrowAnchorOffset = new Vector2(0f, 60f);
-    [Tooltip("화살표 바운스 진폭(픽셀)")]
     [SerializeField, Min(0f)] private float arrowBobAmplitude = 6f;
-    [Tooltip("화살표 바운스 속도(초당 사이클 비율)")]
     [SerializeField, Min(0.01f)] private float arrowBobSpeed = 2f;
-    [Tooltip("맵이 닫힐 때 화살표를 숨길지 여부")]
     [SerializeField] private bool hideArrowWhenClosed = true;
-    [Tooltip("씬 이름 대신 빌드 인덱스 매칭이 가능할 때 우선 사용")]
     [SerializeField] private bool preferBuildIndexMatch = true;
 
-    // === 충돌 열기 ===
+    // === 충돌로 맵 열기 ===
     [Header("충돌로 맵 열기(F)")]
-    [Tooltip("F 키")]
     [SerializeField] private KeyCode interactKey = KeyCode.F;
-    [Tooltip("플레이어 Collider2D (IsTrigger/Collider 모두 가능)")]
     [SerializeField] private Collider2D playerCollider;
-    [Tooltip("이 콜라이더들과 '충돌 중'일 때 F를 누르면 맵이 열립니다.")]
     [SerializeField] private Collider2D[] openMapColliders = Array.Empty<Collider2D>();
 
-    // === 가이드 화살표(목표 유도) ===
-    [Header("가이드 화살표(목표 위치 유도)")]
-    [Tooltip("목표로 안내할 때 표시되는 화살표(현재 위치 화살표와 별개)")]
+    // === 가이드 화살표 ===
+    [Header("가이드 화살표(목표 유도)")]
     [SerializeField] private RectTransform guideArrow;
-    [Tooltip("가이드 화살표 기준 위치 오프셋")]
     [SerializeField] private Vector2 guideArrowOffset = new Vector2(0f, 72f);
-    [Tooltip("가이드 화살표 바운스 진폭")]
     [SerializeField, Min(0f)] private float guideBobAmplitude = 10f;
-    [Tooltip("가이드 화살표 바운스 속도")]
     [SerializeField, Min(0.01f)] private float guideBobSpeed = 2.2f;
-    [Tooltip("맵이 닫혀 있어도 가이드 화살표를 표시할지")]
     [SerializeField] private bool showGuideWhenClosed = false;
 
-    [Header("가이드 대상 플래그(인스펙터 수정 가능)")]
+    [Header("가이드 대상 플래그")]
     public bool PlayerGoPlayerRoom = false;
     public bool PlayerGoStarest = false;
     public bool PlayerGoShopping = false;
@@ -137,30 +115,118 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private int guideIndexStarest = 1;
     [SerializeField] private int guideIndexShopping = 2;
 
-    // 내부 캐시
+    // ===== 출발 연출(씬별 설정) =====
+    [Serializable]
+    public class DepartConfig
+    {
+        public string sceneName = "";
+        public Vector2 playerStart = new Vector2(14.8f, -22f);
+        public float playerEndY = -21.1f;
+        [Min(0.01f)] public float riseDuration = 1.0f;
+
+        [Min(0.01f)] public float departBusSpeed = 6f;
+        public float busTargetX = 24f;
+        public bool enabled = true;
+    }
+
+    [Header("출발 연출 - 씬별 설정")]
+    [SerializeField] private DepartConfig depart_PlayerRoom = new DepartConfig { sceneName = "Player's Room", playerStart = new Vector2(14.8f, -22f), playerEndY = -21.1f, riseDuration = 1.0f, busTargetX = 24f, departBusSpeed = 6f, enabled = true };
+    [SerializeField] private DepartConfig depart_Starest = new DepartConfig { sceneName = "Starest", playerStart = new Vector2(0f, 0f), playerEndY = 1.0f, riseDuration = 1.0f, busTargetX = 24f, departBusSpeed = 6f, enabled = true };
+    [SerializeField] private DepartConfig depart_Shopping = new DepartConfig { sceneName = "Shopping Center", playerStart = new Vector2(0f, 0f), playerEndY = 1.0f, riseDuration = 1.0f, busTargetX = 24f, departBusSpeed = 6f, enabled = true };
+
+    [Header("출발 연출 애니/연동")]
+    [SerializeField] private Transform playerTransform;
+    [SerializeField] private GameObject playerRootToDisable;
+    [SerializeField] private PlayerMove playerMove;
+    [SerializeField] private Animator playerAnimator;
+    [SerializeField] private string departWalkState = "Back_Walk";
+    [SerializeField, Min(0f)] private float departAnimFade = 0.05f;
+    [SerializeField, Min(0f)] private float departAnimSpeed = 0.85f;
+
+    [SerializeField] private Transform busTransform;
+    [SerializeField] private AnimationCurve playerRiseEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    // ===== 도착 연출(씬별 설정) =====
+    [Serializable]
+    public class ArrivalConfig
+    {
+        public string sceneName = "";
+        public GameObject busPrefab;
+        public float busStartX = -37f;
+        public float busStopX = -15f;
+        public float busFinalX = -1f;
+        public float busY = -18.5f;
+        public Vector2 playerDropPos = new Vector2(-14.5f, -18.5f);
+
+        [Min(0.01f)] public float busArriveDuration = 1.2f;
+        [Min(0f)] public float stopWait = 0.4f;
+        [Min(0.01f)] public float busLeaveDuration = 1.0f;
+
+        [Header("상수 속도(유닛/초)")]
+        [Min(0.01f)] public float arriveSpeed = 6f;
+        [Min(0.01f)] public float leaveSpeed = 6f;
+
+        public bool enabled = true;
+    }
+
+    [Header("도착 연출 - 씬별 설정")]
+    [SerializeField] private ArrivalConfig arrive_PlayerRoom = new ArrivalConfig { sceneName = "Player's Room", enabled = false };
+    [SerializeField]
+    private ArrivalConfig arrive_Starest = new ArrivalConfig
+    {
+        sceneName = "Starest",
+        busStartX = -37f,
+        busStopX = -15f,
+        busFinalX = -1f,
+        busY = -18.5f,
+        playerDropPos = new Vector2(-14.5f, -18.5f),
+        busArriveDuration = 1.2f,
+        stopWait = 0.4f,
+        busLeaveDuration = 1.0f,
+        arriveSpeed = 3.5f,
+        leaveSpeed = 4.0f,
+        enabled = true
+    };
+    [SerializeField] private ArrivalConfig arrive_Shopping = new ArrivalConfig { sceneName = "Shopping Center", enabled = false };
+
+    [Header("도착 연출 - 플레이어 탐색/활성화 옵션")]
+    [SerializeField] private string playerTag = "Player";
+    [SerializeField] private string playerNameIfNoTag = "Player";
+    [SerializeField] private string[] arrivalPlayerCandidateNames = new string[] { "Player", "Hero", "MainCharacter" };
+    [SerializeField] private bool forceEnableParentHierarchy = true;
+    [SerializeField] private bool arrivalLockControls = true;
+
+    // ===== 도착 연출 - 카메라 팔로우 =====
+    [Header("도착 연출 - 카메라 팔로우(여러 개)")]
+    [SerializeField] private Camera[] arrivalCameras = Array.Empty<Camera>();
+    [SerializeField] private Vector3 arrivalCameraOffset = new Vector3(0f, 0f, 0f);
+    [SerializeField, Min(0.01f)] private float arrivalCameraSmoothTime = 0.15f;
+    [SerializeField] private bool addTempFollowerIfMissing = true;
+
+    // ===== 내부 상태 =====
     RectTransform _mapRT;
     CanvasGroup _mapCG;
-
     RectTransform _notifRT;
     CanvasGroup _notifCG;
 
     bool _isOpen, _animating, _notifAnimating;
     bool _notifOpen;
+    bool _isDeparting;
 
     Coroutine _openCo, _closeCo, _notifOpenCo, _notifCloseCo;
 
-    // 화살표 애니메이션용 내부 상태(현재 위치)
     RectTransform _arrowParentRT;
     Vector2 _arrowBaseAnchoredPos;
     int _arrowBoundIndex = -1;
 
-    // 가이드 화살표 내부 상태
     RectTransform _guideParentRT;
     Vector2 _guideBaseAnchoredPos;
     int _guideBoundIndex = -1;
 
-    // ▼ 원래 맵 스케일 보존용
     Vector3 _mapInitialScale = Vector3.one;
+
+    private static ArrivalConfig s_pendingArrival;
+    private static bool s_hasPendingArrival = false;
 
     void Awake()
     {
@@ -172,45 +238,24 @@ public class MapMenuController : MonoBehaviour
 
         _mapRT = map.GetComponent<RectTransform>();
         _mapCG = map.GetComponent<CanvasGroup>();
-
-        // 원래 스케일을 기억
         if (_mapRT) _mapInitialScale = _mapRT.localScale;
 
-        // 초기 상태
         mapPanel.SetActive(false);
         map.SetActive(false);
-
-        if (_mapRT)
-        {
-            // 열기 전 대기 스케일을 '원래 스케일 × openEndMul'로 맞춤
-            _mapRT.localScale = keepOriginalScale
-                ? Vector3.Scale(_mapInitialScale, openEndMul)
-                : Vector3.one;
-        }
-
+        if (_mapRT) _mapRT.localScale = keepOriginalScale ? Vector3.Scale(_mapInitialScale, openEndMul) : Vector3.one;
         if (_mapCG && useAlphaFade)
         {
-            _mapCG.alpha = 0f;
-            _mapCG.interactable = false;
-            _mapCG.blocksRaycasts = false;
+            _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false;
         }
         _isOpen = _animating = false;
 
-        // 알림 초기화
         if (notificationRoot)
         {
             _notifRT = notificationRoot.GetComponent<RectTransform>();
             _notifCG = notificationRoot.GetComponent<CanvasGroup>();
             if (_notifRT) _notifRT.localScale = notifEndScale;
-            if (_notifCG)
-            {
-                _notifCG.alpha = 0f;
-                _notifCG.interactable = true;
-                _notifCG.blocksRaycasts = notificationBlocksClicks;
-            }
-            notificationRoot.SetActive(false);
-            _notifOpen = false;
-
+            if (_notifCG) { _notifCG.alpha = 0f; _notifCG.interactable = true; _notifCG.blocksRaycasts = notificationBlocksClicks; }
+            notificationRoot.SetActive(false); _notifOpen = false;
             if (okButton) okButton.onClick.AddListener(HideNotification);
         }
 
@@ -220,7 +265,6 @@ public class MapMenuController : MonoBehaviour
         if (!uiGroup) uiGroup = UnityEngine.Object.FindObjectOfType<UIExclusiveManager>();
 #endif
 
-        // 메뉴 항목 호버/클릭 모듈 부착
         for (int i = 0; i < menuItems.Length; i++)
         {
             var go = menuItems[i]; if (!go) continue;
@@ -234,39 +278,24 @@ public class MapMenuController : MonoBehaviour
 
         if (exitButton) exitButton.onClick.AddListener(OnClickExit);
 
-        if (currentArrow)
-        {
-            currentArrow.gameObject.SetActive(false);
-            _arrowParentRT = null;
-            _arrowBoundIndex = -1;
-        }
+        if (currentArrow) { currentArrow.gameObject.SetActive(false); _arrowParentRT = null; _arrowBoundIndex = -1; }
+        if (guideArrow) { guideArrow.gameObject.SetActive(false); _guideParentRT = null; _guideBoundIndex = -1; }
 
-        if (guideArrow)
-        {
-            guideArrow.gameObject.SetActive(false);
-            _guideParentRT = null;
-            _guideBoundIndex = -1;
-        }
+        SceneManager.sceneLoaded += OnSceneLoaded_Arrival;
     }
 
     void OnDestroy()
     {
         if (okButton) okButton.onClick.RemoveListener(HideNotification);
         if (exitButton) exitButton.onClick.RemoveListener(OnClickExit);
+        SceneManager.sceneLoaded -= OnSceneLoaded_Arrival;
     }
 
     void Update()
     {
-        if (_notifOpen && Input.GetKeyDown(KeyCode.Escape))
-        {
-            HideNotification();
-            return;
-        }
-
+        if (_notifOpen && Input.GetKeyDown(KeyCode.Escape)) { HideNotification(); return; }
         if (Input.GetKeyDown(openKey)) OpenMap();
-
         if (Input.GetKeyDown(interactKey) && IsTouchingAnyOpenable()) OpenMap();
-
         if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown)) CloseMap();
 
         if (syncWithPanelActive)
@@ -282,7 +311,6 @@ public class MapMenuController : MonoBehaviour
             var pos = _arrowBaseAnchoredPos; pos.y += dy;
             currentArrow.anchoredPosition = pos;
         }
-
         if ((showGuideWhenClosed || _isOpen) && guideArrow && guideArrow.gameObject.activeSelf)
         {
             float t2 = Time.unscaledTime * guideBobSpeed * Mathf.PI * 2f;
@@ -292,15 +320,10 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    void OnClickExit()
-    {
-        if (_notifOpen) return;
-        CloseMap();
-    }
-
+    // ===== 메뉴 클릭 =====
     void OnMenuClick(int idx)
     {
-        if (_notifOpen) return;
+        if (_notifOpen || _isDeparting) return;
 
         if (idx == shopItemIndex && IsShopping(idx))
         {
@@ -312,28 +335,285 @@ public class MapMenuController : MonoBehaviour
 
         var active = SceneManager.GetActiveScene();
 
+        string targetSceneName = null;
+        Action loadAction = null;
+
         if (sceneIdMode == SceneIdMode.ByBuildIndex)
         {
             int build = (sceneBuildIndices != null && idx >= 0 && idx < sceneBuildIndices.Length) ? sceneBuildIndices[idx] : -1;
-
             if (build >= 0 && build < SceneManager.sceneCountInBuildSettings)
             {
                 if (active.buildIndex == build) { CloseMap(); return; }
-                SceneManager.LoadScene(build);
+                string path = SceneUtility.GetScenePathByBuildIndex(build);
+                targetSceneName = System.IO.Path.GetFileNameWithoutExtension(path);
+                loadAction = () => SceneManager.LoadScene(build);
+            }
+        }
+        if (loadAction == null)
+        {
+            targetSceneName = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
+            if (string.IsNullOrWhiteSpace(targetSceneName))
+            {
+                Debug.LogWarning($"[MapMenu] 인덱스 {idx}에 씬 이름이 설정되지 않았습니다.");
                 return;
+            }
+            if (SceneNameEqualsRobust(active.name, targetSceneName)) { CloseMap(); return; }
+            loadAction = () => SceneManager.LoadScene(targetSceneName);
+        }
+
+        if (TryGetArrivalConfigForScene(targetSceneName, out var arrCfg) && arrCfg.enabled)
+        {
+            s_pendingArrival = arrCfg;
+            s_hasPendingArrival = true;
+        }
+        else
+        {
+            s_hasPendingArrival = false;
+            s_pendingArrival = null;
+        }
+
+        ForceCloseImmediately();
+
+        if (TryGetDepartConfigForScene(active.name, out var depCfg) && depCfg.enabled)
+            StartCoroutine(Co_DepartThenLoad(loadAction, depCfg));
+        else
+            loadAction.Invoke();
+    }
+
+    bool TryGetDepartConfigForScene(string sceneName, out DepartConfig cfg)
+    {
+        if (SceneNameEqualsRobust(sceneName, depart_PlayerRoom.sceneName)) { cfg = depart_PlayerRoom; return true; }
+        if (SceneNameEqualsRobust(sceneName, depart_Starest.sceneName)) { cfg = depart_Starest; return true; }
+        if (SceneNameEqualsRobust(sceneName, depart_Shopping.sceneName)) { cfg = depart_Shopping; return true; }
+        cfg = null; return false;
+    }
+
+    IEnumerator Co_DepartThenLoad(Action loadScene, DepartConfig cfg)
+    {
+        _isDeparting = true;
+
+        if (playerTransform)
+        {
+            var p = playerTransform.position;
+            playerTransform.position = new Vector3(cfg.playerStart.x, cfg.playerStart.y, p.z);
+
+            var pm = playerMove ? playerMove : playerTransform.GetComponent<PlayerMove>();
+            Animator anim = playerAnimator ? playerAnimator : playerTransform.GetComponent<Animator>();
+            if (pm != null) pm.SetControlEnabled(false);
+
+            var prevMode = anim ? anim.updateMode : AnimatorUpdateMode.Normal;
+            if (anim) anim.updateMode = AnimatorUpdateMode.UnscaledTime;
+
+            if (pm != null) pm.ExternalAnim_PlayWalk(Vector2.up, 0.85f);
+            else
+            {
+                if (anim && !string.IsNullOrEmpty(departWalkState))
+                    anim.CrossFadeInFixedTime(departWalkState, departAnimFade, 0);
+                if (anim) anim.speed = 0.85f;
+            }
+
+            float t = 0f, dur = Mathf.Max(0.01f, cfg.riseDuration);
+            float startY = cfg.playerStart.y, endY = cfg.playerEndY;
+            while (t < dur)
+            {
+                float u = Mathf.Clamp01(t / dur);
+                float e = playerRiseEase != null ? playerRiseEase.Evaluate(u) : u;
+                float ny = Mathf.LerpUnclamped(startY, endY, e);
+                playerTransform.position = new Vector3(cfg.playerStart.x, ny, p.z);
+                t += Time.unscaledDeltaTime; yield return null;
+            }
+            playerTransform.position = new Vector3(cfg.playerStart.x, endY, p.z);
+
+            if (pm != null) pm.ExternalAnim_StopIdle();
+            if (anim) anim.updateMode = prevMode;
+
+            var root = playerRootToDisable ? playerRootToDisable : playerTransform.gameObject;
+            root.SetActive(false);
+        }
+
+        if (busTransform)
+        {
+            var b = busTransform;
+            Vector3 target = new Vector3(cfg.busTargetX, b.position.y, b.position.z);
+            float spd = Mathf.Max(0.01f, cfg.departBusSpeed);
+
+            while ((b.position - target).sqrMagnitude > 0.0001f)
+            {
+                b.position = Vector3.MoveTowards(b.position, target, spd * Time.unscaledDeltaTime);
+                yield return null;
+            }
+            b.position = target;
+        }
+
+        loadScene?.Invoke();
+        _isDeparting = false;
+    }
+
+    bool TryGetArrivalConfigForScene(string sceneName, out ArrivalConfig cfg)
+    {
+        if (SceneNameEqualsRobust(sceneName, arrive_PlayerRoom.sceneName)) { cfg = arrive_PlayerRoom; return true; }
+        if (SceneNameEqualsRobust(sceneName, arrive_Starest.sceneName)) { cfg = arrive_Starest; return true; }
+        if (SceneNameEqualsRobust(sceneName, arrive_Shopping.sceneName)) { cfg = arrive_Shopping; return true; }
+        cfg = null; return false;
+    }
+
+    void OnSceneLoaded_Arrival(Scene scene, LoadSceneMode mode)
+    {
+        if (!s_hasPendingArrival || s_pendingArrival == null) return;
+        if (!SceneNameEqualsRobust(scene.name, s_pendingArrival.sceneName)) return;
+
+        var cfg = s_pendingArrival;
+        s_hasPendingArrival = false;
+        s_pendingArrival = null;
+
+        StartCoroutine(Co_RunArrival(cfg));
+    }
+
+    IEnumerator Co_RunArrival(ArrivalConfig cfg)
+    {
+        // 0) 버스 생성
+        GameObject bus = null;
+        if (cfg.busPrefab != null)
+        {
+            bus = Instantiate(cfg.busPrefab);
+            var bp = bus.transform.position;
+            bus.transform.position = new Vector3(cfg.busStartX, cfg.busY, bp.z);
+        }
+        else
+        {
+            Debug.LogWarning("[MapMenu] Arrival: busPrefab이 비어 있습니다. 버스 연출을 건너뜁니다.");
+        }
+
+        // 0.5) 플레이어 찾기(견고)
+        GameObject playerGO = FindPlayerGO(out PlayerMove pm);
+
+        // 0.7) ▶ 카메라들을 버스에 붙이기 (플레이어 활성화 전까지)
+        if (bus) AttachCamerasFollow(bus.transform);
+
+        // 1) 시작X → 정지X — 상수 속도
+        if (bus)
+        {
+            var b = bus.transform;
+            Vector3 targetStop = new Vector3(cfg.busStopX, cfg.busY, b.position.z);
+            float spd = Mathf.Max(0.01f, cfg.arriveSpeed);
+
+            while ((b.position - targetStop).sqrMagnitude > 0.0001f)
+            {
+                b.position = Vector3.MoveTowards(b.position, targetStop, spd * Time.unscaledDeltaTime);
+                yield return null;
+            }
+            b.position = targetStop;
+        }
+
+        // 2) 정차 즉시 플레이어 활성화 + 하차 위치 배치
+        if (playerGO)
+        {
+            if (arrivalLockControls && pm != null) pm.SetControlEnabled(false);
+
+            if (!playerGO.activeInHierarchy && forceEnableParentHierarchy)
+                EnsureHierarchyActive(playerGO);
+            else if (!playerGO.activeSelf)
+                playerGO.SetActive(true);
+
+            var pz = playerGO.transform.position.z;
+            playerGO.transform.position = new Vector3(cfg.playerDropPos.x, cfg.playerDropPos.y, pz);
+
+            // ▶ 카메라 타깃을 플레이어로 전환
+            AttachCamerasFollow(playerGO.transform);
+        }
+
+        // 2.5) 정차 대기
+        if (cfg.stopWait > 0f)
+        {
+            float tw = 0f;
+            while (tw < cfg.stopWait) { tw += Time.unscaledDeltaTime; yield return null; }
+        }
+
+        // 3) 정지X → 최종X — 상수 속도
+        if (bus)
+        {
+            var b = bus.transform;
+            Vector3 targetFinal = new Vector3(cfg.busFinalX, cfg.busY, b.position.z);
+            float spd = Mathf.Max(0.01f, cfg.leaveSpeed);
+
+            while ((b.position - targetFinal).sqrMagnitude > 0.0001f)
+            {
+                b.position = Vector3.MoveTowards(b.position, targetFinal, spd * Time.unscaledDeltaTime);
+                yield return null;
+            }
+            b.position = targetFinal;
+            Destroy(bus);
+        }
+
+        // 4) 입력 해제
+        if (arrivalLockControls)
+        {
+            if (pm == null && playerGO != null) pm = playerGO.GetComponent<PlayerMove>();
+            if (pm != null) pm.Unfreeze(keepAnimatorState: true);
+        }
+    }
+
+    // ───────── 카메라 팔로우 유틸 ─────────
+    private void AttachCamerasFollow(Transform target)
+    {
+        if (arrivalCameras == null || arrivalCameras.Length == 0 || target == null) return;
+
+        for (int i = 0; i < arrivalCameras.Length; i++)
+        {
+            var cam = arrivalCameras[i];
+            if (!cam) continue;
+
+            var follower = cam.GetComponent<SimpleCameraFollower>();
+            if (!follower && addTempFollowerIfMissing)
+                follower = cam.gameObject.AddComponent<SimpleCameraFollower>();
+
+            if (follower)
+            {
+                follower.target = target;
+                follower.offset = arrivalCameraOffset;
+                follower.smoothTime = Mathf.Max(0.01f, arrivalCameraSmoothTime);
+                follower.enabled = true;
+            }
+        }
+    }
+
+    // ───────── 플레이어 탐색 유틸 ─────────
+    private GameObject FindPlayerGO(out PlayerMove pm)
+    {
+        pm = null;
+        GameObject playerGO = null;
+
+        if (!string.IsNullOrEmpty(playerTag))
+        {
+            try { var tagged = GameObject.FindGameObjectWithTag(playerTag); if (tagged) playerGO = tagged; } catch { }
+        }
+        if (playerGO == null && !string.IsNullOrEmpty(playerNameIfNoTag))
+        {
+            var byName = GameObject.Find(playerNameIfNoTag);
+            if (byName) playerGO = byName;
+        }
+        if (playerGO == null && arrivalPlayerCandidateNames != null)
+        {
+            foreach (var nm in arrivalPlayerCandidateNames)
+            {
+                if (string.IsNullOrWhiteSpace(nm)) continue;
+                var go = GameObject.Find(nm.Trim());
+                if (go) { playerGO = go; break; }
             }
         }
 
-        string name = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            Debug.LogWarning($"[MapMenu] 인덱스 {idx}에 씬 이름이 설정되지 않았습니다.");
-            return;
-        }
-
-        if (SceneNameEqualsRobust(active.name, name)) { CloseMap(); return; }
-        SceneManager.LoadScene(name);
+#if UNITY_2023_1_OR_NEWER
+        if (playerGO == null) pm = UnityEngine.Object.FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include);
+#else
+        if (playerGO == null) pm = UnityEngine.Object.FindObjectOfType<PlayerMove>();
+#endif
+        if (pm != null && playerGO == null) playerGO = pm.gameObject;
+        if (pm == null && playerGO != null) pm = playerGO.GetComponent<PlayerMove>();
+        return playerGO;
     }
+
+    // ===== 맵/알림 등 기존 =====
+    void OnClickExit() { if (_notifOpen) return; CloseMap(); }
 
     bool IsShopping(int idx)
     {
@@ -345,9 +625,7 @@ public class MapMenuController : MonoBehaviour
     {
         if (_animating || _isOpen) return;
         if (!fromPanelWatchdog && uiGroup != null && !uiGroup.TryActivate(mapPanel)) return;
-
         if (!mapPanel.activeSelf) mapPanel.SetActive(true);
-
         if (_closeCo != null) StopCoroutine(_closeCo);
         _openCo = StartCoroutine(Co_OpenMap());
     }
@@ -369,14 +647,7 @@ public class MapMenuController : MonoBehaviour
         if (mapPanel.activeSelf) mapPanel.SetActive(false);
 
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false; }
-
-        if (_mapRT)
-        {
-            // 닫힌 뒤에도 원래 스케일을 유지
-            _mapRT.localScale = keepOriginalScale
-                ? Vector3.Scale(_mapInitialScale, closeEndMul)
-                : Vector3.one;
-        }
+        if (_mapRT) _mapRT.localScale = keepOriginalScale ? Vector3.Scale(_mapInitialScale, closeEndMul) : Vector3.one;
 
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
         if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
@@ -387,13 +658,7 @@ public class MapMenuController : MonoBehaviour
         _isOpen = true; _animating = true;
 
         if (!map.activeSelf) map.SetActive(true);
-
-        if (_mapRT)
-        {
-            _mapRT.localScale = keepOriginalScale
-                ? Vector3.Scale(_mapInitialScale, openStartMul)
-                : Vector3.one;
-        }
+        if (_mapRT) _mapRT.localScale = keepOriginalScale ? Vector3.Scale(_mapInitialScale, openStartMul) : Vector3.one;
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false; }
 
         float t = 0f, d = Mathf.Max(0.01f, openDuration);
@@ -410,16 +675,10 @@ public class MapMenuController : MonoBehaviour
             t += Time.unscaledDeltaTime; yield return null;
         }
 
-        if (_mapRT)
-        {
-            _mapRT.localScale = keepOriginalScale
-                ? Vector3.Scale(_mapInitialScale, openEndMul)
-                : Vector3.one;
-        }
+        if (_mapRT) _mapRT.localScale = keepOriginalScale ? Vector3.Scale(_mapInitialScale, openEndMul) : Vector3.one;
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 1f; _mapCG.interactable = true; _mapCG.blocksRaycasts = true; }
 
         _animating = false;
-
         RefreshCurrentLocationArrow();
         RefreshGuideArrowBinding();
     }
@@ -445,19 +704,13 @@ public class MapMenuController : MonoBehaviour
             t += Time.unscaledDeltaTime; yield return null;
         }
 
-        if (_mapRT)
-        {
-            _mapRT.localScale = keepOriginalScale
-                ? Vector3.Scale(_mapInitialScale, closeEndMul)
-                : Vector3.one;
-        }
+        if (_mapRT) _mapRT.localScale = keepOriginalScale ? Vector3.Scale(_mapInitialScale, closeEndMul) : Vector3.one;
         if (_mapCG && useAlphaFade) _mapCG.alpha = 0f;
 
         if (map.activeSelf) map.SetActive(false);
         if (mapPanel.activeSelf) mapPanel.SetActive(false);
 
         _animating = false; _isOpen = false;
-
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
         if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
     }
@@ -466,28 +719,19 @@ public class MapMenuController : MonoBehaviour
     {
         if (!notificationRoot || _notifAnimating) return;
         if (_notifCloseCo != null) StopCoroutine(_notifCloseCo);
-
         _notifOpen = true;
 
         notificationRoot.SetActive(true);
         if (_notifRT) _notifRT.localScale = notifStartScale;
-        if (_notifCG)
-        {
-            _notifCG.alpha = 0f;
-            _notifCG.interactable = true;
-            _notifCG.blocksRaycasts = notificationBlocksClicks;
-        }
-
+        if (_notifCG) { _notifCG.alpha = 0f; _notifCG.interactable = true; _notifCG.blocksRaycasts = notificationBlocksClicks; }
         _notifOpenCo = StartCoroutine(Co_ShowNotification());
     }
-
     void HideNotification()
     {
         if (!notificationRoot || _notifAnimating || !notificationRoot.activeSelf) return;
         if (_notifOpenCo != null) StopCoroutine(_notifOpenCo);
         _notifCloseCo = StartCoroutine(Co_HideNotification());
     }
-
     IEnumerator Co_ShowNotification()
     {
         _notifAnimating = true;
@@ -500,10 +744,9 @@ public class MapMenuController : MonoBehaviour
             t += Time.unscaledDeltaTime; yield return null;
         }
         if (_notifRT) _notifRT.localScale = notifEndScale;
-        if (_notifCG) { _notifCG.alpha = 1f; }
+        if (_notifCG) _notifCG.alpha = 1f;
         _notifAnimating = false;
     }
-
     IEnumerator Co_HideNotification()
     {
         _notifAnimating = true;
@@ -520,8 +763,7 @@ public class MapMenuController : MonoBehaviour
         if (_notifCG) _notifCG.alpha = 0f;
 
         notificationRoot.SetActive(false);
-        _notifAnimating = false;
-        _notifOpen = false;
+        _notifAnimating = false; _notifOpen = false;
     }
 
     void RefreshCurrentLocationArrow()
@@ -537,9 +779,7 @@ public class MapMenuController : MonoBehaviour
         if (preferBuildIndexMatch && sceneIdMode == SceneIdMode.ByBuildIndex && sceneBuildIndices != null && sceneBuildIndices.Length == menuItems.Length)
         {
             for (int i = 0; i < sceneBuildIndices.Length; i++)
-            {
                 if (sceneBuildIndices[i] == activeIndex) { matchIdx = i; break; }
-            }
         }
 
         if (matchIdx < 0 && sceneNames != null && sceneNames.Length == menuItems.Length)
@@ -552,30 +792,16 @@ public class MapMenuController : MonoBehaviour
         }
 
         if (matchIdx < 0 || matchIdx >= menuItems.Length || menuItems[matchIdx] == null)
-        {
-            currentArrow.gameObject.SetActive(false);
-            _arrowParentRT = null;
-            _arrowBoundIndex = -1;
-            return;
-        }
+        { currentArrow.gameObject.SetActive(false); _arrowParentRT = null; _arrowBoundIndex = -1; return; }
 
         var targetRT = menuItems[matchIdx].GetComponent<RectTransform>();
-        if (!targetRT)
-        {
-            currentArrow.gameObject.SetActive(false);
-            _arrowParentRT = null;
-            _arrowBoundIndex = -1;
-            return;
-        }
+        if (!targetRT) { currentArrow.gameObject.SetActive(false); _arrowParentRT = null; _arrowBoundIndex = -1; return; }
 
         currentArrow.SetParent(targetRT, worldPositionStays: false);
-
         _arrowBaseAnchoredPos = arrowAnchorOffset;
         currentArrow.anchoredPosition = _arrowBaseAnchoredPos;
-
         currentArrow.gameObject.SetActive(true);
-        _arrowParentRT = targetRT;
-        _arrowBoundIndex = matchIdx;
+        _arrowParentRT = targetRT; _arrowBoundIndex = matchIdx;
     }
 
     void RefreshGuideArrowBinding()
@@ -588,21 +814,11 @@ public class MapMenuController : MonoBehaviour
         if (PlayerGoShopping) targetIndex = guideIndexShopping;
 
         if (targetIndex < 0 || targetIndex >= menuItems.Length || menuItems[targetIndex] == null)
-        {
-            guideArrow.gameObject.SetActive(false);
-            _guideParentRT = null;
-            _guideBoundIndex = -1;
-            return;
-        }
+        { guideArrow.gameObject.SetActive(false); _guideParentRT = null; _guideBoundIndex = -1; return; }
 
         var targetRT = menuItems[targetIndex].GetComponent<RectTransform>();
         if (!targetRT)
-        {
-            guideArrow.gameObject.SetActive(false);
-            _guideParentRT = null;
-            _guideBoundIndex = -1;
-            return;
-        }
+        { guideArrow.gameObject.SetActive(false); _guideParentRT = null; _guideBoundIndex = -1; return; }
 
         guideArrow.SetParent(targetRT, worldPositionStays: false);
         _guideBaseAnchoredPos = guideArrowOffset;
@@ -610,9 +826,7 @@ public class MapMenuController : MonoBehaviour
 
         bool shouldShow = showGuideWhenClosed || _isOpen;
         guideArrow.gameObject.SetActive(shouldShow);
-
-        _guideParentRT = targetRT;
-        _guideBoundIndex = targetIndex;
+        _guideParentRT = targetRT; _guideBoundIndex = targetIndex;
     }
 
     void AutoResolveBuildIndices()
@@ -633,16 +847,13 @@ public class MapMenuController : MonoBehaviour
         for (int i = 0; i < sceneBuildIndices.Length && i < sceneNames.Length; i++)
         {
             if (sceneBuildIndices[i] >= 0) continue;
-            string want = sceneNames[i];
-            if (string.IsNullOrWhiteSpace(want)) continue;
+            string want = sceneNames[i]; if (string.IsNullOrWhiteSpace(want)) continue;
             string norm = Normalize(want);
             if (nameToIndex.TryGetValue(norm, out int idx)) sceneBuildIndices[i] = idx;
             else
             {
                 foreach (var kv in nameToIndex)
-                {
                     if (SceneNameEqualsRobust(kv.Key, norm)) { sceneBuildIndices[i] = kv.Value; break; }
-                }
             }
         }
     }
@@ -652,7 +863,6 @@ public class MapMenuController : MonoBehaviour
         string na = Normalize(a), nb = Normalize(b);
         return string.Equals(na, nb, StringComparison.OrdinalIgnoreCase);
     }
-
     static string Normalize(string s)
     {
         if (string.IsNullOrEmpty(s)) return string.Empty;
@@ -663,14 +873,23 @@ public class MapMenuController : MonoBehaviour
     bool IsTouchingAnyOpenable()
     {
         if (!playerCollider || openMapColliders == null || openMapColliders.Length == 0) return false;
-
         for (int i = 0; i < openMapColliders.Length; i++)
         {
-            var c = openMapColliders[i];
-            if (!c) continue;
+            var c = openMapColliders[i]; if (!c) continue;
             if (c.IsTouching(playerCollider)) return true;
         }
         return false;
+    }
+
+    private static void EnsureHierarchyActive(GameObject leaf)
+    {
+        if (leaf == null) return;
+        Transform t = leaf.transform;
+        while (t != null)
+        {
+            if (!t.gameObject.activeSelf) t.gameObject.SetActive(true);
+            t = t.parent;
+        }
     }
 }
 
@@ -704,14 +923,9 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         _graphic = GetComponent<Graphic>();
 
         if (_graphic != null)
-        {
-            _baseColor = _graphic.color;
-            _hasBaseColor = true;
-        }
+        { _baseColor = _graphic.color; _hasBaseColor = true; }
         else
-        {
-            Debug.LogWarning($"[HoverableMenuItem] '{name}'에 Graphic이 없어 색상 연출 비활성화", this);
-        }
+        { Debug.LogWarning($"[HoverableMenuItem] '{name}'에 Graphic이 없어 색상 연출 비활성화", this); }
 
         SetScale(_normalScale);
     }
@@ -759,5 +973,27 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private static Color MultiplyColor(Color baseColor, Color mul)
     {
         return new Color(baseColor.r * mul.r, baseColor.g * mul.g, baseColor.b * mul.b, baseColor.a * mul.a);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 카메라에 자동으로 붙여 쓰는 간단한 팔로워
+// SmoothDamp로 부드럽게 따라가며, Z는 기존 카메라 Z를 유지합니다.
+// ─────────────────────────────────────────────────────────────────────────────
+[DisallowMultipleComponent]
+public class SimpleCameraFollower : MonoBehaviour
+{
+    public Transform target;
+    public Vector3 offset = Vector3.zero;
+    [Min(0.01f)] public float smoothTime = 0.15f;
+
+    private Vector3 _vel;
+
+    void LateUpdate()
+    {
+        if (!target) return;
+        var p = target.position + offset;
+        p.z = transform.position.z; // 카메라 Z 고정
+        transform.position = Vector3.SmoothDamp(transform.position, p, ref _vel, smoothTime);
     }
 }
