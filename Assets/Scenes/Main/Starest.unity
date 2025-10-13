@@ -405,6 +405,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1 &243342707 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 293481570493145184, guid: 0de763642ab8c7244949f3774c1213c2, type: 3}
+  m_PrefabInstance: {fileID: 1922017510}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &258513218
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -610,6 +615,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
+--- !u!1 &395148658 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 293481570493145184, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
+  m_PrefabInstance: {fileID: 258513218}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &417964755
 GameObject:
   m_ObjectHideFlags: 0
@@ -623,7 +633,7 @@ GameObject:
   - component: {fileID: 417964758}
   m_Layer: 0
   m_Name: Salt's House_Box
-  m_TagString: House
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -759,6 +769,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!1 &436445418 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 293481570493145184, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
+  m_PrefabInstance: {fileID: 666888510}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &444004556 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1416050035757409936, guid: c39d6033fe68f7b42ad99c2bb02ff922, type: 3}
@@ -783,7 +798,7 @@ GameObject:
   - component: {fileID: 455567624}
   m_Layer: 0
   m_Name: Sol's House_Box
-  m_TagString: House
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2033,8 +2048,8 @@ MonoBehaviour:
     Weekday: 1
     Language: ko
     StartGame: 1
-    CanFirstSleep: 0
-    Starest_First_Visit: 0
+    CanFirstSleep: 1
+    Starest_First_Visit: 1
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
@@ -2315,6 +2330,11 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &757826606 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 293481570493145184, guid: c9563a6f54828bc40b7a5ee7e27dfe0d, type: 3}
+  m_PrefabInstance: {fileID: 152375491}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &776306315 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7312298538800193529, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
@@ -2449,6 +2469,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6592344275335623878, guid: d85a6f391aa442841ababba114e8b865, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1405067369}
+    - targetCorrespondingSourceObject: {fileID: 6592344275335623878, guid: d85a6f391aa442841ababba114e8b865, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1405067372}
   m_SourcePrefab: {fileID: 100100000, guid: d85a6f391aa442841ababba114e8b865, type: 3}
 --- !u!1 &825948718
 GameObject:
@@ -3074,6 +3097,44 @@ MonoBehaviour:
   starestOnly: 1
   IsVillage: 0
   ownerFlags: []
+--- !u!114 &1405067372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1405067349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc033439d9908f428c74f7d45888874, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HoverIndicatorSpawner2D
+  player: {fileID: 1405067363}
+  playerCollider: {fileID: 0}
+  detectByCollisionOnly: 1
+  scanInterval: 0.1
+  scanRadius: 2
+  targetLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  includeTriggers: 1
+  npcTag: NPC
+  doorTag: Door
+  indicatorPrefab: {fileID: 7160934040699333172, guid: b5158e7f720dcaa48be2b5248e950d6f, type: 3}
+  spawnOffset: {x: 0.5, y: 0}
+  parentToTarget: 1
+  inheritScaleFromTarget: 0
+  addFloatBob: 0
+  bobAmplitude: 0.25
+  bobFrequency: 1.2
+  bobUseUnscaledTime: 1
+  bobWorldSpaceWhenNotParented: 1
+  onePerTarget: 1
+  exceptions:
+  - {fileID: 436445418}
+  - {fileID: 395148658}
+  - {fileID: 757826606}
+  - {fileID: 243342707}
 --- !u!1 &1407443124 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1235178147958398201, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
@@ -3097,7 +3158,7 @@ GameObject:
   - component: {fileID: 1518603146}
   m_Layer: 0
   m_Name: White's House_Box
-  m_TagString: House
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3409,7 +3470,7 @@ GameObject:
   - component: {fileID: 1807376347}
   m_Layer: 0
   m_Name: Ryu's House_Box
-  m_TagString: House
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

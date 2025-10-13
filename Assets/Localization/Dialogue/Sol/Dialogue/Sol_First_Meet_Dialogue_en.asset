@@ -77,10 +77,6 @@ MonoBehaviour:
     m_Localized: "Huh\u2026? Well\u2026 I was taught that I should\u2026"
     m_Metadata:
       m_Items: []
-  - m_Id: 220657409323008
-    m_Localized: '[Friendship decreased.]'
-    m_Metadata:
-      m_Items: []
   - m_Id: 221271946162176
     m_Localized: "You\u2019ve been to school, right?\nI haven\u2019t, and I wish
       I could have\u2026"
@@ -116,10 +112,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 222176154218496
     m_Localized: "\u2026!!! I\u2019d love that!"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222220244742144
-    m_Localized: '[Affinity increased.]'
     m_Metadata:
       m_Items: []
   - m_Id: 243722453250048

@@ -1201,7 +1201,7 @@ MonoBehaviour:
   spawnOffset: {x: 0.5, y: 1}
   parentToTarget: 1
   inheritScaleFromTarget: 0
-  addFloatBob: 1
+  addFloatBob: 0
   bobAmplitude: 0.25
   bobFrequency: 1.2
   bobUseUnscaledTime: 1

@@ -7,6 +7,7 @@
 // - 주말이 아닌 평일에는 상점가(Shopping Center) 입장 시 안내 알림 표시
 // - [변경] 오브젝트 여러 개와 "충돌 중"일 때 F를 누르면 맵 열기
 // - [변경] 맵 열기 차단(requiredMessageName) 로직 제거
+// - [핵심] 원래 RectTransform 스케일을 보존하고, 애니메이션은 '곱셈 계수'로만 적용
 
 using System;
 using System.Linq;
@@ -54,12 +55,19 @@ public class MapMenuController : MonoBehaviour
     [Header("버튼")]
     [SerializeField] private Button exitButton;   // 클릭 시 맵 닫기
 
-    [Header("맵 열기/닫기 애니메이션 (Unscaled Time)")]
-    [SerializeField] private Vector3 openStartScale = new Vector3(0.9f, 0.9f, 1f);
-    [SerializeField] private Vector3 openEndScale = Vector3.one;
+    // ▼▼▼ 스케일 보존형 애니메이션 파라미터(곱셈 계수) ▼▼▼
+    [Header("맵 열기/닫기 애니메이션 (Unscaled Time) - 스케일 보존")]
+    [Tooltip("원래 RectTransform.localScale을 그대로 보존할지 여부")]
+    [SerializeField] private bool keepOriginalScale = true;
+
+    [Tooltip("열기 시작/끝 곱셈 계수(원래 스케일 × 계수). 모두 (1,1,1)이면 크기 변화 없음")]
+    [SerializeField] private Vector3 openStartMul = new Vector3(1f, 1f, 1f);
+    [SerializeField] private Vector3 openEndMul = new Vector3(1f, 1f, 1f);
     [SerializeField, Min(0.01f)] private float openDuration = 0.14f;
-    [SerializeField] private Vector3 closeStartScale = Vector3.one;
-    [SerializeField] private Vector3 closeEndScale = new Vector3(0.9f, 0.9f, 1f);
+
+    [Tooltip("닫기 시작/끝 곱셈 계수(원래 스케일 × 계수). 모두 (1,1,1)이면 크기 변화 없음")]
+    [SerializeField] private Vector3 closeStartMul = new Vector3(1f, 1f, 1f);
+    [SerializeField] private Vector3 closeEndMul = new Vector3(1f, 1f, 1f);
     [SerializeField, Min(0.01f)] private float closeDuration = 0.12f;
 
     [Header("알파 페이드(CanvasGroup 필요)")]
@@ -120,11 +128,8 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool showGuideWhenClosed = false;
 
     [Header("가이드 대상 플래그(인스펙터 수정 가능)")]
-    [Tooltip("True면 메뉴 인덱스 guideIndexPlayerRoom 위에 가이드 화살표 표시")]
     public bool PlayerGoPlayerRoom = false;
-    [Tooltip("True면 메뉴 인덱스 guideIndexStarest 위에 가이드 화살표 표시")]
     public bool PlayerGoStarest = false;
-    [Tooltip("True면 메뉴 인덱스 guideIndexShopping 위에 가이드 화살표 표시")]
     public bool PlayerGoShopping = false;
 
     [Header("가이드 대상 인덱스(기본 0/1/2)")]
@@ -135,6 +140,7 @@ public class MapMenuController : MonoBehaviour
     // 내부 캐시
     RectTransform _mapRT;
     CanvasGroup _mapCG;
+
     RectTransform _notifRT;
     CanvasGroup _notifCG;
 
@@ -144,18 +150,20 @@ public class MapMenuController : MonoBehaviour
     Coroutine _openCo, _closeCo, _notifOpenCo, _notifCloseCo;
 
     // 화살표 애니메이션용 내부 상태(현재 위치)
-    RectTransform _arrowParentRT;     // 현재 부착된 버튼의 RectTransform
-    Vector2 _arrowBaseAnchoredPos;    // 바운스 기준점
-    int _arrowBoundIndex = -1;        // 화살표가 연결된 메뉴 인덱스
+    RectTransform _arrowParentRT;
+    Vector2 _arrowBaseAnchoredPos;
+    int _arrowBoundIndex = -1;
 
     // 가이드 화살표 내부 상태
     RectTransform _guideParentRT;
     Vector2 _guideBaseAnchoredPos;
     int _guideBoundIndex = -1;
 
+    // ▼ 원래 맵 스케일 보존용
+    Vector3 _mapInitialScale = Vector3.one;
+
     void Awake()
     {
-        // 필수 참조 확인
         if (!map || !mapPanel)
         {
             Debug.LogError("[MapMenuController] map / mapPanel 참조가 필요합니다.");
@@ -165,10 +173,21 @@ public class MapMenuController : MonoBehaviour
         _mapRT = map.GetComponent<RectTransform>();
         _mapCG = map.GetComponent<CanvasGroup>();
 
-        // 맵 초기 상태
+        // 원래 스케일을 기억
+        if (_mapRT) _mapInitialScale = _mapRT.localScale;
+
+        // 초기 상태
         mapPanel.SetActive(false);
         map.SetActive(false);
-        if (_mapRT) _mapRT.localScale = openEndScale;
+
+        if (_mapRT)
+        {
+            // 열기 전 대기 스케일을 '원래 스케일 × openEndMul'로 맞춤
+            _mapRT.localScale = keepOriginalScale
+                ? Vector3.Scale(_mapInitialScale, openEndMul)
+                : Vector3.one;
+        }
+
         if (_mapCG && useAlphaFade)
         {
             _mapCG.alpha = 0f;
@@ -195,14 +214,13 @@ public class MapMenuController : MonoBehaviour
             if (okButton) okButton.onClick.AddListener(HideNotification);
         }
 
-        // UI 배타 그룹 자동 할당
 #if UNITY_2023_1_OR_NEWER
         if (!uiGroup) uiGroup = UnityEngine.Object.FindAnyObjectByType<UIExclusiveManager>() ?? UnityEngine.Object.FindFirstObjectByType<UIExclusiveManager>();
 #else
         if (!uiGroup) uiGroup = UnityEngine.Object.FindObjectOfType<UIExclusiveManager>();
 #endif
 
-        // 메뉴 항목에 호버/클릭 모듈 부착
+        // 메뉴 항목 호버/클릭 모듈 부착
         for (int i = 0; i < menuItems.Length; i++)
         {
             var go = menuItems[i]; if (!go) continue;
@@ -212,13 +230,10 @@ public class MapMenuController : MonoBehaviour
             hover.onClick = () => OnMenuClick(idx);
         }
 
-        // 빌드 인덱스 자동 해석
         AutoResolveBuildIndices();
 
-        // Exit 버튼 연결
         if (exitButton) exitButton.onClick.AddListener(OnClickExit);
 
-        // 현재 위치 화살표 초기 설정
         if (currentArrow)
         {
             currentArrow.gameObject.SetActive(false);
@@ -226,7 +241,6 @@ public class MapMenuController : MonoBehaviour
             _arrowBoundIndex = -1;
         }
 
-        // 가이드 화살표 초기 설정
         if (guideArrow)
         {
             guideArrow.gameObject.SetActive(false);
@@ -243,37 +257,24 @@ public class MapMenuController : MonoBehaviour
 
     void Update()
     {
-        // 알림이 열려 있으면 Esc로 알림만 닫기
         if (_notifOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             HideNotification();
             return;
         }
 
-        // M 키 열기 (제한 없음)
-        if (Input.GetKeyDown(openKey))
-        {
-            OpenMap();
-        }
+        if (Input.GetKeyDown(openKey)) OpenMap();
 
-        // F 키: 충돌 중일 때만 열기
-        if (Input.GetKeyDown(interactKey) && IsTouchingAnyOpenable())
-        {
-            OpenMap();
-        }
+        if (Input.GetKeyDown(interactKey) && IsTouchingAnyOpenable()) OpenMap();
 
-        // 맵 닫기 토글
-        if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown))
-            CloseMap();
+        if ((_isOpen && Input.GetKeyDown(closeKey)) || extraCloseKeys.Any(Input.GetKeyDown)) CloseMap();
 
-        // 외부 SetActive 동기화
         if (syncWithPanelActive)
         {
             if (mapPanel.activeSelf && !_isOpen && !_animating) OpenMap(fromPanelWatchdog: true);
             else if (!mapPanel.activeSelf && (_isOpen || _animating)) ForceCloseImmediately();
         }
 
-        // 맵이 열려 있고 화살표들이 연결되어 있으면 바운스 애니메이션
         if (_isOpen && currentArrow && currentArrow.gameObject.activeSelf)
         {
             float t = Time.unscaledTime * arrowBobSpeed * Mathf.PI * 2f;
@@ -282,7 +283,6 @@ public class MapMenuController : MonoBehaviour
             currentArrow.anchoredPosition = pos;
         }
 
-        // 가이드 화살표 바운스 (맵이 닫혀있으면 옵션에 따라 표시)
         if ((showGuideWhenClosed || _isOpen) && guideArrow && guideArrow.gameObject.activeSelf)
         {
             float t2 = Time.unscaledTime * guideBobSpeed * Mathf.PI * 2f;
@@ -292,34 +292,26 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    // Exit 버튼 핸들러
     void OnClickExit()
     {
-        if (_notifOpen) return; // 알림이 클릭을 막는 경우
+        if (_notifOpen) return;
         CloseMap();
     }
 
-    // 메뉴 항목 클릭
     void OnMenuClick(int idx)
     {
         if (_notifOpen) return;
 
-        // 상점가 주말 제한 체크
         if (idx == shopItemIndex && IsShopping(idx))
         {
             bool weekend = DataManager.instance != null && DataManager.instance.IsWeekend;
             if (!weekend) { ShowNotification(); return; }
         }
 
-        // 씬 이동 전 임시 저장
-        if (DataManager.instance != null)
-        {
-            DataManager.instance.CommitDataToTempFile();
-        }
+        if (DataManager.instance != null) DataManager.instance.CommitDataToTempFile();
 
         var active = SceneManager.GetActiveScene();
 
-        // 빌드 인덱스 우선 로드
         if (sceneIdMode == SceneIdMode.ByBuildIndex)
         {
             int build = (sceneBuildIndices != null && idx >= 0 && idx < sceneBuildIndices.Length) ? sceneBuildIndices[idx] : -1;
@@ -330,7 +322,6 @@ public class MapMenuController : MonoBehaviour
                 SceneManager.LoadScene(build);
                 return;
             }
-            // 이름으로 폴백
         }
 
         string name = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
@@ -344,14 +335,12 @@ public class MapMenuController : MonoBehaviour
         SceneManager.LoadScene(name);
     }
 
-    // 상점가 여부 판별
     bool IsShopping(int idx)
     {
         string name = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
         return !string.IsNullOrEmpty(name) && SceneNameEqualsRobust(name, shopSceneName);
     }
 
-    // 외부에서 호출 가능한 맵 열기
     public void OpenMap(bool fromPanelWatchdog = false)
     {
         if (_animating || _isOpen) return;
@@ -363,7 +352,6 @@ public class MapMenuController : MonoBehaviour
         _openCo = StartCoroutine(Co_OpenMap());
     }
 
-    // 외부에서 호출 가능한 맵 닫기
     public void CloseMap()
     {
         if (_animating || !_isOpen) return;
@@ -371,7 +359,6 @@ public class MapMenuController : MonoBehaviour
         _closeCo = StartCoroutine(Co_CloseMap());
     }
 
-    // 즉시 강제 닫기(워치독용)
     void ForceCloseImmediately()
     {
         if (_openCo != null) StopCoroutine(_openCo);
@@ -382,12 +369,16 @@ public class MapMenuController : MonoBehaviour
         if (mapPanel.activeSelf) mapPanel.SetActive(false);
 
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false; }
-        if (_mapRT) _mapRT.localScale = closeEndScale;
 
-        // 화살표 처리
+        if (_mapRT)
+        {
+            // 닫힌 뒤에도 원래 스케일을 유지
+            _mapRT.localScale = keepOriginalScale
+                ? Vector3.Scale(_mapInitialScale, closeEndMul)
+                : Vector3.one;
+        }
+
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
-
-        // 가이드 화살표: 기본은 숨김(옵션에 따라 유지 가능)
         if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
     }
 
@@ -396,24 +387,39 @@ public class MapMenuController : MonoBehaviour
         _isOpen = true; _animating = true;
 
         if (!map.activeSelf) map.SetActive(true);
-        if (_mapRT) _mapRT.localScale = openStartScale;
+
+        if (_mapRT)
+        {
+            _mapRT.localScale = keepOriginalScale
+                ? Vector3.Scale(_mapInitialScale, openStartMul)
+                : Vector3.one;
+        }
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 0f; _mapCG.interactable = false; _mapCG.blocksRaycasts = false; }
 
         float t = 0f, d = Mathf.Max(0.01f, openDuration);
         while (t < d)
         {
             float u = t / d, e = 1f - Mathf.Pow(1f - u, 3f);
-            if (_mapRT) _mapRT.localScale = Vector3.LerpUnclamped(openStartScale, openEndScale, e);
+            if (_mapRT && keepOriginalScale)
+            {
+                var a = Vector3.Scale(_mapInitialScale, openStartMul);
+                var b = Vector3.Scale(_mapInitialScale, openEndMul);
+                _mapRT.localScale = Vector3.LerpUnclamped(a, b, e);
+            }
             if (_mapCG && useAlphaFade) _mapCG.alpha = Mathf.LerpUnclamped(0f, 1f, e);
             t += Time.unscaledDeltaTime; yield return null;
         }
 
-        if (_mapRT) _mapRT.localScale = openEndScale;
+        if (_mapRT)
+        {
+            _mapRT.localScale = keepOriginalScale
+                ? Vector3.Scale(_mapInitialScale, openEndMul)
+                : Vector3.one;
+        }
         if (_mapCG && useAlphaFade) { _mapCG.alpha = 1f; _mapCG.interactable = true; _mapCG.blocksRaycasts = true; }
 
         _animating = false;
 
-        // 맵이 열린 직후 현재 위치/가이드 화살표 갱신
         RefreshCurrentLocationArrow();
         RefreshGuideArrowBinding();
     }
@@ -429,12 +435,22 @@ public class MapMenuController : MonoBehaviour
         while (t < d)
         {
             float u = t / d, e = Mathf.Pow(u, 3f);
-            if (_mapRT) _mapRT.localScale = Vector3.LerpUnclamped(closeStartScale, closeEndScale, e);
+            if (_mapRT && keepOriginalScale)
+            {
+                var a = Vector3.Scale(_mapInitialScale, closeStartMul);
+                var b = Vector3.Scale(_mapInitialScale, closeEndMul);
+                _mapRT.localScale = Vector3.LerpUnclamped(a, b, e);
+            }
             if (_mapCG && useAlphaFade) _mapCG.alpha = Mathf.LerpUnclamped(startAlpha, 0f, e);
             t += Time.unscaledDeltaTime; yield return null;
         }
 
-        if (_mapRT) _mapRT.localScale = closeEndScale;
+        if (_mapRT)
+        {
+            _mapRT.localScale = keepOriginalScale
+                ? Vector3.Scale(_mapInitialScale, closeEndMul)
+                : Vector3.one;
+        }
         if (_mapCG && useAlphaFade) _mapCG.alpha = 0f;
 
         if (map.activeSelf) map.SetActive(false);
@@ -442,12 +458,10 @@ public class MapMenuController : MonoBehaviour
 
         _animating = false; _isOpen = false;
 
-        // 맵 닫힘 시 화살표 처리
         if (currentArrow && hideArrowWhenClosed) currentArrow.gameObject.SetActive(false);
         if (guideArrow && !showGuideWhenClosed) guideArrow.gameObject.SetActive(false);
     }
 
-    // 알림 표시
     void ShowNotification()
     {
         if (!notificationRoot || _notifAnimating) return;
@@ -467,7 +481,6 @@ public class MapMenuController : MonoBehaviour
         _notifOpenCo = StartCoroutine(Co_ShowNotification());
     }
 
-    // 알림 숨김
     void HideNotification()
     {
         if (!notificationRoot || _notifAnimating || !notificationRoot.activeSelf) return;
@@ -511,45 +524,33 @@ public class MapMenuController : MonoBehaviour
         _notifOpen = false;
     }
 
-    // 현재 위치 화살표 갱신
     void RefreshCurrentLocationArrow()
     {
         if (!currentArrow) return;
 
-        // 현재 활성 씬 정보
         var active = SceneManager.GetActiveScene();
         string activeName = active.name;
         int activeIndex = active.buildIndex;
 
-        // 메뉴 항목과 매칭될 인덱스 탐색
         int matchIdx = -1;
 
-        // 빌드 인덱스 우선 매칭
         if (preferBuildIndexMatch && sceneIdMode == SceneIdMode.ByBuildIndex && sceneBuildIndices != null && sceneBuildIndices.Length == menuItems.Length)
         {
             for (int i = 0; i < sceneBuildIndices.Length; i++)
             {
-                if (sceneBuildIndices[i] == activeIndex)
-                {
-                    matchIdx = i; break;
-                }
+                if (sceneBuildIndices[i] == activeIndex) { matchIdx = i; break; }
             }
         }
 
-        // 이름 매칭(폴백)
         if (matchIdx < 0 && sceneNames != null && sceneNames.Length == menuItems.Length)
         {
             for (int i = 0; i < sceneNames.Length; i++)
             {
                 var name = sceneNames[i];
-                if (!string.IsNullOrWhiteSpace(name) && SceneNameEqualsRobust(activeName, name))
-                {
-                    matchIdx = i; break;
-                }
+                if (!string.IsNullOrWhiteSpace(name) && SceneNameEqualsRobust(activeName, name)) { matchIdx = i; break; }
             }
         }
 
-        // 매칭 실패 시 화살표 숨김
         if (matchIdx < 0 || matchIdx >= menuItems.Length || menuItems[matchIdx] == null)
         {
             currentArrow.gameObject.SetActive(false);
@@ -558,7 +559,6 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // 대상 버튼의 RectTransform
         var targetRT = menuItems[matchIdx].GetComponent<RectTransform>();
         if (!targetRT)
         {
@@ -568,35 +568,25 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // 화살표를 대상 버튼의 자식으로 부착
         currentArrow.SetParent(targetRT, worldPositionStays: false);
 
-        // 기준 위치 계산
         _arrowBaseAnchoredPos = arrowAnchorOffset;
         currentArrow.anchoredPosition = _arrowBaseAnchoredPos;
 
-        // 활성화 및 내부 상태 기록
         currentArrow.gameObject.SetActive(true);
         _arrowParentRT = targetRT;
         _arrowBoundIndex = matchIdx;
     }
 
-    // === 가이드 화살표 갱신 ===
     void RefreshGuideArrowBinding()
     {
-        if (!guideArrow || menuItems == null || menuItems.Length == 0)
-        {
-            return;
-        }
+        if (!guideArrow || menuItems == null || menuItems.Length == 0) return;
 
-        // 어떤 플래그가 켜졌는지 확인(우선순위: PlayerRoom → Starest → Shopping)
         int targetIndex = -1;
-
         if (PlayerGoPlayerRoom) targetIndex = guideIndexPlayerRoom;
         if (PlayerGoStarest) targetIndex = guideIndexStarest;
         if (PlayerGoShopping) targetIndex = guideIndexShopping;
 
-        // 메뉴 범위 체크
         if (targetIndex < 0 || targetIndex >= menuItems.Length || menuItems[targetIndex] == null)
         {
             guideArrow.gameObject.SetActive(false);
@@ -605,7 +595,6 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // 해당 버튼의 RectTransform
         var targetRT = menuItems[targetIndex].GetComponent<RectTransform>();
         if (!targetRT)
         {
@@ -615,12 +604,10 @@ public class MapMenuController : MonoBehaviour
             return;
         }
 
-        // 부착 및 위치
         guideArrow.SetParent(targetRT, worldPositionStays: false);
         _guideBaseAnchoredPos = guideArrowOffset;
         guideArrow.anchoredPosition = _guideBaseAnchoredPos;
 
-        // 표시(맵이 닫혀 있으면 옵션에 따라 숨김)
         bool shouldShow = showGuideWhenClosed || _isOpen;
         guideArrow.gameObject.SetActive(shouldShow);
 
@@ -628,7 +615,6 @@ public class MapMenuController : MonoBehaviour
         _guideBoundIndex = targetIndex;
     }
 
-    // 빌드 인덱스 자동 해석
     void AutoResolveBuildIndices()
     {
         if (sceneIdMode != SceneIdMode.ByBuildIndex) return;
@@ -661,14 +647,12 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    // 이름 비교 유틸(공백/따옴표 제거 후 대소문자 무시)
     static bool SceneNameEqualsRobust(string a, string b)
     {
         string na = Normalize(a), nb = Normalize(b);
         return string.Equals(na, nb, StringComparison.OrdinalIgnoreCase);
     }
 
-    // 정규화(공백 및 따옴표 제거)
     static string Normalize(string s)
     {
         if (string.IsNullOrEmpty(s)) return string.Empty;
@@ -676,7 +660,6 @@ public class MapMenuController : MonoBehaviour
         return new string(s.Where(ch => ch != ' ' && ch != '\'' && ch != '’').ToArray());
     }
 
-    // 플레이어가 등록된 어떤 콜라이더와도 "충돌 중"인지 검사
     bool IsTouchingAnyOpenable()
     {
         if (!playerCollider || openMapColliders == null || openMapColliders.Length == 0) return false;
@@ -685,8 +668,6 @@ public class MapMenuController : MonoBehaviour
         {
             var c = openMapColliders[i];
             if (!c) continue;
-            // IsTouching은 서로의 ContactFilter 조건에 따라 다릅니다.
-            // Trigger/NonTrigger 조합 모두 지원되도록 Physics2D 설정을 확인하세요.
             if (c.IsTouching(playerCollider)) return true;
         }
         return false;
@@ -696,7 +677,6 @@ public class MapMenuController : MonoBehaviour
 [RequireComponent(typeof(RectTransform))]
 public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-    // 클릭 콜백(외부에서 할당)
     public System.Action onClick;
 
     [SerializeField] private float _normalScale = 1f;
@@ -738,12 +718,10 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
 
     private void OnEnable()
     {
-        if (_graphic != null && _hasBaseColor)
-            _graphic.color = _baseColor;
+        if (_graphic != null && _hasBaseColor) _graphic.color = _baseColor;
         SetScale(_normalScale);
     }
 
-    // 외부에서 호버 파라미터 세팅
     public void SetVisualParams(float normalScale, float hoverScale, Color hoverColor, bool revertToOriginalColor)
     {
         _normalScale = Mathf.Max(0.0001f, normalScale);

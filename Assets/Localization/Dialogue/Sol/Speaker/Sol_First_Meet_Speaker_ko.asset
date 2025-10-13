@@ -74,10 +74,6 @@ MonoBehaviour:
     m_Localized: "\uC194\uC774"
     m_Metadata:
       m_Items: []
-  - m_Id: 220657409323008
-    m_Localized: '{System}'
-    m_Metadata:
-      m_Items: []
   - m_Id: 221271946162176
     m_Localized: "\uC194\uC774"
     m_Metadata:
@@ -108,10 +104,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 222176154218496
     m_Localized: "\uC194\uC774"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222220244742144
-    m_Localized: '{System}'
     m_Metadata:
       m_Items: []
   - m_Id: 243722453250048

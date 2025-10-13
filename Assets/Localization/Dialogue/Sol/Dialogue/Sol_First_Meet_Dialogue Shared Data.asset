@@ -75,10 +75,6 @@ MonoBehaviour:
     m_Key: Dialogue_Choice3_A2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 220657409323008
-    m_Key: Dialogue_Choice3_A2_002
-    m_Metadata:
-      m_Items: []
   - m_Id: 221271946162176
     m_Key: Dialogue_Choice3_A2_003
     m_Metadata:
@@ -109,10 +105,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 222176154218496
     m_Key: Dialogue_Choice4_Same_001
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222220244742144
-    m_Key: Dialogue_Choice4_Same_002
     m_Metadata:
       m_Items: []
   - m_Id: 243722453250048
