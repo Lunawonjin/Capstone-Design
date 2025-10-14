@@ -2588,7 +2588,10 @@ MonoBehaviour:
   - Player
   forceEnableParentHierarchy: 1
   arrivalLockControls: 1
-  arrivalCameras: []
+  arrivalCameras:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   arrivalCameraOffset: {x: 0, y: 0, z: 0}
   arrivalCameraSmoothTime: 0.15
   addTempFollowerIfMissing: 1

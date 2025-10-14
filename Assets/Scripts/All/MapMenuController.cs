@@ -1,10 +1,9 @@
 // MapMenuController.cs
-// 핵심: 도착 연출(Co_RunArrival)에서
-//   1) 버스 생성 직후  -> 모든 arrivalCameras가 버스를 팔로우
-//   2) 버스가 -15에 정차 -> 플레이어 활성화 & 모든 arrivalCameras가 플레이어로 팔로우 전환
-//   3) 버스가 떠남     -> 이후는 플레이어 팔로우 유지
-//
-// 나머지(맵 토글/화살표/출발-도착 연출/상수속도 이동/플레이어 강제 활성화/입력락 해제)는 이전 버전 그대로 유지
+// 핵심 요약
+//  - 도착 연출: 버스 카메라(busCameras) → 맵 카메라(mapCamera) 확실한 전환
+//    · SetCameraActive(cam, on/off)로 컴포넌트와 GO 동시 제어 + depth 보정
+//  - 버스 카메라 팔로우: Y 고정(lockY), 최소 X 경계(minX) 지원(SimpleCameraFollower)
+//  - 그 외: 출발 연출(Back_Walk, 상수속도 이동, 비/활성화), 맵 토글, 화살표, 알림 등 기존 동작 유지
 
 using System;
 using System.Linq;
@@ -196,12 +195,23 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool forceEnableParentHierarchy = true;
     [SerializeField] private bool arrivalLockControls = true;
 
-    // ===== 도착 연출 - 카메라 팔로우 =====
-    [Header("도착 연출 - 카메라 팔로우(여러 개)")]
-    [SerializeField] private Camera[] arrivalCameras = Array.Empty<Camera>();
+    // ===== 도착 연출 - 카메라 제어 =====
+    [Header("도착 연출 - 카메라")]
+    [SerializeField] private Camera[] busCameras = Array.Empty<Camera>(); // 버스 추적 카메라들
+    [SerializeField] private Camera mapCamera;                             // 정차 후 활성화할 맵 카메라
+
+    [Header("버스 카메라 팔로우 설정")]
     [SerializeField] private Vector3 arrivalCameraOffset = new Vector3(0f, 0f, 0f);
     [SerializeField, Min(0.01f)] private float arrivalCameraSmoothTime = 0.15f;
     [SerializeField] private bool addTempFollowerIfMissing = true;
+
+    [Header("버스 카메라 Y 고정")]
+    [SerializeField] private bool lockCameraY = true;
+    [SerializeField] private float lockedCameraY = -18.5f;
+
+    [Header("버스 카메라 최소 X 경계")]
+    [SerializeField] private bool useMinCameraX = true;
+    [SerializeField] private float minCameraX = -20f;
 
     // ===== 내부 상태 =====
     RectTransform _mapRT;
@@ -484,10 +494,10 @@ public class MapMenuController : MonoBehaviour
             Debug.LogWarning("[MapMenu] Arrival: busPrefab이 비어 있습니다. 버스 연출을 건너뜁니다.");
         }
 
-        // 0.5) 플레이어 찾기(견고)
+        // 0.5) 플레이어 찾기
         GameObject playerGO = FindPlayerGO(out PlayerMove pm);
 
-        // 0.7) ▶ 카메라들을 버스에 붙이기 (플레이어 활성화 전까지)
+        // 0.7) ▶ 버스 카메라들을 버스에 붙이기 (플레이어 활성화 전까지)
         if (bus) AttachCamerasFollow(bus.transform);
 
         // 1) 시작X → 정지X — 상수 속도
@@ -517,12 +527,12 @@ public class MapMenuController : MonoBehaviour
 
             var pz = playerGO.transform.position.z;
             playerGO.transform.position = new Vector3(cfg.playerDropPos.x, cfg.playerDropPos.y, pz);
-
-            // ▶ 카메라 타깃을 플레이어로 전환
-            AttachCamerasFollow(playerGO.transform);
         }
 
-        // 2.5) 정차 대기
+        // 2.1) ▶ 카메라 전환: 맵 카메라 ON, 버스 카메라 OFF (확실하게)
+        SwitchToMapCamera();
+
+        // 2.5) 정차 대기(연출 호흡)
         if (cfg.stopWait > 0f)
         {
             float tw = 0f;
@@ -553,14 +563,27 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
+    // ───────── 카메라 온/오프 보조 유틸 ─────────
+    private void SetCameraActive(Camera cam, bool active, bool alsoToggleGameObject = true, float? overrideDepth = null)
+    {
+        if (!cam) return;
+        if (alsoToggleGameObject && cam.gameObject.activeSelf != active)
+            cam.gameObject.SetActive(active);
+
+        cam.enabled = active;
+
+        if (overrideDepth.HasValue)
+            cam.depth = overrideDepth.Value;
+    }
+
     // ───────── 카메라 팔로우 유틸 ─────────
     private void AttachCamerasFollow(Transform target)
     {
-        if (arrivalCameras == null || arrivalCameras.Length == 0 || target == null) return;
+        if (busCameras == null || busCameras.Length == 0 || target == null) return;
 
-        for (int i = 0; i < arrivalCameras.Length; i++)
+        for (int i = 0; i < busCameras.Length; i++)
         {
-            var cam = arrivalCameras[i];
+            var cam = busCameras[i];
             if (!cam) continue;
 
             var follower = cam.GetComponent<SimpleCameraFollower>();
@@ -572,8 +595,57 @@ public class MapMenuController : MonoBehaviour
                 follower.target = target;
                 follower.offset = arrivalCameraOffset;
                 follower.smoothTime = Mathf.Max(0.01f, arrivalCameraSmoothTime);
+
+                // Y 고정 / 최소 X 경계 적용
+                follower.lockY = lockCameraY;
+                follower.fixedY = lockedCameraY;
+
+                follower.useMinX = useMinCameraX;
+                follower.minX = minCameraX;
+
                 follower.enabled = true;
             }
+
+            // 버스 카메라는 항상 보이도록(맵 카메라보다 뒤)
+            cam.depth = 0f;
+            SetCameraActive(cam, true, alsoToggleGameObject: true);
+        }
+
+        // 버스 들어오는 동안 맵 카메라는 꺼둠(컴포넌트+GO)
+        if (mapCamera) SetCameraActive(mapCamera, false, alsoToggleGameObject: true);
+    }
+
+    // 맵 카메라로 전환(버스 카메라 끄고, 맵 카메라 확실히 켬)
+    private void SwitchToMapCamera()
+    {
+        if (busCameras != null)
+        {
+            for (int i = 0; i < busCameras.Length; i++)
+            {
+                var cam = busCameras[i];
+                if (!cam) continue;
+
+                var follower = cam.GetComponent<SimpleCameraFollower>();
+                if (follower) follower.enabled = false;
+
+                SetCameraActive(cam, false, alsoToggleGameObject: true);
+            }
+        }
+
+        if (mapCamera)
+        {
+            // 버스 카메라보다 앞서도록 depth 보정
+            float frontDepth = 10f;
+            if (busCameras != null)
+            {
+                foreach (var bc in busCameras)
+                    if (bc) frontDepth = Mathf.Max(frontDepth, bc.depth + 1f);
+            }
+            SetCameraActive(mapCamera, true, alsoToggleGameObject: true, overrideDepth: frontDepth);
+        }
+        else
+        {
+            Debug.LogWarning("[MapMenu] mapCamera가 할당되지 않았습니다. 인스펙터에서 Map Camera를 지정하세요.");
         }
     }
 
@@ -977,8 +1049,9 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 카메라에 자동으로 붙여 쓰는 간단한 팔로워
-// SmoothDamp로 부드럽게 따라가며, Z는 기존 카메라 Z를 유지합니다.
+// SimpleCameraFollower
+//  - Y 고정(lockY), 최소 X 경계(minX) 지원
+//  - SmoothDamp 추적, 카메라 Z는 현 위치 유지
 // ─────────────────────────────────────────────────────────────────────────────
 [DisallowMultipleComponent]
 public class SimpleCameraFollower : MonoBehaviour
@@ -987,13 +1060,32 @@ public class SimpleCameraFollower : MonoBehaviour
     public Vector3 offset = Vector3.zero;
     [Min(0.01f)] public float smoothTime = 0.15f;
 
+    [Header("Y 고정 옵션")]
+    public bool lockY = false;
+    public float fixedY = 0f;
+
+    [Header("최소 X 경계")]
+    public bool useMinX = false;
+    public float minX = 0f;
+
     private Vector3 _vel;
 
     void LateUpdate()
     {
         if (!target) return;
+
         var p = target.position + offset;
-        p.z = transform.position.z; // 카메라 Z 고정
+
+        // 카메라의 기존 Z 유지
+        p.z = transform.position.z;
+
+        // Y 고정
+        if (lockY) p.y = fixedY;
+
+        // 최소 X 경계 적용
+        if (useMinX && p.x < minX)
+            p.x = minX;
+
         transform.position = Vector3.SmoothDamp(transform.position, p, ref _vel, smoothTime);
     }
 }
