@@ -701,7 +701,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 26.6}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 220, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3461591108336906755
@@ -1122,7 +1122,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -772.3, y: 351.2}
+  m_AnchoredPosition: {x: -772.3, y: 338}
   m_SizeDelta: {x: 155, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3725992497152187881
@@ -2588,13 +2588,15 @@ MonoBehaviour:
   - Player
   forceEnableParentHierarchy: 1
   arrivalLockControls: 1
-  arrivalCameras:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  busCameras: []
+  mapCamera: {fileID: 0}
   arrivalCameraOffset: {x: 0, y: 0, z: 0}
   arrivalCameraSmoothTime: 0.15
   addTempFollowerIfMissing: 1
+  lockCameraY: 1
+  lockedCameraY: -18.5
+  useMinCameraX: 1
+  minCameraX: -20
 --- !u!114 &4198364525068548763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6993,7 +6995,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -846.1, y: 357.4}
+  m_AnchoredPosition: {x: -846.1, y: 344.19998}
   m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4533109771870792634
@@ -8207,7 +8209,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -800, y: 400}
-  m_SizeDelta: {x: 230, y: 180}
+  m_SizeDelta: {x: 210, y: 210}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3739471223457440891
 CanvasRenderer:
@@ -8237,7 +8239,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 8778972361987915155, guid: 5f0315ac77e25d244bb776fe6397c67e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

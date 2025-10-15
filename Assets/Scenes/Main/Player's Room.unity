@@ -422,6 +422,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 433796503304358902, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.628
+      objectReference: {fileID: 0}
     - target: {fileID: 997664615941449605, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
       propertyPath: m_SortingOrder
       value: 3
@@ -545,6 +549,10 @@ PrefabInstance:
     - target: {fileID: 6068192239350380068, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
       propertyPath: orthographic size
       value: 5.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7002724484061777704, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.596
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4106241121551004892, guid: cfa10515f96ba6f4d8b2362f8c2e4820, type: 3}
@@ -999,7 +1007,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41c32bee2006ce040b6c067a92a50668, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 2.5
+  moveSpeed: 3
   controlEnabled: 1
   uiLock: {fileID: 0}
 --- !u!114 &323229405
