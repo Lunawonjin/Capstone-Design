@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6727896318951107521}
   m_Layer: 5
   m_Name: Panel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1101,7 +1101,7 @@ GameObject:
   - component: {fileID: 7565338170241223440}
   m_Layer: 5
   m_Name: Text_Coin
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1736,7 +1736,7 @@ GameObject:
   - component: {fileID: 5299697106145576189}
   m_Layer: 5
   m_Name: Shopping
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2081,7 +2081,7 @@ GameObject:
   - component: {fileID: 1639965705024532100}
   m_Layer: 5
   m_Name: PhonePanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2543,11 +2543,11 @@ MonoBehaviour:
   arrive_PlayerRoom:
     sceneName: Player's Room
     busPrefab: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
-    busStartX: -37
-    busStopX: -15
-    busFinalX: -1
+    busStartX: 22.5
+    busStopX: 6.5
+    busFinalX: 5
     busY: -18.8
-    playerDropPos: {x: -14.5, y: -18.5}
+    playerDropPos: {x: 9.2, y: -18.5}
     busArriveDuration: 1
     stopWait: 1
     busLeaveDuration: 1
@@ -2597,6 +2597,10 @@ MonoBehaviour:
   lockedCameraY: -18.5
   useMinCameraX: 1
   minCameraX: -20
+  useSceneFade: 1
+  fadeInDuration: 0.35
+  fadeOutDuration: 0.45
+  fadeColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &4198364525068548763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3132,7 +3136,7 @@ GameObject:
   - component: {fileID: 5410098814612018977}
   m_Layer: 5
   m_Name: BookIcon
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3372,7 +3376,7 @@ GameObject:
   - component: {fileID: 4571552273638040865}
   m_Layer: 5
   m_Name: Notification
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4838,7 +4842,7 @@ GameObject:
   - component: {fileID: 8076865373978485624}
   m_Layer: 5
   m_Name: Exit
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6621,7 +6625,7 @@ GameObject:
   - component: {fileID: 6530103362316438157}
   m_Layer: 5
   m_Name: Setting_BT
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6974,7 +6978,7 @@ GameObject:
   - component: {fileID: 8186540625516935036}
   m_Layer: 5
   m_Name: Coin
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8186,7 +8190,7 @@ GameObject:
   - component: {fileID: 3198371736558693152}
   m_Layer: 5
   m_Name: Calender
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8648,7 +8652,7 @@ GameObject:
   - component: {fileID: 8932605103279777870}
   m_Layer: 5
   m_Name: MapPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -9314,7 +9318,7 @@ GameObject:
   - component: {fileID: 1117877524296334503}
   m_Layer: 5
   m_Name: "\uBCC4\uBB34\uB9AC\uD130"
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -10382,7 +10386,7 @@ GameObject:
   - component: {fileID: 3250063667851175952}
   m_Layer: 5
   m_Name: Map
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -11351,7 +11355,7 @@ GameObject:
   - component: {fileID: 651949454186631133}
   m_Layer: 5
   m_Name: Messenger_BT
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -11704,7 +11708,7 @@ GameObject:
   - component: {fileID: 4220479278787490453}
   m_Layer: 5
   m_Name: CurrentArrow
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -12757,7 +12761,7 @@ GameObject:
   - component: {fileID: 6410693260511055946}
   m_Layer: 5
   m_Name: MissonArrow
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -13314,7 +13318,7 @@ GameObject:
   - component: {fileID: 417394788183853191}
   m_Layer: 5
   m_Name: Town
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

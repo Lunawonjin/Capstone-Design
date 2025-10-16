@@ -1,3 +1,4 @@
+// DataManager.cs
 using UnityEngine;
 using System.IO;
 using System;
@@ -6,7 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TMPro;
 using UnityEngine.SceneManagement;
-using System.Linq; // 배열에서 .Contains()를 사용하기 위해 필요합니다.
+using System.Linq; // 배열에서 .Contains() 사용
 
 #region 저장 포맷(활성 오브젝트 기록)
 
@@ -14,17 +15,10 @@ using System.Linq; // 배열에서 .Contains()를 사용하기 위해 필요합�
 [Serializable]
 public class ActiveObjectInfo
 {
-    // 예: "Environment/Trees/Tree_01"
-    public string HierarchyPath;
-
-    // GameObject.name
-    public string Name;
-
-    // GameObject.tag (Untagged 포함)
-    public string Tag;
-
-    // activeInHierarchy 당시의 활성 상태(요청 사양상 true만 저장되지만, 포맷 확장성 위해 둠)
-    public bool ActiveInHierarchy;
+    public string HierarchyPath;    // 예: "Environment/Trees/Tree_01"
+    public string Name;             // GameObject.name
+    public string Tag;              // GameObject.tag (Untagged 포함)
+    public bool ActiveInHierarchy;  // true만 저장(확장성 위해 필드 유지)
 }
 
 #endregion
@@ -45,10 +39,10 @@ public class PlayerData
     // 마지막 씬 이름
     public string Scene;
 
-    // 요일(1~7) : 월(1) 화(2) 수(3) 목(4) 금(5) 토(6) 일(7)
+    // 요일(1~7)
     public int Weekday;
 
-    // 언어 코드("ko","en","jp") — 기본 "ko"
+    // 언어 코드("ko","en","jp")
     public string Language;
 
     //문자 조건
@@ -60,7 +54,7 @@ public class PlayerData
     //첫 방문 지역 이벤트
     public bool Starest_First_Visit;
 
-    // 첫 만남 플래그(스토리 트리거)
+    // 첫 만남 플래그
     public bool Sol_First_Meet;
     public bool Salt_First_Meet;
     public bool Ryu_First_Meet;
@@ -74,12 +68,12 @@ public class PlayerData
     //다이어리 해금 함수
     public bool DiaryOpen;
 
-    //메신저 삭제 방지 (도착/읽음 상태 기록)
-    public List<string> MessengerDelivered = new List<string>(); // 도착한 메시지 이름들(도착 순서)
-    public List<string> MessengerReadList = new List<string>(); // 읽은 메시지 이름들
+    //메신저 상태
+    public List<string> MessengerDelivered = new List<string>();
+    public List<string> MessengerReadList = new List<string>();
 
     // ===== 활성 씬 오브젝트 스냅샷 =====
-    public string ActiveSceneName;      // 저장 시점 활성 씬명
+    public string ActiveSceneName;       // 저장 시점 활성 씬명
     public ActiveObjectInfo[] ActiveObjects; // 저장 시점 activeInHierarchy == true 목록
 
     public PlayerData()
@@ -92,7 +86,7 @@ public class PlayerData
 
         StartGame = false;
 
-        CanFirstSleep  = false;
+        CanFirstSleep = false;
 
         Starest_First_Visit = false;
 
@@ -106,12 +100,11 @@ public class PlayerData
         Ryu_FriendShip = 0;
         White_FriendShip = 0;
 
-        DiaryOpen= false;
+        DiaryOpen = false;
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
 
-        // 메신저 목록은 필드 선언 시점에서 new 되어 있으나 안전하게 보강
         MessengerDelivered = new List<string>();
         MessengerReadList = new List<string>();
     }
@@ -123,15 +116,14 @@ public class DataManager : MonoBehaviour
 
     [Header("플레이어/저장 슬롯")]
     public PlayerData nowPlayer = new PlayerData();
-    public string path;      // 저장 폴더 경로 (persistentDataPath/save)
-    public int nowSlot = -1;  // 현재 선택된 저장 슬롯(0,1,2 ...)
+    public string path;      // 저장 폴더 (persistentDataPath/save)
+    public int nowSlot = -1; // 현재 선택된 저장 슬롯
 
     [Header("임시 저장 (이벤트용)")]
-    public string subPath; // 임시 저장 폴더 경로 (persistentDataPath/sub_save)
-    private string _tempSavePath = null; // 현재 진행중인 이벤트의 임시 저장 파일 경로
-    private bool _isQuitting = false;    // 종료 감지
+    public string subPath; // 임시 저장 폴더 (persistentDataPath/sub_save)
+    private string _tempSavePath = null;
+    private bool _isQuitting = false;
 
-    // 인스펙터에서 저장을 막을 씬 목록을 관리합니다.
     [Header("저장 불가 씬 (메뉴 등)")]
     [SerializeField] private string[] nonGameplayScenes = new string[] { "StartMenu" };
 
@@ -164,17 +156,13 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string whiteFriendshipObjectName = "Text_White_Friendship";
 
     [Header("표기 형식(언어별)")]
-    // {0}=일차(숫자), {1}=요일명
     [SerializeField] private string dayFormatKo = "{0}일 ({1})";
     [SerializeField] private string dayFormatEn = "Day {0} ({1})";
     [SerializeField] private string dayFormatJp = "{0}日（{1}）";
 
     [Header("호감도 표기 형식(언어별)")]
-    [Tooltip("{0}=캐릭터 이름, {1}=호감도 값")]
     [SerializeField] private string friendshipFormatKo = "{0} 호감도: {1}";
-    [Tooltip("{0}=Character Name, {1}=Friendship Value")]
     [SerializeField] private string friendshipFormatEn = "{0} Affinity: {1}";
-    [Tooltip("{0}=キャラクター名, {1}=好感度")]
     [SerializeField] private string friendshipFormatJp = "{0} 好感度: {1}";
 
     [Header("캐릭터 이름 (언어별)")]
@@ -267,6 +255,20 @@ public class DataManager : MonoBehaviour
 
     int _lastSolFriendship = int.MinValue, _lastSaltFriendship = int.MinValue, _lastRyuFriendship = int.MinValue, _lastWhiteFriendship = int.MinValue;
 
+    // ───────── 추가: 씬별 활성 스냅샷 파일 포맷/경로 ─────────
+    [Serializable]
+    private class SceneActiveSnapshot
+    {
+        public string SceneName;
+        public ActiveObjectInfo[] ActiveObjects;
+    }
+
+    private string GetSceneActivesPathForSlot(int slot, string sceneName)
+    {
+        string safe = string.IsNullOrEmpty(sceneName) ? "Unknown" : sceneName.Replace('/', '_').Replace('\\', '_');
+        return Path.Combine(subPath, $"slot_{slot}_{safe}_actives.json");
+    }
+
     void Awake()
     {
         if (instance == null)
@@ -286,21 +288,8 @@ public class DataManager : MonoBehaviour
         subPath = Path.Combine(Application.persistentDataPath, "sub_save");
         if (!Directory.Exists(subPath)) Directory.CreateDirectory(subPath);
 
-        // 시작 시 혹시 남아 있을 수 있는 임시 파일을 청소(선택적)
+        // 시작 시 혹시 남아 있을 수 있는 임시 파일 정리(선택)
         CleanupAllSubSaves();
-
-        if (dontDestroyOnLoadHUD)
-        {
-            if (coinText) DontDestroyOnLoad(coinText.gameObject);
-            if (levelText) DontDestroyOnLoad(levelText.gameObject);
-            if (dayText) DontDestroyOnLoad(dayText.gameObject);
-            if (nameText) DontDestroyOnLoad(nameText.gameObject);
-
-            if (solFriendshipText) DontDestroyOnLoad(solFriendshipText.gameObject);
-            if (saltFriendshipText) DontDestroyOnLoad(saltFriendshipText.gameObject);
-            if (ryuFriendshipText) DontDestroyOnLoad(ryuFriendshipText.gameObject);
-            if (whiteFriendshipText) DontDestroyOnLoad(whiteFriendshipText.gameObject);
-        }
 
         SceneManager.sceneLoaded += OnSceneLoaded_RebindHUD_AndApplyPos;
 
@@ -357,7 +346,6 @@ public class DataManager : MonoBehaviour
 
     public void SaveData()
     {
-
         if (nowSlot < 0)
         {
             Debug.LogError("[DataManager] nowSlot 미지정");
@@ -890,7 +878,7 @@ public class DataManager : MonoBehaviour
 
     void OnSceneLoaded_RebindHUD_AndApplyPos(Scene scene, LoadSceneMode mode)
     {
-        // ★ SubSave가 있으면 즉시 로드하고 삭제 (간결화)
+        // 기존: 이벤트용 sub_save(nowPlayer 전체) 있으면 즉시 로드 후 삭제
         TryLoadAndDeleteSubSave();
 
         if (autoRebindOnSceneLoaded)
@@ -951,6 +939,9 @@ public class DataManager : MonoBehaviour
 
         if (applySavedPositionOnLoad && nowPlayer != null && nowPlayer.HasSavedPosition)
             StartCoroutine(ApplyPositionWhenReady());
+
+        // ★ 추가: 해당 씬용 sub_save 활성 스냅샷 있으면 우선 적용
+        TryApplySubSaveActivesForCurrentScene();
 
         if (autoRestoreActiveObjectsOnSceneLoaded)
         {
@@ -1153,14 +1144,10 @@ public class DataManager : MonoBehaviour
         return false;
     }
 
-    // ===== 임시 저장/로드 API (SubSave) =====
+    // ===== 임시 저장/로드 API (SubSave — 전체 nowPlayer) =====
 
-    string GetTempPathForSlot(int slot)
-    {
-        return Path.Combine(subPath, $"slot_{slot}_temp.json");
-    }
+    string GetTempPathForSlot(int slot) => Path.Combine(subPath, $"slot_{slot}_temp.json");
 
-    /// <summary>현재 nowPlayer를 SubSave에 기록</summary>
     public void SubSaveCommit()
     {
         if (nowSlot < 0)
@@ -1182,9 +1169,6 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// SubSave가 있으면 즉시 로드하고, 성공/실패와 관계없이 파일을 삭제한다.
-    /// </summary>
     public bool TryLoadAndDeleteSubSave()
     {
         if (nowSlot < 0) return false;
@@ -1220,14 +1204,12 @@ public class DataManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>씬 바꾸기 직전에 SubSave로 커밋만 하고, LoadScene 호출</summary>
     public void ChangeSceneWithSubSave(string sceneName)
     {
         SubSaveCommit();
         SceneManager.LoadScene(sceneName);
     }
 
-    /// <summary>sub_save 폴더의 *_temp.json 파일을 모두 삭제합니다.</summary>
     public void CleanupAllSubSaves()
     {
         try
@@ -1285,9 +1267,7 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        // ======================= [디버그 로그 추가] =======================
         Debug.Log($"[디버그] 저장 직전 Coin 값: {nowPlayer.Coin}");
-        // =================================================================
 
         string tempFileName = $"slot_{nowSlot}_temp.json";
         string tempFilePath = Path.Combine(subPath, tempFileName);
@@ -1362,32 +1342,88 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    #region 언어 설정 미리보기 (전체 데이터 로드 방지)
+    // ===== 추가: 씬별 활성 오브젝트 스냅샷 SubSave 저장 =====
 
-    /// <summary>
-    /// 가장 최근에 저장된 슬롯에서 언어 설정 값을 미리 읽어옵니다.
-    /// LanguageSelectUI 등에서 전체 데이터를 로드하는 부작용 없이 언어만 확인할 때 사용합니다.
-    /// 저장 파일이 하나도 없으면 기본 언어("ko")를 반환합니다.
-    /// </summary>
-    /// <param name="slotCount">검색할 슬롯 개수입니다.</param>
-    /// <returns>가장 최근 저장 파일의 언어 코드 또는 기본값("ko").</returns>
+    /// <summary>현재 씬에서 activeInHierarchy==true인 오브젝트 목록을 sub_save에 저장(옵션 필터 동일 적용)</summary>
+    public void SubSaveCommitActivesForCurrentScene()
+    {
+        if (nowSlot < 0)
+        {
+            Debug.LogWarning("[DataManager] SubSaveCommitActivesForCurrentScene: nowSlot 미지정");
+            return;
+        }
+
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded) return;
+
+        ActiveObjectInfo[] actives;
+        if (captureActiveObjectsOnSave)
+            actives = CaptureActiveObjectsInCurrentScene().ToArray();
+        else
+            actives = Array.Empty<ActiveObjectInfo>();
+
+        var snap = new SceneActiveSnapshot
+        {
+            SceneName = scene.name,
+            ActiveObjects = actives
+        };
+
+        try
+        {
+            string dst = GetSceneActivesPathForSlot(nowSlot, scene.name);
+            string json = JsonUtility.ToJson(snap, false);
+            File.WriteAllText(dst, json);
+            if (logRestoreDetails) Debug.Log($"[DataManager] (SubSave) 씬 활성 스냅샷 저장 완료 → {dst} (count={actives.Length})");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] SubSaveCommitActivesForCurrentScene 실패: {e}");
+        }
+    }
+
+    /// <summary>해당 씬용 sub_save 활성 스냅샷이 있으면 PlayerData.ActiveObjects에 주입 후 즉시 복구</summary>
+    public bool TryApplySubSaveActivesForCurrentScene()
+    {
+        if (nowSlot < 0) return false;
+
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded) return false;
+
+        string path = GetSceneActivesPathForSlot(nowSlot, scene.name);
+        if (!File.Exists(path)) return false;
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            var snap = JsonUtility.FromJson<SceneActiveSnapshot>(json);
+            if (snap == null || string.IsNullOrEmpty(snap.SceneName) || snap.ActiveObjects == null)
+                return false;
+
+            nowPlayer.ActiveSceneName = snap.SceneName;
+            nowPlayer.ActiveObjects = snap.ActiveObjects;
+
+            ApplyActiveObjectsSnapshotInternal();
+
+            if (logRestoreDetails)
+                Debug.Log($"[DataManager] (SubSave) 씬 활성 스냅샷 복구 완료 — 씬:'{snap.SceneName}', count:{snap.ActiveObjects.Length}");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] TryApplySubSaveActivesForCurrentScene 실패: {e}");
+            return false;
+        }
+    }
+
+    #region 언어 설정 미리보기 (전체 데이터 로드 방지)
     public string PeekLanguageFromMostRecentSave(int slotCount = 3)
     {
         int recentSlot = GetMostRecentSaveSlot(slotCount);
-        if (recentSlot < 0)
-        {
-            // 저장된 파일이 없으므로 기본 언어 반환
-            return "ko";
-        }
+        if (recentSlot < 0) return "ko";
         return PeekLanguageFromSlot(recentSlot);
     }
 
-    /// <summary>
-    /// 지정된 슬롯의 저장 파일에서 게임 데이터 전체를 로드하지 않고, 언어 설정 값만 읽어옵니다.
-    /// 파일이 없거나 JSON 파싱에 실패하면 기본 언어("ko")를 반환합니다.
-    /// </summary>
-    /// <param name="slot">확인할 저장 슬롯 번호입니다.</param>
-    /// <returns>저장된 언어 코드 또는 기본값("ko").</returns>
     public string PeekLanguageFromSlot(int slot)
     {
         if (slot < 0) return "ko";
@@ -1396,30 +1432,25 @@ public class DataManager : MonoBehaviour
 
         if (!File.Exists(filePath))
         {
-            return "ko"; // 파일이 없으면 기본값 반환
+            return "ko";
         }
 
         try
         {
-            // JSON 파일을 읽어 임시 PlayerData 객체로 변환합니다.
-            // DataManager의 nowPlayer를 덮어쓰지 않는 것이 핵심입니다.
             string json = File.ReadAllText(filePath);
             PlayerData tempData = JsonUtility.FromJson<PlayerData>(json);
 
             if (tempData != null)
             {
-                // 언어 코드를 정규화하여 반환합니다 (e.g., null -> "ko", "ja" -> "jp").
                 return NormalizeLang(tempData.Language);
             }
         }
         catch (Exception e)
         {
-            // 파일 읽기 또는 JSON 파싱 중 오류 발생 시 로그를 남기고 안전하게 기본값을 반환합니다.
             Debug.LogError($"[DataManager] PeekLanguageFromSlot ({filePath}) 실패: {e}");
         }
 
-        return "ko"; // 그 외 모든 실패 시 기본값 반환
+        return "ko";
     }
-
     #endregion
 }

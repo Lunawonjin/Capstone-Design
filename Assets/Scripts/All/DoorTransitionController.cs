@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 방 <-> 길 거리 전환 컨트롤러
 /// - RoomDoor(문) 트리거에 플레이어가 겹쳐있는 동안 S 키 → 길(Road)로 이동
 /// - RoadDoor(문) 트리거에 플레이어가 겹쳐있는 동안 F 키 → 방(Room)으로 이동
-/// - 전환 시 플레이어 좌표/오브젝트/카메라 활성 상태를 토글
-/// - ⚠️ DataManager.nowPlayer.StartGame == true 일 때만 작동
+/// - 전환 시 페이드: 페이드 인(검정) → 좌표/루트/카메라 토글 → 즉시(또는 매우 빠르게) 페이드 아웃
+/// - ⚠️ DataManager.nowPlayer.StartGame == true 일 때만 작동(옵션)
 /// </summary>
 [DisallowMultipleComponent]
 public class DoorTransitionController : MonoBehaviour
@@ -44,8 +45,26 @@ public class DoorTransitionController : MonoBehaviour
     [Tooltip("true면 StartGame이 true일 때만 전환이 동작합니다.")]
     public bool requireStartGame = true;
 
+    // ── 텔레포트 페이드 옵션 ─────────────────────────────
+    [Header("텔레포트 페이드")]
+    [Tooltip("플레이어 강제 이동 시 화면을 페이드로 덮고 걷어냅니다.")]
+    public bool useTeleportFade = true;
+
+    [Tooltip("페이드 인(0→1) 시간(초). 검은 화면을 올리는 시간.")]
+    [Min(0.01f)] public float fadeInDuration = 0.25f;
+
+    [Tooltip("페이드 아웃(1→0) 시간(초). 즉시 걷어내려면 0 또는 매우 작게.")]
+    [Min(0f)] public float fadeOutDuration = 0.001f;
+
+    [Tooltip("페이드 색상")]
+    public Color fadeColor = Color.black;
+    // ───────────────────────────────────────────────────
+
     [Header("디버그")]
     public bool verbose = false;
+
+    // 내부 상태
+    bool _isTeleporting = false;
 
     void Reset()
     {
@@ -54,12 +73,20 @@ public class DoorTransitionController : MonoBehaviour
         toRoadPosition = new Vector2(-6f, -18.3f);
         toRoomPosition = new Vector2(1.5f, -2.3f);
         requireStartGame = true;
+
+        useTeleportFade = true;
+        fadeInDuration = 0.25f;
+        fadeOutDuration = 0.001f; // 요청: 즉시 걷어내기
+        fadeColor = Color.black;
     }
 
     void Awake()
     {
         AutoBind();
         EnsureTriggers();
+
+        if (useTeleportFade)
+            ScreenFader.Initialize(fadeColor);
     }
 
     void AutoBind()
@@ -86,56 +113,97 @@ public class DoorTransitionController : MonoBehaviour
             AutoBind();
             if (player == null || playerCollider == null) return;
         }
+        if (_isTeleporting) return;
 
-        // ── 여기가 핵심: StartGame 조건 체크 ──
-        if (requireStartGame && !IsStartGameTrue())
-            return;
+        if (requireStartGame && !IsStartGameTrue()) return;
 
-        // RoomDoor 겹침 + S 키 → Road로
-        if (roomDoor && IsOverlapping(roomDoor, playerCollider) && Input.GetKey(goRoadKey))
+        // 겹침 판정
+        bool overlapRoom = roomDoor && IsOverlapping(roomDoor, playerCollider);
+        bool overlapRoad = roadDoor && IsOverlapping(roadDoor, playerCollider);
+
+        // 겹치고 있는 동안 누르고 있으면 처리(GetKey) — 타이밍 문제 방지
+        if (overlapRoom && Input.GetKey(goRoadKey))
         {
             if (verbose) Debug.Log("[DoorTransition] RoomDoor + S → Road");
-            TeleportPlayer(toRoadPosition);
-            ToggleGroups(roomActive: false, roadActive: true);
+            StartCoroutine(Co_Teleport(toRoadPosition, roomActive: false, roadActive: true));
         }
 
-        // RoadDoor 겹침 + F 키 → Room으로
-        if (roadDoor && IsOverlapping(roadDoor, playerCollider) && Input.GetKey(goRoomKey))
+        if (overlapRoad && Input.GetKey(goRoomKey))
         {
             if (verbose) Debug.Log("[DoorTransition] RoadDoor + F → Room");
-            TeleportPlayer(toRoomPosition);
-            ToggleGroups(roomActive: true, roadActive: false);
+            StartCoroutine(Co_Teleport(toRoomPosition, roomActive: true, roadActive: false));
         }
     }
 
     bool IsStartGameTrue()
     {
-        // DataManager.nowPlayer.StartGame 이 true여야만 이동 허용
         var dm = DataManager.instance;
         if (dm == null || dm.nowPlayer == null) return false;
-        return dm.nowPlayer.StartGame == true; // 'StarGame' 오타 방지
+        return dm.nowPlayer.StartGame == true; // 오타 방지
     }
 
-    // 두 콜라이더가 겹치는지 간단히 검사(트리거도 동작)
+    // 트리거-겹침 간이 판정(트리거/일반 모두 지원)
     bool IsOverlapping(Collider2D a, Collider2D b)
     {
         if (!a || !b) return false;
         return a.bounds.Intersects(b.bounds);
     }
 
+    // 물리 안전 텔레포트: Rigidbody2D 우선, 속도 초기화
     void TeleportPlayer(Vector2 target)
     {
         if (!player) return;
-        var p = player.position;
-        player.position = new Vector3(target.x, target.y, p.z);
+
+        var rb = player.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.position = target;   // 고정 프레임 반영
+            rb.WakeUp();
+
+            // Z 유지 보정(카메라 레이어 등)
+            var pz = player.position.z;
+            player.position = new Vector3(target.x, target.y, pz);
+        }
+        else
+        {
+            var pz = player.position.z;
+            player.position = new Vector3(target.x, target.y, pz);
+        }
     }
 
-    void ToggleGroups(bool roomActive, bool roadActive)
+    // 활성화 토글: 도착지 먼저 켜고 → 이동 → 출발지 끄기(깜빡임/유실 방지)
+    System.Collections.IEnumerator Co_Teleport(Vector2 targetPos, bool roomActive, bool roadActive)
     {
-        if (roomRoot) roomRoot.SetActive(roomActive);
-        if (roadRoot) roadRoot.SetActive(roadActive);
-        if (roomCamera) roomCamera.SetActive(roomActive);
-        if (roadCamera) roadCamera.SetActive(roadActive);
+        _isTeleporting = true;
+
+        if (useTeleportFade)
+            yield return ScreenFader.Instance.FadeTo(1f, Mathf.Max(0.01f, fadeInDuration), fadeColor);
+
+        // 도착지 루트/카메라 먼저 ON
+        if (roadActive && roadRoot && !roadRoot.activeSelf) roadRoot.SetActive(true);
+        if (roomActive && roomRoot && !roomRoot.activeSelf) roomRoot.SetActive(true);
+        if (roadActive && roadCamera && !roadCamera.activeSelf) roadCamera.SetActive(true);
+        if (roomActive && roomCamera && !roomCamera.activeSelf) roomCamera.SetActive(true);
+
+        // 좌표 이동
+        TeleportPlayer(targetPos);
+
+        // 물리/카메라 갱신 여유
+        yield return new WaitForFixedUpdate();
+        yield return null;
+
+        // 출발지 OFF
+        if (!roomActive && roomRoot) roomRoot.SetActive(false);
+        if (!roadActive && roadRoot) roadRoot.SetActive(false);
+        if (!roomActive && roomCamera) roomCamera.SetActive(false);
+        if (!roadActive && roadCamera) roadCamera.SetActive(false);
+
+        if (useTeleportFade)
+            yield return ScreenFader.Instance.FadeTo(0f, Mathf.Max(0f, fadeOutDuration), fadeColor);
+
+        _isTeleporting = false;
     }
 
 #if UNITY_EDITOR
@@ -153,3 +221,4 @@ public class DoorTransitionController : MonoBehaviour
     }
 #endif
 }
+

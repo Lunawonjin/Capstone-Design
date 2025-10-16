@@ -3,6 +3,7 @@
 //  - 도착 연출: 버스 카메라(busCameras) → 맵 카메라(mapCamera) 확실한 전환
 //    · SetCameraActive(cam, on/off)로 컴포넌트와 GO 동시 제어 + depth 보정
 //  - 버스 카메라 팔로우: Y 고정(lockY), 최소 X 경계(minX) 지원(SimpleCameraFollower)
+//  - 씬 페이드: 로드 직전 페이드 인(검은 화면), "씬 넘어가면 즉시 페이드 아웃(=FadeTo(0) 즉시)"
 //  - 그 외: 출발 연출(Back_Walk, 상수속도 이동, 비/활성화), 맵 토글, 화살표, 알림 등 기존 동작 유지
 
 using System;
@@ -195,8 +196,7 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool forceEnableParentHierarchy = true;
     [SerializeField] private bool arrivalLockControls = true;
 
-    // ===== 도착 연출 - 카메라 제어 =====
-    [Header("도착 연출 - 카메라")]
+    [Header("도착 연출 - 카메라 제어")]
     [SerializeField] private Camera[] busCameras = Array.Empty<Camera>(); // 버스 추적 카메라들
     [SerializeField] private Camera mapCamera;                             // 정차 후 활성화할 맵 카메라
 
@@ -212,6 +212,13 @@ public class MapMenuController : MonoBehaviour
     [Header("버스 카메라 최소 X 경계")]
     [SerializeField] private bool useMinCameraX = true;
     [SerializeField] private float minCameraX = -20f;
+
+    // ===== 씬 페이드 옵션 =====
+    [Header("씬 페이드 옵션")]
+    [SerializeField] private bool useSceneFade = true;
+    [SerializeField, Min(0.01f)] private float fadeInDuration = 0.35f;   // 로드 직전: 0→1
+    [SerializeField, Min(0.01f)] private float fadeOutDuration = 0.45f;  // 유지(이 값은 즉시 모드에선 거의 쓰이지 않음)
+    [SerializeField] private Color fadeColor = Color.black;
 
     // ===== 내부 상태 =====
     RectTransform _mapRT;
@@ -245,6 +252,9 @@ public class MapMenuController : MonoBehaviour
             Debug.LogError("[MapMenuController] map / mapPanel 참조가 필요합니다.");
             enabled = false; return;
         }
+
+        // ScreenFader 준비
+        if (useSceneFade) ScreenFader.Initialize(fadeColor);
 
         _mapRT = map.GetComponent<RectTransform>();
         _mapCG = map.GetComponent<CanvasGroup>();
@@ -341,6 +351,11 @@ public class MapMenuController : MonoBehaviour
             if (!weekend) { ShowNotification(); return; }
         }
 
+        // ★ 씬 이동 직전 현재 씬의 "켜진 오브젝트들"을 sub_save에 스냅샷 저장
+        if (DataManager.instance != null)
+            DataManager.instance.SubSaveCommitActivesForCurrentScene();
+
+        // 기존 임시 저장(이벤트용) 유지
         if (DataManager.instance != null) DataManager.instance.CommitDataToTempFile();
 
         var active = SceneManager.GetActiveScene();
@@ -387,7 +402,7 @@ public class MapMenuController : MonoBehaviour
         if (TryGetDepartConfigForScene(active.name, out var depCfg) && depCfg.enabled)
             StartCoroutine(Co_DepartThenLoad(loadAction, depCfg));
         else
-            loadAction.Invoke();
+            StartCoroutine(Co_LoadWithFadeOnly(loadAction)); // 출발 연출이 없어도 페이드는 적용
     }
 
     bool TryGetDepartConfigForScene(string sceneName, out DepartConfig cfg)
@@ -396,6 +411,14 @@ public class MapMenuController : MonoBehaviour
         if (SceneNameEqualsRobust(sceneName, depart_Starest.sceneName)) { cfg = depart_Starest; return true; }
         if (SceneNameEqualsRobust(sceneName, depart_Shopping.sceneName)) { cfg = depart_Shopping; return true; }
         cfg = null; return false;
+    }
+
+    IEnumerator Co_LoadWithFadeOnly(Action loadScene)
+    {
+        if (useSceneFade)
+            yield return ScreenFader.Instance.FadeTo(1f, Mathf.Max(0.01f, fadeInDuration), fadeColor);
+
+        loadScene?.Invoke();
     }
 
     IEnumerator Co_DepartThenLoad(Action loadScene, DepartConfig cfg)
@@ -455,6 +478,10 @@ public class MapMenuController : MonoBehaviour
             b.position = target;
         }
 
+        // 로드 직전 페이드 인(검은 화면)
+        if (useSceneFade)
+            yield return ScreenFader.Instance.FadeTo(1f, Mathf.Max(0.01f, fadeInDuration), fadeColor);
+
         loadScene?.Invoke();
         _isDeparting = false;
     }
@@ -469,14 +496,18 @@ public class MapMenuController : MonoBehaviour
 
     void OnSceneLoaded_Arrival(Scene scene, LoadSceneMode mode)
     {
-        if (!s_hasPendingArrival || s_pendingArrival == null) return;
-        if (!SceneNameEqualsRobust(scene.name, s_pendingArrival.sceneName)) return;
+        // 요청: 씬 로드 직후 즉시 FadeTo(0)
+        if (useSceneFade)
+            StartCoroutine(ScreenFader.Instance.FadeTo(0f, 0.001f, fadeColor));
 
-        var cfg = s_pendingArrival;
-        s_hasPendingArrival = false;
-        s_pendingArrival = null;
-
-        StartCoroutine(Co_RunArrival(cfg));
+        // 도착 연출이 있으면 그대로 진행(페이드는 이미 0이므로 추가 페이드 없음)
+        if (s_hasPendingArrival && s_pendingArrival != null && SceneNameEqualsRobust(scene.name, s_pendingArrival.sceneName))
+        {
+            var cfg = s_pendingArrival;
+            s_hasPendingArrival = false;
+            s_pendingArrival = null;
+            StartCoroutine(Co_RunArrival(cfg));
+        }
     }
 
     IEnumerator Co_RunArrival(ArrivalConfig cfg)
@@ -561,6 +592,8 @@ public class MapMenuController : MonoBehaviour
             if (pm == null && playerGO != null) pm = playerGO.GetComponent<PlayerMove>();
             if (pm != null) pm.Unfreeze(keepAnimatorState: true);
         }
+
+        yield break;
     }
 
     // ───────── 카메라 온/오프 보조 유틸 ─────────
@@ -1087,5 +1120,106 @@ public class SimpleCameraFollower : MonoBehaviour
             p.x = minX;
 
         transform.position = Vector3.SmoothDamp(transform.position, p, ref _vel, smoothTime);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ScreenFader
+//  - 전역(씬 간 유지) 풀스크린 페이드. 별도 프리팹 없이 자동 생성.
+//  - FadeTo(알파, 시간, 색) 코루틴 제공. DontDestroyOnLoad.
+// ─────────────────────────────────────────────────────────────────────────────
+[DisallowMultipleComponent]
+public class ScreenFader : MonoBehaviour
+{
+    private static ScreenFader _instance;
+    public static ScreenFader Instance
+    {
+        get
+        {
+            if (_instance == null) Initialize(Color.black);
+            return _instance;
+        }
+    }
+
+    private Canvas _canvas;
+    private CanvasGroup _group;
+    private Image _image;
+
+    private static Color _initialColor = Color.black;
+
+    public static void Initialize(Color color)
+    {
+        _initialColor = color;
+        if (_instance != null) { _instance.SetColorKeepAlpha(color); return; }
+
+        var go = new GameObject("[ScreenFader]");
+        DontDestroyOnLoad(go);
+        _instance = go.AddComponent<ScreenFader>();
+        _instance.Build(color);
+    }
+
+    private void Build(Color color)
+    {
+        _canvas = gameObject.AddComponent<Canvas>();
+        _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        _canvas.sortingOrder = Int32.MaxValue;
+
+        _group = gameObject.AddComponent<CanvasGroup>();
+        _group.alpha = 0f;
+        _group.interactable = false;
+        _group.blocksRaycasts = true; // 페이드 중 입력 차단
+
+        var imgGO = new GameObject("Overlay");
+        imgGO.transform.SetParent(transform, false);
+        _image = imgGO.AddComponent<Image>();
+        _image.raycastTarget = false;
+
+        var rt = _image.rectTransform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        _image.color = new Color(color.r, color.g, color.b, 1f);
+    }
+
+    private void SetColorKeepAlpha(Color c)
+    {
+        if (_image == null) return;
+        var a = _image.color.a;
+        _image.color = new Color(c.r, c.g, c.b, a);
+    }
+
+    public IEnumerator FadeTo(float targetAlpha, float duration, Color? overrideColor = null)
+    {
+        if (_group == null || _image == null) yield break;
+
+        if (overrideColor.HasValue)
+        {
+            var c = overrideColor.Value;
+            _image.color = new Color(c.r, c.g, c.b, _image.color.a);
+        }
+        else
+        {
+            var c = _initialColor;
+            _image.color = new Color(c.r, c.g, c.b, _image.color.a);
+        }
+
+        _group.blocksRaycasts = true;
+        float start = _group.alpha;
+        float t = 0f;
+        duration = Mathf.Max(0.001f, duration);
+
+        while (t < duration)
+        {
+            float u = t / duration;
+            float e = 1f - Mathf.Pow(1f - u, 3f);
+            _group.alpha = Mathf.LerpUnclamped(start, targetAlpha, e);
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        _group.alpha = targetAlpha;
+        _group.blocksRaycasts = targetAlpha > 0.001f;
     }
 }

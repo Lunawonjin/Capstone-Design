@@ -664,7 +664,7 @@ Transform:
   m_GameObject: {fileID: 281749007}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3, y: 0, z: -10}
+  m_LocalPosition: {x: 10.02, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1690,7 +1690,7 @@ Transform:
   m_GameObject: {fileID: 515403719}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.85, y: 1.94, z: 0}
+  m_LocalPosition: {x: 6, y: 1.9, z: 0}
   m_LocalScale: {x: 0.7, y: 0.7, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1767,7 +1767,7 @@ GameObject:
   - component: {fileID: 566431806}
   m_Layer: 5
   m_Name: Fade
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1928,7 +1928,7 @@ MonoBehaviour:
     ActiveSceneName: 
     ActiveObjects: []
   path: 
-  nowSlot: -1
+  nowSlot: 0
   subPath: 
   nonGameplayScenes:
   - StartMenu
@@ -1995,11 +1995,14 @@ MonoBehaviour:
   excludeTagsForActiveObjects:
   - HUD
   - UIPanel
+  - Player
+  - MainCamera
   excludeNamesForActiveObjects:
   - UIPanel
+  - Bus
   autoRestoreActiveObjectsOnSceneLoaded: 1
   activeRestoreMode: 0
-  logRestoreDetails: 0
+  logRestoreDetails: 1
 --- !u!4 &813181091
 Transform:
   m_ObjectHideFlags: 0
@@ -2209,6 +2212,10 @@ MonoBehaviour:
   goRoadKey: 115
   goRoomKey: 102
   requireStartGame: 1
+  useTeleportFade: 1
+  fadeInDuration: 0.25
+  fadeOutDuration: 0.001
+  fadeColor: {r: 0, g: 0, b: 0, a: 1}
   verbose: 0
 --- !u!1 &1131872320
 GameObject:
@@ -2237,8 +2244,8 @@ Transform:
   m_GameObject: {fileID: 1131872320}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -3.658, z: 0}
-  m_LocalScale: {x: 1.6679142, y: 0.8508571, z: 1}
+  m_LocalPosition: {x: 0, y: -3.4943, z: 0}
+  m_LocalScale: {x: 1.6679142, y: 0.5234473, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 66997266}
@@ -2356,6 +2363,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1758735948047722464, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_RenderMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1758735948047722464, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_SortingOrder
       value: 1
       objectReference: {fileID: 0}
@@ -2366,6 +2377,22 @@ PrefabInstance:
     - target: {fileID: 2332501267547512414, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_HorizontalAlignment
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_UiScaleMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_ReferenceResolution.x
+      value: 1920
+      objectReference: {fileID: 0}
+    - target: {fileID: 5168931449928046875, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_ReferenceResolution.y
+      value: 1080
       objectReference: {fileID: 0}
     - target: {fileID: 6653993690181892630, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_IsActive
@@ -2413,6 +2440,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7569553354186251677, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
       propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7569553354186251677, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7569553354186251677, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7569553354186251677, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
+      propertyPath: m_LocalScale.z
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7569553354186251677, guid: d601e9c83177f3547b163b1d9eb8d0d6, type: 3}
@@ -3168,7 +3207,7 @@ GameObject:
   - component: {fileID: 1488357701}
   m_Layer: 5
   m_Name: GoodNightPanel
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4038,6 +4077,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 728985004456299797, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
     - target: {fileID: 765729318097381108, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -4078,6 +4121,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1235178147958398201, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
     - target: {fileID: 1273283283524150907, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -4089,6 +4136,10 @@ PrefabInstance:
     - target: {fileID: 1273283283524150907, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1294998881373732605, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
       objectReference: {fileID: 0}
     - target: {fileID: 1321382846652575898, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
@@ -4173,6 +4224,10 @@ PrefabInstance:
     - target: {fileID: 1871668177535166574, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: dialogueAnimRoot
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1917575374140436943, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
       objectReference: {fileID: 0}
     - target: {fileID: 2001249666707134375, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4426,6 +4481,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: UIPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 4136344069891652318, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 4237925974136838174, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
     - target: {fileID: 4357465970316004816, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4473,6 +4536,14 @@ PrefabInstance:
     - target: {fileID: 4777815178978793242, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4785028441416597805, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
+    - target: {fileID: 5056729450066786646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
       objectReference: {fileID: 0}
     - target: {fileID: 5105166014640535782, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
@@ -4518,6 +4589,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: mapCamera
+      value: 
+      objectReference: {fileID: 281749013}
     - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: busTargetX
       value: 26
@@ -4674,6 +4749,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6563923979388643062, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
+      objectReference: {fileID: 0}
     - target: {fileID: 6574514876121542924, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
@@ -4753,6 +4832,10 @@ PrefabInstance:
     - target: {fileID: 7328727176481607389, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7393689666461457811, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_TagString
+      value: HUD
       objectReference: {fileID: 0}
     - target: {fileID: 7555139877819091705, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.x
