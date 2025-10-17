@@ -2544,8 +2544,8 @@ MonoBehaviour:
     sceneName: Player's Room
     busPrefab: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
     busStartX: 22.5
-    busStopX: 6.5
-    busFinalX: 5
+    busStopX: 8.5
+    busFinalX: -2
     busY: -18.8
     playerDropPos: {x: 9.2, y: -18.5}
     busArriveDuration: 1
