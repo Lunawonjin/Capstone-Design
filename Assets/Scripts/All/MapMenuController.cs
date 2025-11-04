@@ -4,7 +4,9 @@
 //    · SetCameraActive(cam, on/off)로 컴포넌트와 GO 동시 제어 + depth 보정
 //  - 버스 카메라 팔로우: Y 고정(lockY), 최소 X 경계(minX) 지원(SimpleCameraFollower)
 //  - 씬 페이드: 로드 직전 페이드 인(검은 화면), "씬 넘어가면 즉시 페이드 아웃(=FadeTo(0) 즉시)"
-//  - 그 외: 출발 연출(Back_Walk, 상수속도 이동, 비/활성화), 맵 토글, 화살표, 알림 등 기존 동작 유지
+//  - 출발 연출 시작 시 BusDoor 비활성화(상호작용/충돌 차단)
+//  - 다른 씬으로 이동할 때 현재 씬의 버스(GameObject) 비활성화(옵션)
+//  - 그 외: 출발 연출, 맵 토글, 화살표, 알림 등 기존 동작 유지
 
 using System;
 using System.Linq;
@@ -217,8 +219,16 @@ public class MapMenuController : MonoBehaviour
     [Header("씬 페이드 옵션")]
     [SerializeField] private bool useSceneFade = true;
     [SerializeField, Min(0.01f)] private float fadeInDuration = 0.35f;   // 로드 직전: 0→1
-    [SerializeField, Min(0.01f)] private float fadeOutDuration = 0.45f;  // 유지(이 값은 즉시 모드에선 거의 쓰이지 않음)
+    [SerializeField, Min(0.01f)] private float fadeOutDuration = 0.45f;  // 유지(즉시 모드에서는 의미 적음)
     [SerializeField] private Color fadeColor = Color.black;
+
+    // ===== 출발 시 BusDoor/버스 비활성화 =====
+    [Header("버스 문(BusDoor) - 출발 시작 즉시 비활성화")]
+    [SerializeField] private GameObject busDoor;
+    [SerializeField] private bool disableDoorOnDepartStart = true;
+
+    [Header("출발 시 버스 비활성화(다른 씬으로 이동할 때 현재 씬 버스 끄기)")]
+    [SerializeField] private bool deactivateBusOnSceneChange = true;
 
     // ===== 내부 상태 =====
     RectTransform _mapRT;
@@ -425,6 +435,9 @@ public class MapMenuController : MonoBehaviour
     {
         _isDeparting = true;
 
+        // ★ 출발 연출 시작 즉시 BusDoor 비활성화 (F 아이콘/충돌 차단)
+        if (disableDoorOnDepartStart) SetBusDoorEnabled(false);
+
         if (playerTransform)
         {
             var p = playerTransform.position;
@@ -466,6 +479,7 @@ public class MapMenuController : MonoBehaviour
 
         if (busTransform)
         {
+            // 출발 연출: 화면 밖으로 이동하는 연출 유지
             var b = busTransform;
             Vector3 target = new Vector3(cfg.busTargetX, b.position.y, b.position.z);
             float spd = Mathf.Max(0.01f, cfg.departBusSpeed);
@@ -476,6 +490,10 @@ public class MapMenuController : MonoBehaviour
                 yield return null;
             }
             b.position = target;
+
+            // ★ 다른 씬으로 넘어가기 직전, 현재 씬의 버스를 비활성화(옵션)
+            if (deactivateBusOnSceneChange && b.gameObject.activeSelf)
+                b.gameObject.SetActive(false);
         }
 
         // 로드 직전 페이드 인(검은 화면)
@@ -996,6 +1014,16 @@ public class MapMenuController : MonoBehaviour
             t = t.parent;
         }
     }
+
+    // ───────── BusDoor 제어 유틸 ─────────
+    /// <summary>
+    /// BusDoor를 활성/비활성화한다. 출발 시작 시 꺼서 상호작용(F) 및 충돌 유도 방지.
+    /// </summary>
+    private void SetBusDoorEnabled(bool on)
+    {
+        if (!busDoor) return;
+        if (busDoor.activeSelf != on) busDoor.SetActive(on);
+    }
 }
 
 [RequireComponent(typeof(RectTransform))]
@@ -1153,7 +1181,7 @@ public class ScreenFader : MonoBehaviour
         if (_instance != null) { _instance.SetColorKeepAlpha(color); return; }
 
         var go = new GameObject("[ScreenFader]");
-        DontDestroyOnLoad(go);
+        UnityEngine.Object.DontDestroyOnLoad(go);
         _instance = go.AddComponent<ScreenFader>();
         _instance.Build(color);
     }

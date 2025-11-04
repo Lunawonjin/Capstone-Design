@@ -589,7 +589,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 600604352441544599, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
       propertyPath: m_SortingOrder
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3377513914089235619, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
       propertyPath: m_FlipX
@@ -786,6 +786,22 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 889705227}
+    - target: {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: exceptions.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: 'exceptions.Array.data[0]'
+      value: 
+      objectReference: {fileID: 693673941}
+    - target: {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: 'exceptions.Array.data[1]'
+      value: 
+      objectReference: {fileID: 1696882817}
+    - target: {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: 'exceptions.Array.data[2]'
+      value: 
+      objectReference: {fileID: 678619270}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -14.5
@@ -1843,7 +1859,7 @@ GameObject:
   - component: {fileID: 494192972}
   - component: {fileID: 494192971}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: UI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3249,7 +3265,6 @@ MonoBehaviour:
   friendshipFontSizeKo: 30
   friendshipFontSizeEn: 30
   friendshipFontSizeJp: 30
-  captureActiveObjectsOnSave: 1
   excludeTagsForActiveObjects:
   - HUD
   - UIPanel
@@ -5137,6 +5152,11 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1363417191 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 609818327869288536, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+  m_PrefabInstance: {fileID: 170945630}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1382456602
 GameObject:
   m_ObjectHideFlags: 0
@@ -6797,6 +6817,18 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: targetBus
+      value: 
+      objectReference: {fileID: 170945631}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: thresholdX
+      value: -8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: playerTransform
+      value: 
+      objectReference: {fileID: 889705227}
     - target: {fileID: 5402143656693260486, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_SizeDelta.x
       value: 500
@@ -6805,6 +6837,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -280
       objectReference: {fileID: 0}
+    - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: busDoor
+      value: 
+      objectReference: {fileID: 1363417191}
     - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: mapCamera
       value: 

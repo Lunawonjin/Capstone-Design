@@ -967,6 +967,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!1 &433759607 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5232476053384649750, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+  m_PrefabInstance: {fileID: 2742362752199809859}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &446932802
 GameObject:
   m_ObjectHideFlags: 0
@@ -1820,7 +1825,6 @@ MonoBehaviour:
   friendshipFontSizeKo: 30
   friendshipFontSizeEn: 30
   friendshipFontSizeJp: 30
-  captureActiveObjectsOnSave: 1
   excludeTagsForActiveObjects:
   - HUD
   - UIPanel
@@ -3290,6 +3294,11 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1567200992 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 609818327869288536, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+  m_PrefabInstance: {fileID: 2742362752199809859}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1641694677
 GameObject:
   m_ObjectHideFlags: 0
@@ -4456,6 +4465,26 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: oneShot
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: targetBus
+      value: 
+      objectReference: {fileID: 433759607}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: playerTransform
+      value: 
+      objectReference: {fileID: 878272167}
+    - target: {fileID: 5212937744235450925, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: optionalDeactivateWhenRight
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5237467616545973371, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4492,6 +4521,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: busDoor
+      value: 
+      objectReference: {fileID: 1567200992}
     - target: {fileID: 5440313760984733646, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: mapCamera
       value: 
@@ -5393,6 +5426,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7922428163170844219, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: controlEnabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5402,9 +5439,9 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 6515909582791554155}
   - {fileID: 2072388588}
   - {fileID: 1145686911}
   - {fileID: 492136516}
   - {fileID: 813181091}
   - {fileID: 228690640}
-  - {fileID: 6515909582791554155}

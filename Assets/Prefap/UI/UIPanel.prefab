@@ -2391,6 +2391,7 @@ GameObject:
   - component: {fileID: 3496779009035905659}
   - component: {fileID: 6701223701166394042}
   - component: {fileID: 5950119198424117319}
+  - component: {fileID: 5212937744235450925}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -2601,6 +2602,9 @@ MonoBehaviour:
   fadeInDuration: 0.35
   fadeOutDuration: 0.45
   fadeColor: {r: 0, g: 0, b: 0, a: 1}
+  busDoor: {fileID: 0}
+  disableDoorOnDepartStart: 1
+  deactivateBusOnSceneChange: 1
 --- !u!114 &4198364525068548763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2745,6 +2749,25 @@ MonoBehaviour:
   buttonContinue: {fileID: 0}
   gameSceneName: Game
   defaultNewSlot: 0
+--- !u!114 &5212937744235450925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1294998881373732605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e30bd2f8169860c4297294631d94af4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BusActivatorByPlayerX
+  targetBus: {fileID: 0}
+  playerTransform: {fileID: 0}
+  playerTag: Player
+  fallbackPlayerName: Player
+  thresholdX: 0
+  oneShot: 1
+  optionalDeactivateWhenRight: 0
 --- !u!1 &1665949188148092799
 GameObject:
   m_ObjectHideFlags: 0
