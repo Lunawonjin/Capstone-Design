@@ -178,7 +178,7 @@ public class DataManager : MonoBehaviour
 
     [Header("호감도 표기 형식(언어별)")]
     [SerializeField] private string friendshipFormatKo = "{0} 호감도: {1}";
-    [SerializeField] private string friendshipFormatEn = "{0} Affinity: {1}";
+    [SerializeField] private string friendshipFormatEn = "{0} Frendship: {1}";
     [SerializeField] private string friendshipFormatJp = "{0} 好感度: {1}";
 
     [Header("캐릭터 이름 (언어별)")]
@@ -186,17 +186,17 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string solNameEn = "Sol";
     [SerializeField] private string solNameJp = "ソル";
     [Space(10)]
-    [SerializeField] private string saltNameKo = "솔트";
-    [SerializeField] private string saltNameEn = "Salt";
-    [SerializeField] private string saltNameJp = "ソルト";
+    [SerializeField] private string saltNameKo = "소금";
+    [SerializeField] private string saltNameEn = "Sogeum";
+    [SerializeField] private string saltNameJp = "ソグミ";
     [Space(10)]
-    [SerializeField] private string ryuNameKo = "류";
-    [SerializeField] private string ryuNameEn = "Ryu";
-    [SerializeField] private string ryuNameJp = "リュウ";
+    [SerializeField] private string ryuNameKo = "류지현";
+    [SerializeField] private string ryuNameEn = "Ryu Jihyeon";
+    [SerializeField] private string ryuNameJp = "リュ・ジヒョン";
     [Space(10)]
-    [SerializeField] private string whiteNameKo = "화이트";
-    [SerializeField] private string whiteNameEn = "White";
-    [SerializeField] private string whiteNameJp = "ホワイト";
+    [SerializeField] private string whiteNameKo = "천하얀";
+    [SerializeField] private string whiteNameEn = "WhiteCheon Hayan";
+    [SerializeField] private string whiteNameJp = "チョン・ハヤン";
 
     [Header("기타 표기 형식")]
     [SerializeField] private string coinFormat = "{0}";
