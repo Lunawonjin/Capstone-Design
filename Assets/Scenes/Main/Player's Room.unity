@@ -1713,6 +1713,7 @@ GameObject:
   m_Component:
   - component: {fileID: 813181091}
   - component: {fileID: 813181090}
+  - component: {fileID: 813181092}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -1851,6 +1852,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &813181092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813181089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4305baafb9954104fb32eeee1e76666f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  bgmGroup: {fileID: 6207582839022664928, guid: ee82fb9c91ca6ba439d4d158486fffa3, type: 2}
+  sfxGroup: {fileID: -4220375662582010775, guid: ee82fb9c91ca6ba439d4d158486fffa3, type: 2}
+  bgmClips:
+  - key: 
+    clip: {fileID: 8300000, guid: 29b2ada5ad0cb8147ad8a73974897401, type: 3}
+  sfxClips: []
+  bgmVolume: 1
+  bgmMute: 0
+  sfxVolume: 1
+  sfxMute: 0
+  sfxPoolSize: 10
+  sfxPoolHardLimit: 32
 --- !u!1 &878272164 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}

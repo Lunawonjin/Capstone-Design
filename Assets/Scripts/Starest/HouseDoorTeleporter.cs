@@ -11,6 +11,7 @@ using UnityEngine.UI;
 //  - 페이드 인 → 좌표/루트/카메라 토글 → 페이드 아웃
 //  - Bus는 절대 비활성화하지 않음(요청 사항)
 //  - 내장 페이더 사용(GraphicRaycaster 미사용, Image.raycastTarget=false)
+//  - StarestCenter 활성/비활성 시 BGM 제어(키="Starest")
 // ─────────────────────────────────────────────────────────────
 [DisallowMultipleComponent]
 public class HouseDoorTeleporter : MonoBehaviour
@@ -116,6 +117,15 @@ public class HouseDoorTeleporter : MonoBehaviour
     [Tooltip("페이드용 Image(비워두면 런타임에 자동 생성)")]
     [SerializeField] private Image fadeOverlay;
 
+    // ====== StarestCenter BGM 제어 ======
+    [Header("StarestCenter BGM")]
+    [Tooltip("StarestCenter가 활성화될 때 재생할 BGM 키")]
+    [SerializeField] private string starestCenterBgmKey = "Starest";
+    [Tooltip("BGM 페이드 시간(초)")]
+    [SerializeField, Min(0f)] private float starestCenterBgmFadeSeconds = 0.6f;
+    [Tooltip("Center에서 나갈 때 현재 BGM을 정지할지 여부")]
+    [SerializeField] private bool stopBgmWhenLeavingCenter = true;
+
     // 전환 중복 방지
     private bool _isSwitchingByDoor = false;
 
@@ -201,6 +211,13 @@ public class HouseDoorTeleporter : MonoBehaviour
         {
             ClearAllFlags();
         }
+
+        // 씬이 갓 로드됐는데 StarestCenterRoot가 이미 켜져 있다면 BGM 상태를 맞춘다.
+        if (starestCenterRoot)
+        {
+            if (starestCenterRoot.activeInHierarchy) SetCenterBgmActive(true);
+            else if (stopBgmWhenLeavingCenter) SetCenterBgmActive(false);
+        }
     }
 
     private void Update()
@@ -268,7 +285,7 @@ public class HouseDoorTeleporter : MonoBehaviour
                 setStarestCenterRoot: null,
                 setRoadCamera: null, setStarestCamera: null,
                 setPlayerCamera: null,
-                ensureBusOn: true       // 버스는 켜기만 함 (끄지 않음)
+                ensureBusOn: true
             ));
             return;
         }
@@ -283,7 +300,7 @@ public class HouseDoorTeleporter : MonoBehaviour
                 setStarestCenterRoot: null,
                 setRoadCamera: null, setStarestCamera: null,
                 setPlayerCamera: null,
-                ensureBusOn: false      // 아무 작업 안 함(절대 끄지 않음)
+                ensureBusOn: false
             ));
             return;
         }
@@ -352,6 +369,13 @@ public class HouseDoorTeleporter : MonoBehaviour
 
         // ★ Bus는 절대 끄지 않음: on 지시일 때만 켠다
         if (ensureBusOn && busObject) { if (!busObject.activeSelf) busObject.SetActive(true); }
+
+        // ▶ BGM: StarestCenter 토글에 맞춰 제어
+        if (setStarestCenterRoot.HasValue)
+        {
+            if (setStarestCenterRoot.Value) SetCenterBgmActive(true);
+            else SetCenterBgmActive(false);
+        }
 
         // 2) 좌표 이동(물리 안전)
         SnapPlayer(new Vector3(targetPos.x, targetPos.y, playerTransform.position.z));
@@ -736,5 +760,22 @@ public class HouseDoorTeleporter : MonoBehaviour
             yield return null;
         }
         fadeOverlay.color = target;
+    }
+
+    // ───────── BGM 제어 유틸 ─────────
+    private void SetCenterBgmActive(bool on)
+    {
+        if (SoundManager.Instance == null) return;
+
+        if (on)
+        {
+            if (!string.IsNullOrEmpty(starestCenterBgmKey))
+                SoundManager.Instance.PlayBGM(starestCenterBgmKey, starestCenterBgmFadeSeconds, 0f);
+        }
+        else
+        {
+            if (stopBgmWhenLeavingCenter)
+                SoundManager.Instance.StopBGM(starestCenterBgmFadeSeconds);
+        }
     }
 }
