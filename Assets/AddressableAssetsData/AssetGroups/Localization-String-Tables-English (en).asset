@@ -57,6 +57,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df4a49952fbd76a4eb787fbaebe45313
+    m_Address: Prolog_Table_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 544fd178bf8e1be45bdb8065448f99a1, type: 2}
   m_SchemaSet:

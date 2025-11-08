@@ -20,6 +20,11 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2731aa6c1207d1e4e8cf05893a7c1899
+    m_Address: Assets/Localization/Dialogue/Prolog/Prolog_Table Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3d4d168b851240847bf1d6a09ef8f32d
     m_Address: Assets/Localization/Dialogue/sol_first_meet Shared Data.asset
     m_ReadOnly: 1

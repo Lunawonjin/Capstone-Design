@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1185b50e4d0960f45b0a56aeeb59bea6
+    m_Address: Prolog_Table_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d05518455e2eb642876804932625bfc
     m_Address: Boss_First_Calling_Dialogue_ja
     m_ReadOnly: 1
