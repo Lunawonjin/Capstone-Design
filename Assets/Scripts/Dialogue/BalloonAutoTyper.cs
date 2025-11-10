@@ -16,16 +16,17 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
 
     [Header("레이아웃 설정")]
-    [SerializeField] private Vector2 padding = new Vector2(40f, 20f);
+    [SerializeField] private Vector2 padding = new Vector2(40f, 20f); // 말풍선 기본 여백(좌우/상하 합산 개념)
     [SerializeField] private float minWidth = 120f;
     [SerializeField] private float maxWidth = 600f;
     [SerializeField] private bool autoWrap = true;
 
-    [Header("텍스트 위치/간격")]
-    [Tooltip("텍스트를 위로 올릴 픽셀 단위 오프셋(+면 위로 이동)")]
-    [SerializeField] private float textYOffset = 6f;
-    [Tooltip("TMP 줄 간격(필요 시 미세 조정)")]
-    [SerializeField] private float lineSpacing = 0f;
+    [Header("텍스트 위치 보정")]
+    [Tooltip("텍스트 박스를 X,Y로 평행 이동(말풍선 안에서 미세 위치 조정)")]
+    [SerializeField] private float textOffsetX = 0f;
+    [SerializeField] private float textOffsetY = 0f;
+    [Tooltip("텍스트 박스의 추가 안쪽 여백: Left, Top, Right, Bottom")]
+    [SerializeField] private Vector4 textExtraPadding = new Vector4(0f, 0f, 0f, 0f);
 
     [Header("타자기 효과")]
     [SerializeField] private float charsPerSecond = 30f;    // 초당 출력 글자 수
@@ -48,10 +49,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     [SerializeField] private bool useExitFX = true;
     [SerializeField] private float exitDuration = 0.12f;
     [SerializeField] private float exitEndScale = 0.90f;
-
-    [Header("비활성화 동작")]
-    [Tooltip("Hide() 호출 시 GameObject를 비활성화까지 할지 여부(끄면 알파 0으로만 숨김)")]
-    [SerializeField] private bool hideOnEndDeactivate = false;
 
     [Header("로컬라이즈 입력 (테이블/키)")]
     [SerializeField] private string tableName = "Dialogue_Main";
@@ -88,9 +85,9 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     {
         if (autoWrap && bodyText != null)
         {
-            bodyText.enableWordWrapping = true;              // 줄바꿈은 여기서
+            bodyText.enableWordWrapping = true;
             bodyText.enableAutoSizing = false;
-            bodyText.overflowMode = TextOverflowModes.Overflow; // Wrap enum은 없음 → Overflow/Truncate 중 택1
+            bodyText.overflowMode = TextOverflowModes.Overflow;
         }
 
         if (canvasGroup == null)
@@ -99,38 +96,20 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
             if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
 
-        // Text RectTransform을 BG에 Stretch로 정렬 (삐져나감 방지)
-        if (bodyText != null)
-        {
-            var tr = bodyText.rectTransform;
-            tr.anchorMin = Vector2.zero;
-            tr.anchorMax = Vector2.one;
-            tr.offsetMin = Vector2.zero;
-            tr.offsetMax = Vector2.zero;
-            tr.pivot = new Vector2(0.5f, 0.5f);
-
-            // 초기 오프셋/간격 적용
-            tr.anchoredPosition = new Vector2(0f, textYOffset);
-            bodyText.lineSpacing = lineSpacing;
-        }
+        // 텍스트 RectTransform을 Stretch로 정렬하고 인셋/오프셋 적용
+        ApplyTextFrameLayout();
     }
 
-    // 외부에서 텍스트 오프셋을 런타임에 바꾸고 싶을 때
-    public void SetTextYOffset(float y)
-    {
-        textYOffset = y;
-        if (bodyText != null)
-            bodyText.rectTransform.anchoredPosition = new Vector2(0f, textYOffset);
-    }
+    // ===== 외부 제어 =====
 
-    // 외부: 출력 중이면 즉시 완성
+    // 출력 중이면 즉시 완성
     public void CompleteInstant()
     {
         if (!isTyping) return;
         forceComplete = true;
     }
 
-    // 외부: 로컬라이즈 대사 표시 (등장 연출 포함)
+    // 로컬라이즈 대사 표시 (등장 연출 포함)
     public void ShowLocalized(string table, string key, bool withEnterFX = true)
     {
         tableName = table;
@@ -138,17 +117,38 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         StartCoroutine(Co_LoadAndShow(withEnterFX));
     }
 
-    // 외부: 비로컬 문자열 직접 표시 (등장 연출 포함)
+    // 비로컬 문자열 직접 표시 (등장 연출 포함)
     public void ShowMessage(string message, bool withEnterFX = true)
     {
         fullMessage = message ?? string.Empty;
         StartCoroutine(Co_ShowInternal(withEnterFX));
     }
 
-    // 외부: 퇴장 연출
+    // 퇴장 연출
     public void Hide(bool withExitFX = true)
     {
         StartCoroutine(Co_Exit(withExitFX));
+    }
+
+    // 인스펙터에서 값 바꾸면 즉시 반영하고 싶을 때 호출
+    public void ApplyTextFrameLayout()
+    {
+        if (bodyText == null) return;
+
+        var tr = bodyText.rectTransform;
+
+        // Stretch 정렬
+        tr.anchorMin = Vector2.zero;
+        tr.anchorMax = Vector2.one;
+        tr.pivot = new Vector2(0.5f, 0.5f);
+
+        // 추가 패딩(좌/상/우/하)을 인셋으로 적용
+        // offsetMin = (Left, Bottom), offsetMax = (-Right, -Top)
+        tr.offsetMin = new Vector2(textExtraPadding.x, textExtraPadding.w);
+        tr.offsetMax = new Vector2(-textExtraPadding.z, -textExtraPadding.y);
+
+        // 평행 이동(가운데 기준)
+        tr.anchoredPosition = new Vector2(textOffsetX, textOffsetY);
     }
 
     private IEnumerator Co_LoadAndShow(bool withEnterFX)
@@ -180,8 +180,10 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     // 공통 표시: 등장 → 사이즈 애니메이션 → 타자기
     private IEnumerator Co_ShowInternal(bool withEnterFX)
     {
-        // 비활성화 모드가 아니면 Active 유지 + 알파로만 제어
         gameObject.SetActive(true);
+
+        // 텍스트 인셋/오프셋 항상 재적용(인스펙터에서 값 조정했을 수 있음)
+        ApplyTextFrameLayout();
 
         if (withEnterFX && useEnterFX)
             yield return StartCoroutine(Co_Enter());
@@ -189,14 +191,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
             canvasGroup.alpha = 1f;
 
         RecalcAndAnimateSize(fullMessage);
-
-        // 텍스트 오프셋/줄간격을 다시 보장
-        if (bodyText != null)
-        {
-            bodyText.rectTransform.anchoredPosition = new Vector2(0f, textYOffset);
-            bodyText.lineSpacing = lineSpacing;
-        }
-
         yield return StartCoroutine(Co_Type());
     }
 
@@ -204,10 +198,17 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     {
         if (bodyText == null || balloonBg == null) return;
 
+        // 텍스트의 선호 크기 측정
         bodyText.ForceMeshUpdate();
         Vector2 pref = bodyText.GetPreferredValues(message);
-        float w = Mathf.Clamp(pref.x + padding.x, minWidth, maxWidth);
-        float h = pref.y + padding.y;
+
+        // 추가 텍스트 패딩을 풍선 계산에도 반영(잘림 방지)
+        float extraX = textExtraPadding.x + textExtraPadding.z; // L+R
+        float extraY = textExtraPadding.y + textExtraPadding.w; // T+B
+
+        float w = Mathf.Clamp(pref.x + padding.x + extraX, minWidth, maxWidth);
+        float h = pref.y + padding.y + extraY;
+
         Vector2 targetSize = new Vector2(w, h);
         lastTargetSize = targetSize;
 
@@ -324,7 +325,7 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         if (!withExitFX || !useExitFX)
         {
             canvasGroup.alpha = 0f;
-            if (hideOnEndDeactivate) gameObject.SetActive(false);
+            gameObject.SetActive(false);
             yield break;
         }
 
@@ -345,7 +346,7 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
 
         if (balloonBg != null) balloonBg.localScale = endScale;
         canvasGroup.alpha = 0f;
-        if (hideOnEndDeactivate) gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
 
     private static float EaseOutQuad(float x) { return 1f - (1f - x) * (1f - x); }

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1526fcc0de4f4083ff88c57902b6c4, type: 3}
+  m_Name: 22c6c01e-ff1b-465c-9887-e47be1d6c380
+  m_EditorClassIdentifier: 
+  m_DefaultSprite: {fileID: 21300000, guid: fc96e697fa5d80f4e8d605bf19c47665, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  animationFrame: 0
+  animationSpeed: 0
+  damageFloorType: 0
+  damageFloorValue: 0
+  terrainTagValue: 0
+  filename: 
+  hasAnimation: 0
+  id: 22c6c01e-ff1b-465c-9887-e47be1d6c380
+  imageAdjustType: 0
+  isBush: 0
+  isCounter: 0
+  isDamageFloor: 0
+  isLadder: 0
+  isPassBottom: 0
+  isPassLeft: 0
+  isPassRight: 0
+  isPassTop: 0
+  largePartsDataModel:
+    parentId: cebf82f9-abc2-4f46-b499-d32ba0e65c63
+    x: 2
+    y: 0
+  name: 
+  passType: 2
+  regionId: 0
+  serialNumber: 10413
+  listNumber: 0
+  tileImageDataModel:
+    filename: house_p_1.png
+    texture: {fileID: 0}
+  type: 7
+  vehicleTypes: []

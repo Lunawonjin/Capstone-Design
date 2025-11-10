@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1526fcc0de4f4083ff88c57902b6c4, type: 3}
+  m_Name: 685d9b46-00dc-4eab-b329-add523b85d4e
+  m_EditorClassIdentifier: 
+  m_DefaultSprite: {fileID: 21300000, guid: 28ee8ebf032aa8a44ad9207b61c7e7a9, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  animationFrame: 0
+  animationSpeed: 0
+  damageFloorType: 0
+  damageFloorValue: 0
+  terrainTagValue: 0
+  filename: 
+  hasAnimation: 0
+  id: 685d9b46-00dc-4eab-b329-add523b85d4e
+  imageAdjustType: 0
+  isBush: 0
+  isCounter: 0
+  isDamageFloor: 0
+  isLadder: 0
+  isPassBottom: 0
+  isPassLeft: 0
+  isPassRight: 0
+  isPassTop: 0
+  largePartsDataModel:
+    parentId: 274329f9-42cf-4a9e-921f-aa6338d3da2c
+    x: 3
+    y: 0
+  name: 
+  passType: 2
+  regionId: 0
+  serialNumber: 10506
+  listNumber: 0
+  tileImageDataModel:
+    filename: rag_p.png
+    texture: {fileID: 0}
+  type: 7
+  vehicleTypes: []
