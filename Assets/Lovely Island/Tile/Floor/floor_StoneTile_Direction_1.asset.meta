@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bc99bfce77d059b42a008ced632240c0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 320234
+  packageName: Lovely Island-Pixel Art Tileset
+  packageVersion: 1.0
+  assetPath: Assets/Lovely Island/Tile/Floor/floor_StoneTile_Direction_1.asset
+  uploadId: 756977

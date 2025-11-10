@@ -1,0 +1,31 @@
+LICENSE AGREEMENT
+
+Copyright © FlowerStone. All rights reserved.
+
+By purchasing or downloading this asset, you are granted a non-exclusive, non-transferable, and non-sublicensable license to use the asset under the following terms:
+
+1. ✅ Permitted Uses:
+- You may use this asset in personal and commercial projects.
+- You may modify, adapt, or combine this asset with other content for use in your own projects.
+- You may include the asset as part of a larger project (e.g., a video game, animation, or interactive media) as long as the asset is not redistributed or extracted.
+
+2. ❌ Prohibited Uses:
+- You may not resell, re-license, or redistribute this asset as-is, or in a form that is substantially similar to the original.
+- You may not share or upload the asset (original or modified) to any online repository, asset collection, or file sharing service.
+- You may not use this asset to create non-fungible tokens (NFTs), blockchain-related products, or train machine learning/AI models.
+- You may not use this asset in any way that violates applicable laws or promotes hate, violence, or illegal activity.
+
+3. 🔒 Ownership:
+- All rights, title, and interest in the asset remain the sole property of FlowerStone.
+- This license grants you usage rights, but does not transfer ownership or intellectual property rights.
+
+4. 📦 Distribution Conditions:
+- If this asset is included in a released product (e.g., a game or app), it must not be extractable by end users in its original or raw form.
+- Reasonable steps must be taken to protect the asset from direct access.
+
+5. 💼 Credit (Optional):
+- Credit to "FlowerStone" is appreciated but not required.
+
+By using this asset, you agree to the terms of this license.
+
+For extended licenses or custom licensing needs, please contact: [cowldud9@gmail.com]
