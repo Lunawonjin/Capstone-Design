@@ -23,104 +23,92 @@ MonoBehaviour:
     m_Key: Dialogue_002
     m_Metadata:
       m_Items: []
-  - m_Id: 667238731776
-    m_Key: Dialogue_Choice1_S1_001
+  - m_Id: 16216976980905984
+    m_Key: Dialogue_003
     m_Metadata:
       m_Items: []
-  - m_Id: 679607734272
-    m_Key: Dialogue_Choice1_S2_001
+  - m_Id: 16216976980905985
+    m_Key: Dialogue_004
     m_Metadata:
       m_Items: []
-  - m_Id: 940057235456
-    m_Key: Dialogue_Choice1_Same_001
+  - m_Id: 16216976985100288
+    m_Key: Dialogue_005
     m_Metadata:
       m_Items: []
-  - m_Id: 942737395712
-    m_Key: Dialogue_Choice1_Same_002
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8863063937024
-    m_Key: Dialogue_Choice1_Same_003
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8992483381248
-    m_Key: Dialogue_Choice2_S1_001
+  - m_Id: 16216976985100289
+    m_Key: Dialogue_006
     m_Metadata:
       m_Items: []
   - m_Id: 9147165118464
-    m_Key: Dialogue_Choice2_S2_001
+    m_Key: Dialogue_Choice1_S1_001
     m_Metadata:
       m_Items: []
-  - m_Id: 289421408595968
-    m_Key: Dialogue_Choice2_Same_001
+  - m_Id: 16216976985100290
+    m_Key: Dialogue_Choice1_S2_001
     m_Metadata:
       m_Items: []
   - m_Id: 9420180754432
-    m_Key: Dialogue_Choice2_Same_002
+    m_Key: Dialogue_Choice1_Same_001
     m_Metadata:
       m_Items: []
-  - m_Id: 5106137825742848
-    m_Key: Dialogue_Choice2_Same_003
+  - m_Id: 16216976985100291
+    m_Key: Dialogue_Choice1_Same_002
     m_Metadata:
       m_Items: []
   - m_Id: 9567400824832
-    m_Key: Dialogue_Choice3_S1_001
+    m_Key: Dialogue_Choice2_S1_001
     m_Metadata:
       m_Items: []
   - m_Id: 20500135219200
-    m_Key: Dialogue_Choice3_S2_001
+    m_Key: Dialogue_Choice2_S2_001
     m_Metadata:
       m_Items: []
   - m_Id: 220647078752256
-    m_Key: Dialogue_Choice3_A1_001
+    m_Key: Dialogue_Choice2_A1_001
     m_Metadata:
       m_Items: []
   - m_Id: 220649352065024
-    m_Key: Dialogue_Choice3_A2_001
+    m_Key: Dialogue_Choice2_A1_002
     m_Metadata:
       m_Items: []
   - m_Id: 221271946162176
-    m_Key: Dialogue_Choice3_A2_003
+    m_Key: Dialogue_Choice4_A2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 221799711240192
+  - m_Id: 16216976985100292
+    m_Key: Dialogue_Choice3_A2_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100293
     m_Key: Dialogue_Choice3_Same_001
     m_Metadata:
       m_Items: []
-  - m_Id: 221862810349568
+  - m_Id: 16216976985100294
     m_Key: Dialogue_Choice3_Same_002
     m_Metadata:
       m_Items: []
+  - m_Id: 16216976985100295
+    m_Key: Dialogue_Choice3_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100296
+    m_Key: Dialogue_Choice3_Same_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100297
+    m_Key: Dialogue_Choice4_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100298
+    m_Key: Dialogue_Choice4_S1_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100299
+    m_Key: Dialogue_Choice4_A2_002
+    m_Metadata:
+      m_Items: []
   - m_Id: 222058420105216
-    m_Key: Dialogue_Choice5_S1_001
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222176154218496
-    m_Key: Dialogue_Choice5_Same_001
-    m_Metadata:
-      m_Items: []
-  - m_Id: 243804032462848
-    m_Key: Dialogue_Choice5_Same_004
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5106137888657408
-    m_Key: Dialogue_Choice4_Same_005
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5106137888657409
-    m_Key: Dialogue_Choice4_Same_006
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5106137888657410
-    m_Key: Dialogue_Choice4_Same_007
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222098752532480
-    m_Key: Dialogue_Choice5_S2_001
-    m_Metadata:
-      m_Items: []
-  - m_Id: 243722453250048
-    m_Key: Dialogue_Choice5_Same_003
+    m_Key: 
     m_Metadata:
       m_Items: []
   m_Metadata:

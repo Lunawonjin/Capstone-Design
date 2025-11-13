@@ -27,33 +27,31 @@ MonoBehaviour:
     m_Localized: "Oh, hello! I\u2019m Sol\u2026!"
     m_Metadata:
       m_Items: []
-  - m_Id: 667238731776
+  - m_Id: 16216976980905984
     m_Localized: "Hi, I\u2019m {playerName}. "
     m_Metadata:
       m_Items: []
-  - m_Id: 679607734272
-    m_Localized: Sol? What a cute name!
-    m_Metadata:
-      m_Items: []
-  - m_Id: 940057235456
-    m_Localized: "I\u2019ll get going then.\nHave a good chat with Sol!"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 942737395712
+  - m_Id: 16216976980905985
     m_Localized: "What\u2019s Sol sick with?\nI saw you getting injections."
     m_Metadata:
       m_Items: []
-  - m_Id: 8863063937024
+  - m_Id: 16216976985100288
     m_Localized: "I\u2026 I have leukemia.\nThey said I\u2019ve had it since I was
       young!"
     m_Metadata:
       m_Items: []
-  - m_Id: 8992483381248
+  - m_Id: 16216976985100289
     m_Localized: "That too bad\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 9147165118464
     m_Localized: "Oh\u2026 I see."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100290
+    m_Localized: 'Adaults always react like this.
+
+      Heh-heh!'
     m_Metadata:
       m_Items: []
   - m_Id: 9420180754432
@@ -62,10 +60,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 9567400824832
     m_Localized: "Haha! That\u2019s such a relief."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 20500135219200
-    m_Localized: Why do you act so cheerful like this?
     m_Metadata:
       m_Items: []
   - m_Id: 220647078752256
@@ -80,57 +74,43 @@ MonoBehaviour:
     m_Localized: "You\u2019ve been to school, right?\nI haven\u2019t though..."
     m_Metadata:
       m_Items: []
-  - m_Id: 221799711240192
+  - m_Id: 16216976985100292
     m_Localized: I want to play with friends at school!
     m_Metadata:
       m_Items: []
-  - m_Id: 221862810349568
+  - m_Id: 16216976985100293
     m_Localized: "I just have only Kkin\u2026"
     m_Metadata:
       m_Items: []
-  - m_Id: 222058420105216
+  - m_Id: 16216976985100295
     m_Localized: Kkin?
     m_Metadata:
       m_Items: []
-  - m_Id: 222098752532480
-    m_Localized: How about we go out with Kkin sometime?
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222176154218496
+  - m_Id: 16216976985100296
     m_Localized: 'Kkin is my best friend.
 
       This rabbit doll right here!'
     m_Metadata:
       m_Items: []
-  - m_Id: 243722453250048
-    m_Localized: You can come to see me tomorrow, right?
-    m_Metadata:
-      m_Items: []
-  - m_Id: 243804032462848
+  - m_Id: 16216976985100297
     m_Localized: "Kkin is my sole friend\u2026 "
     m_Metadata:
       m_Items: []
-  - m_Id: 289421408595968
-    m_Localized: 'Adaults always react like this.
-
-      Heh-heh!'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5106137825742848
-    m_Localized: Sol is totally the strongest!
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5106137888657408
+  - m_Id: 16216976985100298
     m_Localized: "Mommy and Daddy were working hard for me,\nso they couldn\u2019t
       come often."
     m_Metadata:
       m_Items: []
-  - m_Id: 5106137888657409
-    m_Localized: "I held Kkin\u2019s hand and toughed the pain out. "
+  - m_Id: 16216976985100299
+    m_Localized: "That\u2019s why Kkin is super precious to me!"
     m_Metadata:
       m_Items: []
-  - m_Id: 5106137888657410
-    m_Localized: "That\u2019s why Kkin is super precious to me!"
+  - m_Id: 16216976985100291
+    m_Localized: Sol is totally the strongest!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20500135219200
+    m_Localized: Why do you act so cheerful like this?
     m_Metadata:
       m_Items: []
   references:
