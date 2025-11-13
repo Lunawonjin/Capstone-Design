@@ -341,7 +341,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   includeTriggers: 1
-  npcTag: Npc
+  npcTag: NPC
   doorTag: Door
   indicatorPrefab: {fileID: 7160934040699333172, guid: b5158e7f720dcaa48be2b5248e950d6f, type: 3}
   spawnOffset: {x: 0.5, y: 1}
@@ -355,6 +355,7 @@ MonoBehaviour:
   onePerTarget: 1
   exceptions:
   - {fileID: 0}
+  debugLog: 0
 --- !u!1001 &8261440773418031408
 PrefabInstance:
   m_ObjectHideFlags: 0

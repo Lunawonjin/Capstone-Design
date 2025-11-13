@@ -1,0 +1,124 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Sol's_Talk_Dialogue Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Sol's_Talk_Dialogue
+  m_TableCollectionNameGuidString: fcf31ff2fc800354fac010d7b801150b
+  m_Entries:
+  - m_Id: 16332620238848
+    m_Key: Sol_Talk_01_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764800
+    m_Key: Sol_Talk_02_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764801
+    m_Key: Sol_Talk_03_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764802
+    m_Key: Sol_Talk_04_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153408
+    m_Key: Sol_Talk_05_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153409
+    m_Key: Sol_Talk_06_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153410
+    m_Key: Sol_Talk_07_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153411
+    m_Key: Sol_Talk_08_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153412
+    m_Key: Sol_Talk_09_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153413
+    m_Key: Sol_Talk_10_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153414
+    m_Key: Sol_Talk_11_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153415
+    m_Key: Sol_Talk_12_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153416
+    m_Key: Sol_Talk_13_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153417
+    m_Key: Sol_Talk_14_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153418
+    m_Key: Sol_Talk_15_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153419
+    m_Key: Sol_Talk_16_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153420
+    m_Key: Sol_Talk_17_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153421
+    m_Key: Sol_Talk_18_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153422
+    m_Key: Sol_Talk_19_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153423
+    m_Key: Sol_Talk_20_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153424
+    m_Key: Sol_Talk_21_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153425
+    m_Key: Sol_Talk_22_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153426
+    m_Key: Sol_Talk_23_Dialogue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153427
+    m_Key: Sol_Talk_24_Dialogue\
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 4657101648961208402
+  references:
+    version: 2
+    RefIds:
+    - rid: 4657101648961208402
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1763023761324

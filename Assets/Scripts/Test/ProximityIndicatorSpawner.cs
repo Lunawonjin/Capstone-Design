@@ -55,6 +55,9 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
     [Header("생성 예외(이 오브젝트들에선 표시 안 함)")]
     public List<GameObject> exceptions = new();
 
+    [Header("디버그 로그")]
+    public bool debugLog = false;
+
     // 내부 상태
     private readonly Dictionary<Transform, GameObject> spawned = new(); // target -> indicator
     private readonly HashSet<Transform> currentTargets = new();
@@ -66,6 +69,7 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
     private void Awake()
     {
         if (!player) player = transform;
+
         if (!playerCollider)
         {
             // 플레이어의 콜라이더 자동 탐색(자신 또는 부모)
@@ -75,6 +79,11 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
 
         if (!indicatorPrefab)
             Debug.LogWarning("[HoverIndicatorSpawner2D] indicatorPrefab이 비었습니다.");
+
+        if (debugLog)
+        {
+            Debug.Log($"[HoverIndicatorSpawner2D] Awake - player={player}, playerCollider={playerCollider}, targetLayerMask={targetLayerMask.value}");
+        }
     }
 
     private void Update()
@@ -104,6 +113,8 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
         if (!playerCollider)
         {
             // 콜라이더가 없으면 반경 스캔으로 폴백
+            if (debugLog)
+                Debug.LogWarning("[HoverIndicatorSpawner2D] playerCollider가 없어 Radius 스캔으로 폴백합니다.");
             ScanByRadius();
             return;
         }
@@ -116,7 +127,11 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
         };
 
         hitsBuffer.Clear();
+        // Unity 6에서는 List 버전 OverlapCollider 지원. 혹시 안 되면 배열 버전으로 변경 필요.
         playerCollider.Overlap(filter, hitsBuffer);
+
+        if (debugLog)
+            Debug.Log($"[HoverIndicatorSpawner2D] Collision 스캔 hitCount={hitsBuffer.Count}");
 
         for (int i = 0; i < hitsBuffer.Count; i++)
         {
@@ -127,6 +142,9 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
             if (!t) continue;
             if (!HasTargetTag(t)) continue;
             if (IsInExceptions(t.gameObject)) continue;
+
+            if (debugLog)
+                Debug.Log($"[HoverIndicatorSpawner2D] Collision hit 대상: {t.name}, tag={t.tag}");
 
             currentTargets.Add(t);
         }
@@ -141,6 +159,13 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
     {
         currentTargets.Clear();
 
+        if (!player)
+        {
+            if (debugLog)
+                Debug.LogWarning("[HoverIndicatorSpawner2D] player Transform이 없습니다.");
+            return;
+        }
+
         var filter = new ContactFilter2D
         {
             useTriggers = includeTriggers,
@@ -151,6 +176,9 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
         hitsBuffer.Clear();
         Physics2D.OverlapCircle(player.position, scanRadius, filter, hitsBuffer);
 
+        if (debugLog)
+            Debug.Log($"[HoverIndicatorSpawner2D] Radius 스캔 hitCount={hitsBuffer.Count}");
+
         for (int i = 0; i < hitsBuffer.Count; i++)
         {
             var col = hitsBuffer[i];
@@ -160,6 +188,9 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
             if (!t) continue;
             if (!HasTargetTag(t)) continue;
             if (IsInExceptions(t.gameObject)) continue;
+
+            if (debugLog)
+                Debug.Log($"[HoverIndicatorSpawner2D] Radius hit 대상: {t.name}, tag={t.tag}");
 
             currentTargets.Add(t);
         }
@@ -218,6 +249,9 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
         }
 
         spawned[target] = inst;
+
+        if (debugLog)
+            Debug.Log($"[HoverIndicatorSpawner2D] 인디케이터 스폰: target={target.name}");
     }
 
     private void DespawnIndicator(Transform target)
@@ -226,10 +260,42 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
         {
             if (inst) Destroy(inst);
             spawned.Remove(target);
+
+            if (debugLog)
+                Debug.Log($"[HoverIndicatorSpawner2D] 인디케이터 제거: target={target.name}");
         }
     }
 
-    private Transform ResolveTargetRoot(Transform t) => t;
+    /// <summary>
+    /// 자식 콜라이더를 때렸더라도, 위로 타고 올라가면서 NPC/Door 태그가 붙은 부모를 찾아서 반환한다.
+    /// 못 찾으면 최상위 루트 Transform을 반환한다.
+    /// </summary>
+    private Transform ResolveTargetRoot(Transform t)
+    {
+        if (!t) return null;
+
+        Transform cur = t;
+
+        // 먼저 위로 올라가면서 NPC/Door 태그가 있는 부모를 찾는다.
+        while (cur != null)
+        {
+            string tag = cur.tag; // 등록 안 되면 "Untagged"
+            bool isNpc = !string.IsNullOrWhiteSpace(npcTag) && tag == npcTag;
+            bool isDoor = !string.IsNullOrWhiteSpace(doorTag) && tag == doorTag;
+
+            if (isNpc || isDoor)
+                return cur;
+
+            cur = cur.parent;
+        }
+
+        // NPC/ Door 태그를 못 찾았다면, 원래 인자로 들어온 트랜스폼의 루트를 반환
+        cur = t;
+        while (cur.parent != null)
+            cur = cur.parent;
+
+        return cur;
+    }
 
     private bool HasTargetTag(Transform t)
     {
@@ -305,11 +371,15 @@ public class FloatBob2D : MonoBehaviour
 
         if (worldSpace)
         {
-            var p = _basePos; p.y += y; transform.position = p;
+            var p = _basePos;
+            p.y += y;
+            transform.position = p;
         }
         else
         {
-            var p = _basePos; p.y += y; transform.localPosition = p;
+            var p = _basePos;
+            p.y += y;
+            transform.localPosition = p;
         }
     }
 }

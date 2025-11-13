@@ -33,6 +33,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ef9d2c9fece75d4aaa46e5b9b37f408
+    m_Address: Sol's_Talk_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 937ad5e1abf68b94cbdd154ad558fdb1
     m_Address: Sol_First_Meet_Dialogue_en
     m_ReadOnly: 1
@@ -41,6 +47,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 99ea8975099a8384c8dad8b42a1f7ce8
     m_Address: Boss_First_Calling_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af1e5a71e3c3a0346ba2be40d5dd8721
+    m_Address: Salt's_Talk_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

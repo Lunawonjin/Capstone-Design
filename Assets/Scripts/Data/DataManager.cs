@@ -63,6 +63,12 @@ public class PlayerData
     //첫 방문 지역 이벤트
     public bool Starest_First_Visit;
 
+    //오늘 하루 말을 NPC에게 걸었는지 확인하는 Bool값
+    public bool Sol_Today_Talk;
+    public bool Salt_Today_Talk;
+    public bool Ryu_Today_Talk;
+    public bool White_Today_Talk;
+
     // 첫 만남 플래그
     public bool Sol_First_Meet;
     public bool Salt_First_Meet;
@@ -102,6 +108,11 @@ public class PlayerData
 
         StartGame = false;
         CanFirstSleep = false;
+
+        Sol_Today_Talk = false;
+        Salt_Today_Talk = false;
+        Ryu_Today_Talk = false;
+        White_Today_Talk = false;
 
         Starest_First_Visit = false;
 

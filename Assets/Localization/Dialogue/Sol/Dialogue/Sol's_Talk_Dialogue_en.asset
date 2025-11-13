@@ -1,0 +1,130 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Sol's_Talk_Dialogue_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: fcf31ff2fc800354fac010d7b801150b, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 16332620238848
+    m_Localized: Hello, {playerName}! What should we talk about first today?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764800
+    m_Localized: "The weather\u2019s nice\u2014I want to run around. Can we take
+      a little walk?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764801
+    m_Localized: "Kkin says we\u2019re brave today. So I\u2019m brave too!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332674764802
+    m_Localized: "Um\u2026 I\u2019ve been sleeping well lately. Hardly any bad dreams."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153408
+    m_Localized: "I feel calm when you\u2019re here, {playerName}. I was waiting
+      for you."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153409
+    m_Localized: My heart wants to dash and dash. But staying with me slowly is fine
+      too.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153410
+    m_Localized: When I hear laughter outside, I end up laughing too.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153411
+    m_Localized: I like rainy days too. Raindrops sound like a lullaby.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153412
+    m_Localized: "I\u2019m good at keeping secrets. So I listen quietly to people."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153413
+    m_Localized: I want to write in my picture diary with Kkin today. Will you help
+      me?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153414
+    m_Localized: "Actually, being brave is my strong point. It hurts less when I\u2019m
+      brave!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153415
+    m_Localized: Someday I want to sprint across a school yard as fast as I can.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153416
+    m_Localized: "What\u2019s your favorite game, {playerName}? I like tag!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153417
+    m_Localized: "Sometimes my heart goes thump-thump\u2026 but don\u2019t worry.
+      It\u2019ll be okay soon."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153418
+    m_Localized: Grown-ups treat me very carefully. But I can still give them a big
+      smile.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153419
+    m_Localized: Can I say one wish? I want to play with friends till sunset.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153420
+    m_Localized: "I like how my house smells\u2014warm, sweet\u2026 safe."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153421
+    m_Localized: "Sometimes I stare out the window a long time. I can hear the wind
+      even if I don\u2019t go out."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153422
+    m_Localized: "Even on tough days, good things happen\u2014like you coming to
+      see me."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153423
+    m_Localized: "When I squeeze Kkin\u2019s paw, I feel like I can do anything."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153424
+    m_Localized: "I want to go see the stars someday\u2014practice finding my way
+      in the night sky."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153425
+    m_Localized: Want to know a secret? I want to hold tight to today. Sometimes
+      tomorrow worries me.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153426
+    m_Localized: "But it\u2019s okay\u2014when you\u2019re by my side, I feel brave."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16332683153427
+    m_Localized: "You\u2019ll come again tomorrow, right? I\u2019ll be here waiting\u2014promise."
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []
