@@ -1,8 +1,5 @@
 // DialogueRunnerStringTables.cs
-// 전화/메신저 공용 러너.
-// - *_Dialogue 테이블은 필수
-// - *_Speaker 테이블은 모드에 따라 사용(Auto/ForceOn/ForceOff)
-// - 스피커가 {System}/System 이거나 선택지 상태일 땐 이름 패널/스피커 텍스트 숨김
+// Common runner for localized string tables.
 
 using System;
 using System.Collections;
@@ -18,22 +15,22 @@ using UnityEngine.Localization.Tables;
 [DisallowMultipleComponent]
 public class DialogueRunnerStringTables : MonoBehaviour
 {
-    // ===== 외부 알림 =====
+    // ===== External events =====
     public event Action<string> OnKeyShown;
     public event Action OnDialogueEnded;
 
     // ===== UI =====
     [Header("UI")]
-    public TextMeshProUGUI speakerText;   // *_Speaker (옵션)
-    public TextMeshProUGUI bodyText;      // *_Dialogue
+    public TextMeshProUGUI speakerText;
+    public TextMeshProUGUI bodyText;
     public TextMeshProUGUI promptText;
     public GameObject nextIndicator;
     public Button choiceButtonPrefab;
 
-    [Tooltip("화자 이름 텍스트를 감싸는 UI 패널(GameObject)")]
+    [Tooltip("Panel that contains speakerText")]
     public GameObject namePanel;
 
-    [Header("선택지 컨테이너(없으면 자동 생성)")]
+    [Header("Choice container (runtime created if null)")]
     public Canvas targetCanvas;
     public Vector2 referenceResolution = new(1920, 1080);
     [Range(0, 1)] public float matchWidthOrHeight = 0.5f;
@@ -43,7 +40,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public Vector4 choicePaddingTLBR = new(24, 24, 24, 24);
     public Color choiceContainerBg = new(0, 0, 0, 0);
 
-    [Header("폰트/버튼 크기 (기본값)")]
+    [Header("Default font/button sizes")]
     public float bodyFontSize = 52f;
     public float speakerFontSize = 46f;
     public float promptFontSize = 52f;
@@ -51,7 +48,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     public float choiceButtonHeight = 88f;
     public float choiceButtonMinWidth = 0f;
 
-    [Header("언어별 폰트 크기")]
+    [Header("Per-language font sizes")]
     public bool useLanguageFontSizes = true;
     [Serializable] public class LangFont { public string localeCode = "ko"; public float speakerSize = 46f; public float bodySize = 52f; }
     public List<LangFont> languageFonts = new()
@@ -61,40 +58,38 @@ public class DialogueRunnerStringTables : MonoBehaviour
         new LangFont { localeCode = "ja", speakerSize = 44f, bodySize = 50f },
     };
 
-    [Header("타이핑/입력")]
+    [Header("Typing / input")]
     [Range(0f, 0.1f)] public float charDelay = 0.03f;
     public bool respectRichText = true;
     public KeyCode advanceKey = KeyCode.Space;
     [Range(0f, 0.5f)] public float advanceCooldownSec = 0.12f;
     public bool debugInputLog = false;
 
-    [Header("동작")]
+    [Header("Behaviour")]
     public bool deactivateOnEnd = true;
     public GameObject toggleDuringChoiceTarget;
     public PlayerMove playerMove;
     public bool autoFindPlayerMove = true;
     public bool includeInactiveOnFind = true;
 
-    [Header("선택지 입력 제어")]
+    [Header("Choice input control")]
     public bool blockSpaceSubmitOnChoices = true;
     public bool autoSelectFirstChoice = false;
 
-    [Header("Player Name Token")]
+    [Header("Player name token")]
     public string fallbackPlayerName = "Player";
 
-    // ── Speaker 테이블 로딩 모드 ──
     public enum SpeakerLoadMode { Auto, ForceOn, ForceOff }
 
-    [Header("Speaker 테이블 사용 모드")]
-    [Tooltip("Auto: 있으면 사용 / ForceOn: 반드시 사용(없으면 경고) / ForceOff: 사용 안함")]
+    [Header("Speaker table mode")]
     public SpeakerLoadMode speakerMode = SpeakerLoadMode.Auto;
 
-    // ===== 내부 상태 =====
+    // ===== Internal state =====
     private RectTransform _choiceRoot;
     private VerticalLayoutGroup _vlg;
     private ContentSizeFitter _csf;
 
-    private StringTable _speakerTable;   // 사용 가능 시 세팅
+    private StringTable _speakerTable;
     private StringTable _dialogueTable;
 
     private bool _speakerAvailable = false;
@@ -119,15 +114,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private bool _inputUnlocked = false;
     private float _advanceCooldownLeft = 0f;
 
-    // ===== Locale 변경 감지용 =====
     private bool _localeHooked = false;
 
-    // ===== 비활성화→활성화 복원 =====
-    [Header("재활성화 복원")]
+    [Header("Resume when re-enabled")]
     public bool retypeOnResume = true;
     private bool _resumePending = false;
     private bool _wasTypingWhenHidden = false;
     private string _lastKeyShown = "";
+
+    // NPC talk-table mode: eventName is key, table is "{Npc}'s_Talk_Dialogue"
+    private bool _useNpcTalkTableMode = false;
 
     private void Awake()
     {
@@ -204,7 +200,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         UnhookLocaleChange();
     }
 
-    // ───────────────── 시작/테이블 로딩 ─────────────────
+    // ===== Start / table loading =====
     public void BeginWithEventName(string eventName)
     {
         if (string.IsNullOrWhiteSpace(eventName))
@@ -249,35 +245,92 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _speakerTable = null;
         _dialogueTable = null;
         _speakerAvailable = false;
+        _useNpcTalkTableMode = false;
 
-        // Dialogue: 필수
-        yield return LoadTable($"{_eventName}_Dialogue", t => _dialogueTable = t);
-        if (_dialogueTable == null)
+        // 1) Default: "{EventName}_Dialogue"
+        string defaultTableName = $"{_eventName}_Dialogue";
+        yield return LoadTable(defaultTableName, t => _dialogueTable = t);
+
+        if (_dialogueTable != null)
         {
-            Debug.LogError($"[DialogueRunnerStringTables] Missing dialogue table: '{_eventName}_Dialogue'");
+            if (speakerMode == SpeakerLoadMode.ForceOff)
+            {
+                _speakerTable = null;
+                _speakerAvailable = false;
+            }
+            else
+            {
+                string speakerTableName = $"{_eventName}_Speaker";
+                yield return LoadTable(speakerTableName, t => _speakerTable = t);
+                _speakerAvailable = (_speakerTable != null);
+
+                if (speakerMode == SpeakerLoadMode.ForceOn && !_speakerAvailable)
+                    Debug.LogWarning($"[DialogueRunnerStringTables] SpeakerLoadMode=ForceOn, but '{speakerTableName}' is missing.");
+            }
+
+            if (debugInputLog)
+                Debug.Log($"[DialogueRunnerStringTables] Using default table '{defaultTableName}'.");
+
+            OnDialogueBegin();
+            Next();
             yield break;
         }
 
-        // Speaker: 모드별 처리
-        if (speakerMode == SpeakerLoadMode.ForceOff)
+        // 2) NPC talk table: "{Npc}'s_Talk_Dialogue" with key = eventName
+        string npcId = ExtractNpcIdFromEventName(_eventName);
+        if (!string.IsNullOrEmpty(npcId))
         {
-            _speakerTable = null;
-            _speakerAvailable = false;
-        }
-        else
-        {
-            yield return LoadTable($"{_eventName}_Speaker", t => _speakerTable = t);
-            _speakerAvailable = (_speakerTable != null);
+            // Try multiple possible collection names, in order
+            string[] candidates =
+            {
+                $"{npcId}'s_Talk_Dialogue",
+                $"{npcId}_Talk_Dialogue",
+                $"{npcId}_Dialogue",
+                $"{npcId}Talk_Dialogue"
+            };
 
-            if (speakerMode == SpeakerLoadMode.ForceOn && !_speakerAvailable)
-                Debug.LogWarning($"[DialogueRunnerStringTables] SpeakerLoadMode=ForceOn 이지만 '{_eventName}_Speaker' 테이블이 없습니다.");
+            StringTable found = null;
+            string usedName = null;
+
+            foreach (var name in candidates)
+            {
+                yield return LoadTable(name, t => found = t);
+                if (found != null)
+                {
+                    usedName = name;
+                    break;
+                }
+            }
+
+            _dialogueTable = found;
+
+            if (_dialogueTable != null)
+            {
+                _useNpcTalkTableMode = true;
+                _speakerTable = null;
+                _speakerAvailable = false;
+
+                if (debugInputLog)
+                    Debug.Log($"[DialogueRunnerStringTables] NPC talk-table mode: table='{usedName}', key='{_eventName}'.");
+
+                if (!HasBody(_eventName))
+                {
+                    Debug.LogWarning($"[DialogueRunnerStringTables] Table '{usedName}' does not contain key '{_eventName}'. Text will show the key itself.");
+                }
+
+                OnDialogueBegin();
+                ShowKey(_eventName);
+                yield break;
+            }
+
+            Debug.LogError($"[DialogueRunnerStringTables] Could not find any NPC table for id='{npcId}'. Tried: {string.Join(", ", candidates)}");
+            yield break;
         }
 
-        OnDialogueBegin();
-        Next();
+        Debug.LogError($"[DialogueRunnerStringTables] Missing dialogue table: '{defaultTableName}' and NPC id could not be extracted (eventName='{_eventName}').");
     }
 
-    // ───────────────── 입력/진행 ─────────────────
+    // ===== Update / input =====
     private void Update()
     {
         if (_advanceCooldownLeft > 0f)
@@ -295,13 +348,27 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         if (!pressed) return;
 
-        if (debugInputLog) Debug.Log("[DialogueRunner] advance pressed");
+        if (debugInputLog) Debug.Log("[DialogueRunnerStringTables] advance pressed.");
 
         if (_advanceCooldownLeft > 0f) return;
         _advanceCooldownLeft = advanceCooldownSec;
 
-        if (_isTyping) CompleteTypingInstant();
-        else Next();
+        if (_isTyping)
+        {
+            CompleteTypingInstant();
+        }
+        else
+        {
+            if (_useNpcTalkTableMode)
+            {
+                // Single-line mode for NPC talk-table: one key → end
+                EndDialogue();
+            }
+            else
+            {
+                Next();
+            }
+        }
     }
 
     private static string KeyLinear(int i) => $"Dialogue_{i:000}";
@@ -312,19 +379,69 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private bool HasBody(string key)
     {
         if (_dialogueTable == null) return false;
-        return _dialogueTable.GetEntry(key) != null;
+        if (_dialogueTable.GetEntry(key) != null) return true;
+
+        // Loose search (trim and case-insensitive)
+        return FindEntryLoose(key) != null;
     }
+
+    // Loose entry search for keys with trimming / case-insensitive match
+    private StringTableEntry FindEntryLoose(string key)
+    {
+        if (_dialogueTable == null || string.IsNullOrEmpty(key)) return null;
+
+        string target = key.Trim();
+
+        foreach (var entry in _dialogueTable.Values)
+        {
+            if (entry == null) continue;
+            string k = entry.Key;
+            if (string.IsNullOrEmpty(k)) continue;
+
+            if (string.Equals(k.Trim(), target, StringComparison.OrdinalIgnoreCase))
+                return entry;
+        }
+
+        return null;
+    }
+
     private string LBody(string key)
     {
         if (_dialogueTable == null) return key;
+
         var e = _dialogueTable.GetEntry(key);
-        return e == null ? key : ReplaceTokens(e.GetLocalizedString());
+
+        if (e == null)
+        {
+            e = FindEntryLoose(key);
+
+            if (e == null)
+            {
+                // Log key list once to help debugging
+                string tableName = _dialogueTable.TableCollectionName;
+                List<string> keys = new List<string>();
+                foreach (var entry in _dialogueTable.Values)
+                {
+                    if (entry != null && !string.IsNullOrEmpty(entry.Key))
+                        keys.Add(entry.Key);
+                }
+
+                Debug.LogWarning(
+                    $"[DialogueRunnerStringTables] Table '{tableName}' has no entry for key '{key}'. Existing keys: {string.Join(", ", keys)}");
+
+                return key;
+            }
+        }
+
+        return ReplaceTokens(e.GetLocalizedString());
     }
+
     private string LSpeakerRaw(string key)
     {
         if (!_speakerAvailable || _speakerTable == null) return "";
         var e = _speakerTable.GetEntry(key);
-        return e == null ? "" : ReplaceTokens(e.GetLocalizedString());
+        if (e == null) return "";
+        return ReplaceTokens(e.GetLocalizedString());
     }
 
     private void Next()
@@ -382,7 +499,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _waitingChoice = true;
         _mode = Mode.ChoiceSelect;
 
-        // 선택지 진입 시 스피커 UI 무조건 숨김 (요구사항)
         SetSpeakerUI(false);
 
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
@@ -442,7 +558,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 _waitingChoice = false;
                 _mode = Mode.AnswerRun;
 
-                ShowAnswerFirstLine(n, _answerPick); // 여기서 ShowKey가 호출되며 스피커 표시 여부는 라인 규칙에 따름
+                ShowAnswerFirstLine(n, _answerPick);
             });
 
             _activeButtons.Add(btn);
@@ -450,7 +566,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         if (useCustomLayouts && TryApplyCustomLayout(sList.Count))
         {
-            // custom layout applied
         }
         else
         {
@@ -470,7 +585,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
     }
 
-    // ===== Custom Choice Layouts =====
     [Header("Custom Choice Layouts")]
     public bool useCustomLayouts = true;
     [Serializable] public class ChoiceLayout { public int optionCount = 2; public Vector2[] positions = Array.Empty<Vector2>(); public Vector2 buttonSize = new(900, 100); public bool centerRoot = true; }
@@ -606,7 +720,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== System/선택지 스피커 숨김 규칙 =====
+    // ===== System/speaker visibility rules =====
     private static bool IsSystemSpeakerString(string sp)
     {
         if (string.IsNullOrWhiteSpace(sp)) return false;
@@ -618,7 +732,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     private bool ShouldShowSpeakerUI(string sp)
     {
-        if (_mode == Mode.ChoiceSelect) return false; // 선택지 상태면 항상 숨김
+        if (_mode == Mode.ChoiceSelect) return false;
         if (!_speakerAvailable) return false;
         if (string.IsNullOrWhiteSpace(sp)) return false;
         if (IsSystemSpeakerString(sp)) return false;
@@ -637,7 +751,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
     }
 
-    // ===== NamePanel 제어 + 언어별 폰트 크기 적용 + 마지막 라인 기억 =====
     private void ShowKey(string key)
     {
         if (promptText) promptText.gameObject.SetActive(false);
@@ -715,7 +828,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 if (c == '<')
                 {
                     int close = fullText.IndexOf('>', i);
-                    if (close == -1) { if (bodyText) bodyText.text += fullText.Substring(i); break; }
+                    if (close == -1)
+                    {
+                        if (bodyText) bodyText.text += fullText.Substring(i);
+                        break;
+                    }
                     if (bodyText) bodyText.text += fullText.Substring(i, close - i + 1);
                     i = close + 1;
                     if (!printedOne && bodyText && bodyText.text.Length > 0) { printedOne = true; yield return null; _inputUnlocked = true; }
@@ -751,7 +868,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _advanceCooldownLeft = advanceCooldownSec;
     }
 
-    // ===== 캔버스/선택지 루트 =====
+    // ===== Canvas / choice root =====
     private void EnsureCanvas()
     {
         if (targetCanvas == null)
@@ -814,7 +931,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _choiceRoot.gameObject.SetActive(false);
     }
 
-    // ===== 토큰 치환 =====
+    // ===== Token replace =====
     private string ReplaceTokens(string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
@@ -828,12 +945,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return s.Replace("{playerName}", name);
     }
 
-    // ===== 대화 시작/종료 콜백 =====
+    // ===== Begin / end callbacks =====
     private void OnDialogueBegin()
     {
         if (playerMove != null) playerMove.controlEnabled = false;
-
-        // 시작 시엔 끈 상태에서 필요할 때만 켠다
         SetSpeakerUI(false);
     }
 
@@ -851,7 +966,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
         ReleaseAllButtons();
 
-        // 텍스트 정리
         SetSpeakerUI(false);
         if (bodyText) { bodyText.text = ""; bodyText.ForceMeshUpdate(); }
 
@@ -869,7 +983,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _advanceCooldownLeft = 0f;
     }
 
-    // ===== 언어별 폰트 크기 유틸 =====
+    // ===== Locale hooks / font size =====
     private void HookLocaleChange()
     {
         if (_localeHooked) return;
@@ -878,7 +992,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
             _localeHooked = true;
         }
-        catch { /* ignore */ }
+        catch { }
     }
 
     private void UnhookLocaleChange()
@@ -889,7 +1003,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
             _localeHooked = false;
         }
-        catch { /* ignore */ }
+        catch { }
     }
 
     private void OnLocaleChanged(Locale loc)
@@ -943,20 +1057,19 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return loc != null ? loc.Identifier.Code : "";
     }
 
-    // ===== 비활성화→활성화 복원 =====
+    // ===== Resume from hidden =====
     private void ResumeFromHiddenIfNeeded()
     {
         if (!_resumePending) return;
 
         if (_mode == Mode.ChoiceSelect)
         {
-            // 선택지 복귀 시에도 스피커 UI는 항상 꺼둠
             SetSpeakerUI(false);
 
             if (_choiceRoot) _choiceRoot.gameObject.SetActive(true);
             if (promptText) promptText.gameObject.SetActive(true);
             if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
-            _inputUnlocked = false; // 선택은 버튼으로 처리
+            _inputUnlocked = false;
             _resumePending = false;
             _wasTypingWhenHidden = false;
             return;
@@ -991,7 +1104,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _wasTypingWhenHidden = false;
     }
 
-    // ===== 현재 보이는 라인을 최신 {playerName}으로 즉시 새로고침 =====
     public void RefreshPlayerNameNow()
     {
         if (_waitingChoice || string.IsNullOrEmpty(_lastKeyShown)) return;
@@ -1029,5 +1141,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
             _inputUnlocked = true;
             if (nextIndicator) nextIndicator.SetActive(true);
         }
+    }
+
+    // ===== NPC id extraction ("Sol_Talk_08" -> "Sol") =====
+    private string ExtractNpcIdFromEventName(string eventName)
+    {
+        if (string.IsNullOrEmpty(eventName)) return null;
+        int idx = eventName.IndexOf("_Talk_", StringComparison.Ordinal);
+        if (idx <= 0) return null;
+        return eventName.Substring(0, idx);
     }
 }
