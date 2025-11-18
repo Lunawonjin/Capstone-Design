@@ -15,100 +15,100 @@ MonoBehaviour:
   m_TableCollectionName: Sol's_Talk_Dialogue
   m_TableCollectionNameGuidString: fcf31ff2fc800354fac010d7b801150b
   m_Entries:
-  - m_Id: 16332620238848
-    m_Key: Sol_Talk_01_Dialogue
+  - m_Id: 1763493099802624
+    m_Key: Sol_Talk_01
     m_Metadata:
       m_Items: []
-  - m_Id: 16332674764800
-    m_Key: Sol_Talk_02_Dialogue
+  - m_Id: 1763493162717184
+    m_Key: Sol_Talk_02
     m_Metadata:
       m_Items: []
-  - m_Id: 16332674764801
-    m_Key: Sol_Talk_03_Dialogue
+  - m_Id: 1763493162717185
+    m_Key: Sol_Talk_03
     m_Metadata:
       m_Items: []
-  - m_Id: 16332674764802
-    m_Key: Sol_Talk_04_Dialogue
+  - m_Id: 1763493162717186
+    m_Key: Sol_Talk_04
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153408
-    m_Key: Sol_Talk_05_Dialogue
+  - m_Id: 1763493162717187
+    m_Key: Sol_Talk_05
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153409
-    m_Key: Sol_Talk_06_Dialogue
+  - m_Id: 1763493162717188
+    m_Key: Sol_Talk_06
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153410
-    m_Key: Sol_Talk_07_Dialogue
+  - m_Id: 1763493162717189
+    m_Key: Sol_Talk_07
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153411
-    m_Key: Sol_Talk_08_Dialogue
+  - m_Id: 1763493162717190
+    m_Key: Sol_Talk_08
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153412
-    m_Key: Sol_Talk_09_Dialogue
+  - m_Id: 1763493162717191
+    m_Key: Sol_Talk_09
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153413
-    m_Key: Sol_Talk_10_Dialogue
+  - m_Id: 1763493162717192
+    m_Key: Sol_Talk_10
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153414
-    m_Key: Sol_Talk_11_Dialogue
+  - m_Id: 1763493162717193
+    m_Key: Sol_Talk_11
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153415
-    m_Key: Sol_Talk_12_Dialogue
+  - m_Id: 1763493162717194
+    m_Key: Sol_Talk_12
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153416
-    m_Key: Sol_Talk_13_Dialogue
+  - m_Id: 1763493162717195
+    m_Key: Sol_Talk_13
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153417
-    m_Key: Sol_Talk_14_Dialogue
+  - m_Id: 1763493162717196
+    m_Key: Sol_Talk_14
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153418
-    m_Key: Sol_Talk_15_Dialogue
+  - m_Id: 1763493162717197
+    m_Key: Sol_Talk_15
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153419
-    m_Key: Sol_Talk_16_Dialogue
+  - m_Id: 1763493162717198
+    m_Key: Sol_Talk_16
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153420
-    m_Key: Sol_Talk_17_Dialogue
+  - m_Id: 1763493162717199
+    m_Key: Sol_Talk_17
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153421
-    m_Key: Sol_Talk_18_Dialogue
+  - m_Id: 1763493162717200
+    m_Key: Sol_Talk_18
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153422
-    m_Key: Sol_Talk_19_Dialogue
+  - m_Id: 1763493162717201
+    m_Key: Sol_Talk_19
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153423
-    m_Key: Sol_Talk_20_Dialogue
+  - m_Id: 1763493162717202
+    m_Key: Sol_Talk_20
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153424
-    m_Key: Sol_Talk_21_Dialogue
+  - m_Id: 1763493162717203
+    m_Key: Sol_Talk_21
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153425
-    m_Key: Sol_Talk_22_Dialogue
+  - m_Id: 1763493162717204
+    m_Key: Sol_Talk_22
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153426
-    m_Key: Sol_Talk_23_Dialogue
+  - m_Id: 1763493162717205
+    m_Key: Sol_Talk_23
     m_Metadata:
       m_Items: []
-  - m_Id: 16332683153427
-    m_Key: Sol_Talk_24_Dialogue\
+  - m_Id: 1763493162717206
+    m_Key: Sol_Talk_24
     m_Metadata:
       m_Items: []
   m_Metadata:

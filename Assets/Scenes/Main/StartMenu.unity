@@ -2531,7 +2531,7 @@ MonoBehaviour:
   - {fileID: 1933847031}
   - {fileID: 1044956605}
   - {fileID: 1927431254}
-  startSceneName: Player's Room
+  startSceneName: Prolog
   leaveEmptySlotTextUntouched: 1
 --- !u!4 &802761140
 Transform:
@@ -4962,6 +4962,10 @@ MonoBehaviour:
     StartGame: 0
     CanFirstSleep: 0
     Starest_First_Visit: 0
+    Sol_Today_Talk: 0
+    Salt_Today_Talk: 0
+    Ryu_Today_Talk: 0
+    White_Today_Talk: 0
     Sol_First_Meet: 0
     Salt_First_Meet: 0
     Ryu_First_Meet: 0

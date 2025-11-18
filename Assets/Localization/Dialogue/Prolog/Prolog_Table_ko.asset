@@ -38,7 +38,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 42064587198464
     m_Localized: "\uD558\uD558, \uC774\uACF3\uC5D0 \uC628 \uB370\uC5D0\uB294 \uB2E4
-      \uC774\uC720\uAC00 \uC788\uC744 \uAC83\uC774\uB2E4."
+      \uC774\uC720\uAC00 \uC788\uC744 \uAC8C\uC57C."
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198465
@@ -88,11 +88,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198475
-    m_Localized: "\uBB34\uC2A8 \uC77C\uC774 \uC77C\uC5B4\uB09C \uAC70\uC9C0..."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 42064587198476
-    m_Localized: "\uC77C\uB2E8 \uC790\uB7EC\uAC00\uC790."
+    m_Localized: "\uBB34\uC2A8 \uC77C\uC774 \uC77C\uC5B4\uB09C \uAC70\uC9C0... \uC77C\uB2E8
+      \uC790\uB7EC\uAC00\uC790."
     m_Metadata:
       m_Items: []
   references:

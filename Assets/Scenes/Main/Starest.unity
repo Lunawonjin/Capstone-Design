@@ -6266,7 +6266,7 @@ MonoBehaviour:
   dialogueRunner: {fileID: 590834592}
   npcId: Sol
   autoFillFromNpcId: 1
-  autoMaxIndex: 27
+  autoMaxIndex: 24
   randomEventCountPerDay: 2
   ignoreIfAlreadyTalkedToday: 1
   enableDebugLog: 1
@@ -6476,6 +6476,10 @@ PrefabInstance:
     - target: {fileID: 8104164832368079342, guid: 6092497127b406544877fa7015b2f029, type: 3}
       propertyPath: m_Name
       value: Sol (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104164832368079342, guid: 6092497127b406544877fa7015b2f029, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6731,6 +6735,7 @@ GameObject:
   m_Component:
   - component: {fileID: 645547098}
   - component: {fileID: 645547099}
+  - component: {fileID: 645547100}
   m_Layer: 0
   m_Name: EventManager
   m_TagString: Untagged
@@ -6900,6 +6905,33 @@ MonoBehaviour:
   specialObjectShowDuration: 0.5
   starestCenterRoot: {fileID: 1190056252}
   runFirstVisitWhenStarestCenterActivates: 1
+--- !u!114 &645547100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 645547096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 603c631f3931ad34e90fa0d2a998ab0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealingEventManager
+  characterConfigs:
+  - characterName: Sol
+    ownerName: Sol
+    gauge1CasualGameEvents: []
+    gauge2SimpleEvents: []
+    randomSimpleEvents: []
+    randomSimpleEventChance: 0
+    itemRequestEvents: []
+    gauge4CasualGameEvents: []
+    simpleEventAfterGauge4Events: []
+    gauge5SeriousGameEvents: []
+  eventRunner: {fileID: 645547099}
+  autoFindEventRunner: 1
+  playerDayFieldName: Day
+  enableLog: 1
 --- !u!1001 &666888510
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9745,11 +9777,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NPCTalkManager
   playerTag: Player
   talkKey: 102
-  dialogueManagerObject: {fileID: 0}
+  dialogueManagerObject: {fileID: 61904102}
   dialogueRunner: {fileID: 590834592}
   npcId: Sol
   autoFillFromNpcId: 1
-  autoMaxIndex: 10
+  autoMaxIndex: 24
   randomEventCountPerDay: 2
   ignoreIfAlreadyTalkedToday: 1
   enableDebugLog: 1

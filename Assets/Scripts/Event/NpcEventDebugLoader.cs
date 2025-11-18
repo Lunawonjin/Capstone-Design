@@ -1651,6 +1651,37 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         return false;
     }
+    // HealingEventManager 등 외부에서 임의의 owner/event를 실행하고 싶을 때 사용.
+    public bool RunEventByName_External(string ownerName, string eventName, Action onComplete = null)
+    {
+        if (string.IsNullOrWhiteSpace(ownerName) || string.IsNullOrWhiteSpace(eventName))
+        {
+            Debug.LogWarning("[NpcEventDebugLoader] RunEventByName_External: ownerName or eventName is empty.");
+            return false;
+        }
+
+        if (_eventRunning)
+        {
+            Debug.LogWarning("[NpcEventDebugLoader] RunEventByName_External: an event is already running.");
+            return false;
+        }
+
+        string ownerForIO = ownerName.Trim();
+        string eventForIO = eventName.Trim();
+
+        if (!TryLoadSingle(ownerForIO, eventForIO, out var le))
+        {
+            Debug.LogWarning($"[NpcEventDebugLoader] RunEventByName_External: failed to load {ownerForIO}/{eventForIO}");
+            return false;
+        }
+
+        Cache(le);
+        if (logWhenRun)
+            LogLoaded(le);
+
+        StartCoroutine(RunEventCoroutine(ownerForIO, eventForIO, le.json, onComplete));
+        return true;
+    }
 
     private IEnumerator TryAdvanceDialogueOneStepCo(float initialDelay = 0.0f)
     {

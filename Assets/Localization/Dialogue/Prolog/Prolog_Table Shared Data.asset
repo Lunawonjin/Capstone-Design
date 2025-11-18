@@ -79,10 +79,6 @@ MonoBehaviour:
     m_Key: Dialogue_016_Player
     m_Metadata:
       m_Items: []
-  - m_Id: 42064587198476
-    m_Key: Dialogue_017_Player
-    m_Metadata:
-      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
