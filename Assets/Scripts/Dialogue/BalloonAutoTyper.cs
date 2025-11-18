@@ -54,12 +54,19 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     [SerializeField] private string tableName = "Dialogue_Main";
     [SerializeField] private string entryKey = "Dialogue_001";
 
+    [Header("디버그 로그 옵션")]
+    [SerializeField] private bool debugLog = false;
+
     // 상태
     private bool isTyping = false;        // 현재 타자기 진행 중 여부
     private bool forceComplete = false;   // 스킵 플래그
     private string fullMessage = "";      // 완전한 문장
     private Coroutine resizeCR;           // 리사이즈 코루틴 핸들
     private Vector2 lastTargetSize;       // 마지막 목표 사이즈 캐시
+
+    // 새로 추가: 현재 실행 중인 표시/타이핑 코루틴 핸들
+    private Coroutine showCR;
+    private Coroutine typeCR;
 
     // 외부 접근용
     public bool IsTypingNow => isTyping;
@@ -106,27 +113,37 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     public void CompleteInstant()
     {
         if (!isTyping) return;
+        if (debugLog) Debug.Log("[BalloonAutoTyper] CompleteInstant 호출");
         forceComplete = true;
     }
 
     // 로컬라이즈 대사 표시 (등장 연출 포함)
     public void ShowLocalized(string table, string key, bool withEnterFX = true)
     {
+        if (debugLog) Debug.Log($"[BalloonAutoTyper] ShowLocalized 호출: table={table}, key={key}");
         tableName = table;
         entryKey = key;
-        StartCoroutine(Co_LoadAndShow(withEnterFX));
+
+        StopCurrentCoroutines(true);
+        showCR = StartCoroutine(Co_LoadAndShow(withEnterFX));
     }
 
     // 비로컬 문자열 직접 표시 (등장 연출 포함)
     public void ShowMessage(string message, bool withEnterFX = true)
     {
+        if (debugLog) Debug.Log("[BalloonAutoTyper] ShowMessage 호출");
         fullMessage = message ?? string.Empty;
-        StartCoroutine(Co_ShowInternal(withEnterFX));
+
+        StopCurrentCoroutines(true);
+        showCR = StartCoroutine(Co_ShowInternal(withEnterFX));
     }
 
     // 퇴장 연출
     public void Hide(bool withExitFX = true)
     {
+        if (debugLog) Debug.Log($"[BalloonAutoTyper] Hide 호출, withExitFX={withExitFX}");
+        // 현재 타이핑/리사이즈는 정리하고, 퇴장 연출만 별도로 수행
+        StopCurrentCoroutines(false);
         StartCoroutine(Co_Exit(withExitFX));
     }
 
@@ -143,12 +160,39 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         tr.pivot = new Vector2(0.5f, 0.5f);
 
         // 추가 패딩(좌/상/우/하)을 인셋으로 적용
-        // offsetMin = (Left, Bottom), offsetMax = (-Right, -Top)
         tr.offsetMin = new Vector2(textExtraPadding.x, textExtraPadding.w);
         tr.offsetMax = new Vector2(-textExtraPadding.z, -textExtraPadding.y);
 
         // 평행 이동(가운데 기준)
         tr.anchoredPosition = new Vector2(textOffsetX, textOffsetY);
+    }
+
+    // ===== 내부 구현 =====
+
+    private void StopCurrentCoroutines(bool stopResize)
+    {
+        if (showCR != null)
+        {
+            StopCoroutine(showCR);
+            showCR = null;
+        }
+
+        if (typeCR != null)
+        {
+            StopCoroutine(typeCR);
+            typeCR = null;
+        }
+
+        if (stopResize && resizeCR != null)
+        {
+            StopCoroutine(resizeCR);
+            resizeCR = null;
+        }
+
+        isTyping = false;
+        forceComplete = false;
+
+        if (debugLog) Debug.Log("[BalloonAutoTyper] 현재 코루틴 정리 완료");
     }
 
     private IEnumerator Co_LoadAndShow(bool withEnterFX)
@@ -174,6 +218,8 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         }
 
         fullMessage = entry.LocalizedValue ?? string.Empty;
+        if (debugLog) Debug.Log($"[BalloonAutoTyper] 로컬라이즈 텍스트 로드 완료: '{fullMessage}'");
+
         yield return StartCoroutine(Co_ShowInternal(withEnterFX));
     }
 
@@ -191,18 +237,18 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
             canvasGroup.alpha = 1f;
 
         RecalcAndAnimateSize(fullMessage);
-        yield return StartCoroutine(Co_Type());
+        typeCR = StartCoroutine(Co_Type());
+        yield return typeCR;
+        typeCR = null;
     }
 
     private void RecalcAndAnimateSize(string message)
     {
         if (bodyText == null || balloonBg == null) return;
 
-        // 텍스트의 선호 크기 측정
         bodyText.ForceMeshUpdate();
         Vector2 pref = bodyText.GetPreferredValues(message);
 
-        // 추가 텍스트 패딩을 풍선 계산에도 반영(잘림 방지)
         float extraX = textExtraPadding.x + textExtraPadding.z; // L+R
         float extraY = textExtraPadding.y + textExtraPadding.w; // T+B
 
@@ -218,6 +264,8 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
 
     private IEnumerator Co_Type()
     {
+        if (debugLog) Debug.Log("[BalloonAutoTyper] Co_Type 시작");
+
         isTyping = true;
         forceComplete = false;
         bodyText.text = "";
@@ -228,6 +276,7 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         {
             if (forceComplete)
             {
+                if (debugLog) Debug.Log("[BalloonAutoTyper] forceComplete 플래그로 즉시 완료");
                 bodyText.text = fullMessage;
                 break;
             }
@@ -256,6 +305,8 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         bodyText.text = fullMessage;
         isTyping = false;
         forceComplete = false;
+
+        if (debugLog) Debug.Log("[BalloonAutoTyper] Co_Type 종료");
     }
 
     private IEnumerator Co_ResizeBalloon(Vector2 targetSize, float duration, float overshoot)

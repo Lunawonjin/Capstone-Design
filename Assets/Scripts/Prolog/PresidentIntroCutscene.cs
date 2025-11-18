@@ -1,352 +1,420 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
-/// <summary>
-/// 대표와 플레이어가 대화하는 인트로 컷신 전용 스크립트
-/// - BalloonAutoTyper_LocalizedFX + WorldBubbleAnchor 사용
-/// - Dialogue_001 ~ 016 순서대로 직접 출력
-/// - Dialogue_013_President 이후 연출:
-///   1) 페이드 아웃
-///   2) PlayerRoom 오브젝트 활성화, main 루트 비활성화
-///   3) 플레이어 (22,0,0), 대표 (24,0,0) 이동
-///   4) 페이드 인
-///   5) 플레이어 흔들기 연출
-/// - Dialogue_015_President 이후 대표 오브젝트 비활성화
-/// - Dialogue_016_Player 이후: 페이드 아웃 → "Player's Room" 씬 로드
-/// - 전체 진행 로그를 Debug.Log로 출력
-/// </summary>
 [DisallowMultipleComponent]
 public class PresidentIntroSequence : MonoBehaviour
 {
-    [Header("다이얼로그 시스템")]
-    [SerializeField] private BalloonAutoTyper_LocalizedFX bubble;   // 말풍선 타자기
-    [SerializeField] private WorldBubbleAnchor anchor;              // 월드 → UI 앵커
-    [SerializeField] private string tableName = "Dialogue_Main";    // String Table 이름
+    [Header("Dialogue System")]
+    [SerializeField] private BalloonAutoTyper_LocalizedFX balloon;
+    [SerializeField] private WorldBubbleAnchor anchor;
+    [SerializeField] private string tableName = "Dialogue_Main";
 
-    [Header("화자 머리 위치")]
-    [SerializeField] private Transform playerHead;      // 플레이어 머리 위치
-    [SerializeField] private Transform presidentHead;   // 대표 머리 위치
+    [Header("Dialogue Keys (in order)")]
+    [SerializeField]
+    private string[] dialogueKeys =
+    {
+        "Dialogue_001_President",
+        "Dialogue_002_Player",
+        "Dialogue_003_President",
+        "Dialogue_004_Player",
+        "Dialogue_005_President",
+        "Dialogue_006_President",
+        "Dialogue_007_President",
+        "Dialogue_008_Player",
+        "Dialogue_009_President",
+        "Dialogue_010_President",
+        "Dialogue_011_President",
+        "Dialogue_012_Player",
+        "Dialogue_013_President",
+        "Dialogue_014_President",
+        "Dialogue_015_President",
+        "Dialogue_016_Player"
+    };
 
-    [Header("캐릭터 실제 Transform")]
+    [Header("Character Transforms")]
     [SerializeField] private Transform playerTransform;
     [SerializeField] private Transform presidentTransform;
 
-    [Header("루트 오브젝트 전환")]
-    [Tooltip("집 안 오브젝트 루트 (PlayerRoom)")]
-    [SerializeField] private GameObject playerRoomRoot;
-    [Tooltip("시작 화면(로비 등) 루트 (main)")]
+    [Header("Root Objects for mid transition")]
     [SerializeField] private GameObject mainRoot;
+    [SerializeField] private GameObject playerRoomRoot;
 
-    [Header("페이드 연출")]
-    [Tooltip("검은 페이드용 CanvasGroup (알파 변경)")]
+    [Header("Positions after Dialogue_013")]
+    [SerializeField] private Vector3 playerPosAfter013 = new Vector3(22f, 0f, 0f);
+    [SerializeField] private Vector3 presidentPosAfter013 = new Vector3(24f, 0f, 0f);
+
+    [Header("President vanish effect")]
+    [SerializeField] private float vanishDuration = 0.4f;
+    [SerializeField] private float vanishMoveUp = 0.5f;
+
+    [Header("Player shake effect")]
+    [SerializeField] private float shakeDuration = 0.8f;
+    [SerializeField] private float shakeAmount = 0.15f;
+
+    [Header("Fade settings")]
     [SerializeField] private CanvasGroup fadeCanvasGroup;
-    [SerializeField] private float fadeDuration = 0.8f;
+    [SerializeField] private float fadeDuration = 0.5f;
 
-    [Header("플레이어 흔들기 연출")]
-    [SerializeField] private float wobbleDuration = 1.0f;
-    [SerializeField] private float wobbleAmplitude = 0.1f;
-    [SerializeField] private float wobbleFrequency = 8.0f;
+    [Header("Input settings")]
+    [SerializeField] private KeyCode advanceKey = KeyCode.Space;
+    [SerializeField] private int advanceMouseButton = 0;
 
-    [Header("마지막에 로드할 씬 이름")]
-    [SerializeField] private string playerRoomSceneName = "Player's Room";
+    [Header("Next scene name")]
+    [SerializeField] private string nextSceneName = "Player's Room";
 
-    private bool _isRunning;
+    private bool sequenceRunning;
+    private bool sceneLoading;
 
     private void Reset()
     {
-        if (bubble == null) bubble = GetComponentInChildren<BalloonAutoTyper_LocalizedFX>(true);
-        if (anchor == null) anchor = GetComponentInChildren<WorldBubbleAnchor>(true);
+        balloon = GetComponentInChildren<BalloonAutoTyper_LocalizedFX>(true);
+        anchor = GetComponentInChildren<WorldBubbleAnchor>(true);
     }
 
     private void Awake()
     {
-        Debug.Log("[PresidentIntroSequence] Awake 호출");
+        // Auto create fade overlay if not assigned
+        if (fadeCanvasGroup == null)
+        {
+            CreateAutoFadeOverlay();
+        }
 
         if (fadeCanvasGroup != null)
         {
             fadeCanvasGroup.alpha = 0f;
+            fadeCanvasGroup.gameObject.SetActive(true);
         }
     }
 
     private void Start()
     {
-        Debug.Log("[PresidentIntroSequence] Start 호출, 컷신 코루틴 시작 시도");
+        if (balloon == null || anchor == null)
+        {
+            Debug.LogError("[PresidentIntroSequence] balloon or anchor is missing.");
+            enabled = false;
+            return;
+        }
+
+        if (dialogueKeys == null || dialogueKeys.Length == 0)
+        {
+            Debug.LogError("[PresidentIntroSequence] dialogueKeys is empty.");
+            enabled = false;
+            return;
+        }
+
+        if (playerTransform == null || presidentTransform == null)
+        {
+            Debug.LogError("[PresidentIntroSequence] playerTransform or presidentTransform is missing.");
+            enabled = false;
+            return;
+        }
+
+        Debug.Log("[PresidentIntroSequence] Sequence start.");
         StartCoroutine(RunSequence());
     }
 
     private IEnumerator RunSequence()
     {
-        if (_isRunning)
+        sequenceRunning = true;
+
+        for (int i = 0; i < dialogueKeys.Length; i++)
         {
-            Debug.LogWarning("[PresidentIntroSequence] 이미 실행 중이어서 두 번 실행을 막았습니다.");
-            yield break;
-        }
-        _isRunning = true;
+            string key = dialogueKeys[i];
+            Debug.Log("[PresidentIntroSequence] Line start: " + key);
 
-        if (!CheckRefs())
-        {
-            Debug.LogError("[PresidentIntroSequence] 참조가 비어 있어서 컷신 실행을 중단합니다.");
-            yield break;
-        }
+            yield return StartCoroutine(ShowOneLine(key, isFirstLine: i == 0));
 
-        Debug.Log("[PresidentIntroSequence] 컷신 시작");
+            Debug.Log("[PresidentIntroSequence] Line end: " + key);
 
-        // 001~012까지 순서대로 출력
-        yield return ShowLine("Dialogue_001_President", presidentHead, true);
-        yield return ShowLine("Dialogue_002_Player", playerHead);
-        yield return ShowLine("Dialogue_003_President", presidentHead);
-        yield return ShowLine("Dialogue_004_Player", playerHead);
-        yield return ShowLine("Dialogue_005_President", presidentHead);
-        yield return ShowLine("Dialogue_006_President", presidentHead);
-        yield return ShowLine("Dialogue_007_President", presidentHead);
-        yield return ShowLine("Dialogue_008_Player", playerHead);
-        yield return ShowLine("Dialogue_009_President", presidentHead);
-        yield return ShowLine("Dialogue_010_President", presidentHead);
-        yield return ShowLine("Dialogue_011_President", presidentHead);
-        yield return ShowLine("Dialogue_012_Player", playerHead);
+            // After Dialogue_013 (index 12)
+            if (i == 12)
+            {
+                Debug.Log("[PresidentIntroSequence] Post-013 transition start.");
+                yield return StartCoroutine(HandleMidTransition());
+                Debug.Log("[PresidentIntroSequence] Post-013 transition end.");
+            }
 
-        // 013: 대사 후 연출(페이드 아웃 → PlayerRoom 전환 → 이동 → 페이드 인 → 흔들기)
-        yield return ShowLine("Dialogue_013_President", presidentHead);
-        Debug.Log("[PresidentIntroSequence] Dialogue_013_President 이후 연출 시작");
+            // After Dialogue_015 (index 14): president vanish
+            if (i == 14)
+            {
+                Debug.Log("[PresidentIntroSequence] President vanish start.");
+                yield return StartCoroutine(VanishPresident());
+                Debug.Log("[PresidentIntroSequence] President vanish end.");
+            }
 
-        // 페이드 아웃
-        yield return Fade(1f, fadeDuration, "[PresidentIntroSequence] 페이드 아웃 완료");
-
-        // PlayerRoom 활성화, main 비활성화
-        Debug.Log("[PresidentIntroSequence] PlayerRoom / main 루트 전환 시도");
-        if (playerRoomRoot != null)
-        {
-            playerRoomRoot.SetActive(true);
-            Debug.Log("[PresidentIntroSequence] PlayerRoom Root 활성화");
-        }
-        else
-        {
-            Debug.LogWarning("[PresidentIntroSequence] playerRoomRoot가 비어 있습니다.");
+            // After Dialogue_016 (index 15): fade out and load scene
+            if (i == 15)
+            {
+                Debug.Log("[PresidentIntroSequence] Final fade and scene load start.");
+                yield return StartCoroutine(FadeOutAndLoadScene());
+                Debug.Log("[PresidentIntroSequence] Final fade and scene load end.");
+            }
         }
 
-        if (mainRoot != null)
-        {
-            mainRoot.SetActive(false);
-            Debug.Log("[PresidentIntroSequence] main Root 비활성화");
-        }
-        else
-        {
-            Debug.LogWarning("[PresidentIntroSequence] mainRoot가 비어 있습니다.");
-        }
-
-        // 좌표 이동
-        if (playerTransform != null)
-        {
-            playerTransform.position = new Vector3(22f, 0f, 0f);
-            Debug.Log($"[PresidentIntroSequence] 플레이어 위치 이동: {playerTransform.position}");
-        }
-        else
-        {
-            Debug.LogWarning("[PresidentIntroSequence] playerTransform이 비어 있어 위치를 이동하지 못했습니다.");
-        }
-
-        if (presidentTransform != null)
-        {
-            presidentTransform.position = new Vector3(24f, 0f, 0f);
-            Debug.Log($"[PresidentIntroSequence] 대표 위치 이동: {presidentTransform.position}");
-        }
-        else
-        {
-            Debug.LogWarning("[PresidentIntroSequence] presidentTransform이 비어 있어 위치를 이동하지 못했습니다.");
-        }
-
-        // 페이드 인
-        yield return Fade(0f, fadeDuration, "[PresidentIntroSequence] 페이드 인 완료");
-
-        // 플레이어 흔들기
-        if (playerTransform != null)
-        {
-            Debug.Log("[PresidentIntroSequence] 플레이어 흔들기 연출 시작");
-            yield return StartCoroutine(WobblePlayer());
-            Debug.Log("[PresidentIntroSequence] 플레이어 흔들기 연출 종료");
-        }
-
-        // 014, 015, 016 이어서 출력
-        yield return ShowLine("Dialogue_014_President", presidentHead);
-        yield return ShowLine("Dialogue_015_President", presidentHead);
-
-        // 015 이후 대표 슈숙: 대표 비활성화
-        if (presidentTransform != null)
-        {
-            GameObject go = presidentTransform.gameObject;
-            Debug.Log("[PresidentIntroSequence] Dialogue_015_President 이후 대표 오브젝트 비활성화");
-            go.SetActive(false);
-        }
-
-        yield return ShowLine("Dialogue_016_Player", playerHead);
-
-        // 마지막: 페이드 아웃 → Scene 로드
-        Debug.Log("[PresidentIntroSequence] Dialogue_016_Player 이후 최종 페이드 아웃 시작");
-        yield return Fade(1f, fadeDuration, "[PresidentIntroSequence] 최종 페이드 아웃 완료");
-
-        Debug.Log($"[PresidentIntroSequence] Scene 로드 시도: '{playerRoomSceneName}'");
-
-        try
-        {
-            SceneManager.LoadScene(playerRoomSceneName);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"[PresidentIntroSequence] SceneManager.LoadScene 예외 발생: '{playerRoomSceneName}'\n{e}");
-        }
-
-        Debug.Log("[PresidentIntroSequence] 컷신 종료");
-        _isRunning = false;
+        sequenceRunning = false;
     }
 
-    /// <summary>
-    /// 한 줄 대사를 표시한 뒤, 출력 완료 및 플레이어 입력(스페이스, 좌클릭)까지 기다림
-    /// </summary>
-    private IEnumerator ShowLine(string key, Transform speakerHead, bool withEnterFX = false)
+    private IEnumerator ShowOneLine(string key, bool isFirstLine)
     {
-        Debug.Log($"[PresidentIntroSequence] ShowLine 시작: key='{key}', speaker='{speakerHead?.name ?? "null"}'");
-
-        if (anchor == null || bubble == null)
+        string speakerId = ExtractSpeakerId(key);
+        if (!string.IsNullOrEmpty(speakerId))
         {
-            Debug.LogError("[PresidentIntroSequence] anchor 또는 bubble이 비어 있습니다. ShowLine을 실행할 수 없습니다.");
-            yield break;
-        }
-
-        if (speakerHead != null)
-        {
-            anchor.SetTarget(speakerHead, true);
+            anchor.SetSpeakerId(speakerId, true);
+            Debug.Log("[PresidentIntroSequence] Speaker: " + speakerId + " (key: " + key + ")");
         }
         else
         {
-            Debug.LogWarning($"[PresidentIntroSequence] speakerHead가 null입니다. key='{key}'");
+            Debug.LogWarning("[PresidentIntroSequence] Could not extract speaker from key: " + key);
         }
 
-        bubble.ShowLocalized(tableName, key, withEnterFX);
+        bool withEnterFx = isFirstLine;
+        balloon.ShowLocalized(tableName, key, withEnterFx);
 
-        // 타자기 완료까지 대기 (스페이스/클릭으로 스킵 가능)
-        while (bubble.IsTypingNow)
+        // While typing: click/space only completes instantly
+        while (balloon.IsTypingNow)
         {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            if (IsAdvanceDown())
             {
-                Debug.Log($"[PresidentIntroSequence] 타이핑 중 스킵 요청: key='{key}'");
-                bubble.CompleteInstant();
+                Debug.Log("[PresidentIntroSequence] Input while typing, complete instantly.");
+                balloon.CompleteInstant();
             }
             yield return null;
         }
 
-        // 출력 완료 후, 플레이어가 스페이스/클릭 한 번 더 눌러야 다음으로 진행
-        Debug.Log($"[PresidentIntroSequence] 타이핑 완료, 입력 대기 상태 진입: key='{key}'");
-
-        bool confirmed = false;
-        while (!confirmed)
+        // Wait until all input is released
+        while (IsAdvanceHeld())
         {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            yield return null;
+        }
+
+        // Then wait for new press to advance
+        bool waited = false;
+        while (!waited)
+        {
+            if (IsAdvanceDown())
             {
-                confirmed = true;
-                Debug.Log($"[PresidentIntroSequence] 입력 확인, 다음 줄로 진행: key='{key}'");
+                waited = true;
             }
             yield return null;
         }
     }
 
-    /// <summary>
-    /// CanvasGroup 알파를 targetAlpha로 페이드 (0 = 밝음, 1 = 완전 암흑)
-    /// </summary>
-    private IEnumerator Fade(float targetAlpha, float duration, string logOnComplete = null)
+    // 013 이후: 페이드 아웃 → PlayerRoom 전환 → 좌표 이동 → 앵커 리스냅 → 페이드 인 → 흔들기
+    private IEnumerator HandleMidTransition()
+    {
+        Debug.Log("[PresidentIntroSequence] HandleMidTransition start");
+
+        // 1) 화면을 완전히 어둡게
+        yield return StartCoroutine(FadeTo(1f));
+
+        // 2) 방 오브젝트 전환 (검은 화면 상태에서)
+        if (mainRoot != null)
+            mainRoot.SetActive(false);
+        if (playerRoomRoot != null)
+            playerRoomRoot.SetActive(true);
+
+        // 3) 캐릭터 위치 이동
+        if (playerTransform != null)
+            playerTransform.position = playerPosAfter013;
+        if (presidentTransform != null)
+            presidentTransform.position = presidentPosAfter013;
+
+        // 4) 말풍선 앵커를 새 카메라/위치 기준으로 강제 재계산
+        if (anchor != null)
+        {
+            Debug.Log("[PresidentIntroSequence] Rebind WorldBubbleAnchor in PlayerRoom");
+
+            // 새 메인 카메라로 교체 (ScreenSpaceCamera인 경우 worldCamera도 세팅)
+            anchor.SetWorldCamera(Camera.main, snap: false);
+
+            // 혹시 몰라서 화자도 다시 President로 설정
+            anchor.SetSpeakerId("President", snapNow: false);
+
+            // 캔버스/카메라 레이아웃이 한 프레임 갱신된 뒤에 스냅
+            yield return new WaitForEndOfFrame();
+            anchor.SnapNow();
+
+            Debug.Log("[PresidentIntroSequence] Anchor snapped after room switch");
+        }
+
+        // 5) 이제 밝아지기
+        yield return StartCoroutine(FadeTo(0f));
+
+        // 6) 플레이어 흔들리는 연출
+        yield return StartCoroutine(ShakePlayer());
+    }
+
+    private IEnumerator VanishPresident()
+    {
+        if (presidentTransform == null)
+            yield break;
+
+        SpriteRenderer sr = presidentTransform.GetComponentInChildren<SpriteRenderer>();
+        Color baseColor = sr != null ? sr.color : Color.white;
+
+        Vector3 startPos = presidentTransform.position;
+        Vector3 endPos = startPos + new Vector3(0f, vanishMoveUp, 0f);
+
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime / Mathf.Max(0.0001f, vanishDuration);
+            float s = t * t;
+            Vector3 pos = Vector3.Lerp(startPos, endPos, s);
+            presidentTransform.position = pos;
+
+            if (sr != null)
+            {
+                float a = Mathf.Lerp(baseColor.a, 0f, s);
+                sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, a);
+            }
+
+            yield return null;
+        }
+
+        if (sr != null)
+        {
+            sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0f);
+        }
+
+        presidentTransform.gameObject.SetActive(false);
+    }
+
+    private IEnumerator ShakePlayer()
+    {
+        if (playerTransform == null)
+            yield break;
+
+        Vector3 origin = playerTransform.position;
+        float timer = 0f;
+
+        while (timer < shakeDuration)
+        {
+            timer += Time.deltaTime;
+            float progress = timer / Mathf.Max(0.0001f, shakeDuration);
+
+            float offsetX = Mathf.Sin(progress * Mathf.PI * 8f) * shakeAmount;
+            float offsetY = Mathf.Sin(progress * Mathf.PI * 6f) * shakeAmount * 0.5f;
+            playerTransform.position = origin + new Vector3(offsetX, offsetY, 0f);
+
+            yield return null;
+        }
+
+        playerTransform.position = origin;
+    }
+
+    private IEnumerator FadeOutAndLoadScene()
+    {
+        if (sceneLoading)
+            yield break;
+
+        sceneLoading = true;
+
+        yield return StartCoroutine(FadeTo(1f, fadeDuration));
+
+        Debug.Log("[PresidentIntroSequence] SceneManager.LoadScene: " + nextSceneName);
+        SceneManager.LoadScene(nextSceneName);
+    }
+
+    // durationOverride <= 0 이면 fadeDuration을 사용
+    private IEnumerator FadeTo(float targetAlpha, float durationOverride = -1f)
     {
         if (fadeCanvasGroup == null)
         {
-            Debug.LogWarning("[PresidentIntroSequence] fadeCanvasGroup이 비어 있어 페이드 없이 바로 전환합니다.");
+            Debug.LogWarning("[PresidentIntroSequence] fadeCanvasGroup is null. Skipping fade. targetAlpha=" + targetAlpha);
             yield break;
         }
+
+        float duration = (durationOverride > 0f) ? durationOverride : fadeDuration;
+
+        fadeCanvasGroup.gameObject.SetActive(true);
 
         float startAlpha = fadeCanvasGroup.alpha;
         float time = 0f;
 
-        Debug.Log($"[PresidentIntroSequence] Fade 시작: {startAlpha} → {targetAlpha}, duration={duration}");
-
         while (time < duration)
         {
             time += Time.deltaTime;
-            float t = Mathf.Clamp01(time / duration);
-            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
+            float t = Mathf.Clamp01(time / Mathf.Max(0.0001f, duration));
+            float a = Mathf.Lerp(startAlpha, targetAlpha, t);
+            fadeCanvasGroup.alpha = a;
             yield return null;
         }
 
         fadeCanvasGroup.alpha = targetAlpha;
-
-        if (!string.IsNullOrEmpty(logOnComplete))
-        {
-            Debug.Log(logOnComplete);
-        }
     }
 
-    /// <summary>
-    /// 플레이어 Transform을 위아래로 살짝 흔드는 연출
-    /// </summary>
-    private IEnumerator WobblePlayer()
+    private bool IsAdvanceDown()
     {
-        if (playerTransform == null)
-            yield break;
-
-        Vector3 basePos = playerTransform.position;
-        float elapsed = 0f;
-
-        while (elapsed < wobbleDuration)
-        {
-            elapsed += Time.deltaTime;
-            float t = elapsed * wobbleFrequency * Mathf.PI * 2f;
-            float offsetY = Mathf.Sin(t) * wobbleAmplitude;
-            playerTransform.position = new Vector3(basePos.x, basePos.y + offsetY, basePos.z);
-            yield return null;
-        }
-
-        playerTransform.position = basePos;
+        if (Input.GetKeyDown(advanceKey))
+            return true;
+        if (Input.GetMouseButtonDown(advanceMouseButton))
+            return true;
+        return false;
     }
 
-    /// <summary>
-    /// 필수 참조 확인용
-    /// </summary>
-    private bool CheckRefs()
+    private bool IsAdvanceHeld()
     {
-        bool ok = true;
+        if (Input.GetKey(advanceKey))
+            return true;
+        if (Input.GetMouseButton(advanceMouseButton))
+            return true;
+        return false;
+    }
 
-        if (bubble == null)
+    private static string ExtractSpeakerId(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+            return null;
+
+        int idx = key.LastIndexOf('_');
+        if (idx < 0 || idx >= key.Length - 1)
+            return null;
+
+        return key.Substring(idx + 1).Trim();
+    }
+
+    private void CreateAutoFadeOverlay()
+    {
+        Canvas parentCanvas = GetComponentInParent<Canvas>();
+        if (parentCanvas == null)
         {
-            Debug.LogError("[PresidentIntroSequence] bubble이 비어 있습니다.");
-            ok = false;
-        }
-        if (anchor == null)
-        {
-            Debug.LogError("[PresidentIntroSequence] anchor가 비어 있습니다.");
-            ok = false;
-        }
-        if (playerHead == null)
-        {
-            Debug.LogWarning("[PresidentIntroSequence] playerHead가 비어 있습니다. 플레이어 말풍선 위치를 못 찾을 수 있습니다.");
-        }
-        if (presidentHead == null)
-        {
-            Debug.LogWarning("[PresidentIntroSequence] presidentHead가 비어 있습니다. 대표 말풍선 위치를 못 찾을 수 있습니다.");
-        }
-        if (playerTransform == null)
-        {
-            Debug.LogWarning("[PresidentIntroSequence] playerTransform이 비어 있습니다. 위치 이동/흔들기 불가.");
-        }
-        if (presidentTransform == null)
-        {
-            Debug.LogWarning("[PresidentIntroSequence] presidentTransform이 비어 있습니다. 위치 이동 및 슈숙 연출 불가.");
-        }
-        if (fadeCanvasGroup == null)
-        {
-            Debug.LogWarning("[PresidentIntroSequence] fadeCanvasGroup이 비어 있습니다. 페이드 연출 없이 진행됩니다.");
-        }
-        if (string.IsNullOrEmpty(playerRoomSceneName))
-        {
-            Debug.LogWarning("[PresidentIntroSequence] playerRoomSceneName이 비어 있습니다. 마지막 씬 로드에서 문제가 생길 수 있습니다.");
+            Debug.LogWarning("[PresidentIntroSequence] No parent Canvas found. Cannot auto-create fade overlay.");
+            return;
         }
 
-        return ok;
+        RectTransform canvasRect = parentCanvas.transform as RectTransform;
+        if (canvasRect == null)
+        {
+            Debug.LogWarning("[PresidentIntroSequence] Parent Canvas has no RectTransform. Cannot auto-create fade overlay.");
+            return;
+        }
+
+        GameObject fadeObj = new GameObject("AutoFadeOverlay");
+        fadeObj.layer = parentCanvas.gameObject.layer;
+        fadeObj.transform.SetParent(parentCanvas.transform, false);
+
+        RectTransform rt = fadeObj.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.localScale = Vector3.one;
+        rt.anchoredPosition = Vector2.zero;
+
+        Image img = fadeObj.AddComponent<Image>();
+        img.color = Color.black;
+        img.raycastTarget = false;
+
+        fadeCanvasGroup = fadeObj.AddComponent<CanvasGroup>();
+        fadeCanvasGroup.alpha = 0f;
+
+        // Ensure fade overlay is on top
+        fadeObj.transform.SetAsLastSibling();
+
+        Debug.Log("[PresidentIntroSequence] Auto-created fade overlay under Canvas '" + parentCanvas.name + "'.");
     }
 }
