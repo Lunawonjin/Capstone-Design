@@ -64,6 +64,10 @@ public class PresidentIntroSequence : MonoBehaviour
     [Header("Next scene name")]
     [SerializeField] private string nextSceneName = "Player's Room";
 
+    [Header("Balloon Root (optional)")]
+    [Tooltip("말풍선 전체를 끄고 켤 루트 오브젝트. 비우면 balloon.gameObject 사용.")]
+    [SerializeField] private GameObject balloonRoot;
+
     private bool sequenceRunning;
     private bool sceneLoading;
 
@@ -75,7 +79,6 @@ public class PresidentIntroSequence : MonoBehaviour
 
     private void Awake()
     {
-        // Auto create fade overlay if not assigned
         if (fadeCanvasGroup == null)
         {
             CreateAutoFadeOverlay();
@@ -85,6 +88,11 @@ public class PresidentIntroSequence : MonoBehaviour
         {
             fadeCanvasGroup.alpha = 0f;
             fadeCanvasGroup.gameObject.SetActive(true);
+        }
+
+        if (balloonRoot == null && balloon != null)
+        {
+            balloonRoot = balloon.gameObject;
         }
     }
 
@@ -124,11 +132,12 @@ public class PresidentIntroSequence : MonoBehaviour
             string key = dialogueKeys[i];
             Debug.Log("[PresidentIntroSequence] Line start: " + key);
 
+            // 일반 대사 출력
             yield return StartCoroutine(ShowOneLine(key, isFirstLine: i == 0));
 
             Debug.Log("[PresidentIntroSequence] Line end: " + key);
 
-            // After Dialogue_013 (index 12)
+            // Dialogue_013 이후: 이동 연출
             if (i == 12)
             {
                 Debug.Log("[PresidentIntroSequence] Post-013 transition start.");
@@ -136,7 +145,7 @@ public class PresidentIntroSequence : MonoBehaviour
                 Debug.Log("[PresidentIntroSequence] Post-013 transition end.");
             }
 
-            // After Dialogue_015 (index 14): president vanish
+            // Dialogue_015 이후: 대표 사라짐
             if (i == 14)
             {
                 Debug.Log("[PresidentIntroSequence] President vanish start.");
@@ -144,7 +153,7 @@ public class PresidentIntroSequence : MonoBehaviour
                 Debug.Log("[PresidentIntroSequence] President vanish end.");
             }
 
-            // After Dialogue_016 (index 15): fade out and load scene
+            // Dialogue_016 이후: 페이드 아웃 후 새 씬
             if (i == 15)
             {
                 Debug.Log("[PresidentIntroSequence] Final fade and scene load start.");
@@ -156,6 +165,14 @@ public class PresidentIntroSequence : MonoBehaviour
         sequenceRunning = false;
     }
 
+    /// <summary>
+    /// 한 줄 재생:
+    /// - 타이핑 중
+    ///   첫 클릭: 완전 출력
+    ///   두 번째 클릭부터: 다음 줄로 넘길 준비(readyToAdvance)
+    /// - 타이핑 끝남
+    ///   readyToAdvance가 이미 true이거나, 새 클릭이 들어오면 다음 줄로 진행
+    /// </summary>
     private IEnumerator ShowOneLine(string key, bool isFirstLine)
     {
         string speakerId = ExtractSpeakerId(key);
@@ -169,47 +186,72 @@ public class PresidentIntroSequence : MonoBehaviour
             Debug.LogWarning("[PresidentIntroSequence] Could not extract speaker from key: " + key);
         }
 
+        // 연출 구간이 아닐 때는 말풍선 켜져 있어야 함
+        SetBalloonVisible(true);
+
         bool withEnterFx = isFirstLine;
         balloon.ShowLocalized(tableName, key, withEnterFx);
 
-        // While typing: click/space only completes instantly
-        while (balloon.IsTypingNow)
+        bool skipRequested = false;
+        bool readyToAdvance = false;
+
+        while (true)
         {
-            if (IsAdvanceDown())
+            if (balloon.IsTypingNow)
             {
-                Debug.Log("[PresidentIntroSequence] Input while typing, complete instantly.");
-                balloon.CompleteInstant();
+                if (IsAdvanceDown())
+                {
+                    if (!skipRequested)
+                    {
+                        Debug.Log("[PresidentIntroSequence] Input while typing, complete instantly.");
+                        skipRequested = true;
+                        balloon.CompleteInstant();
+                    }
+                    else
+                    {
+                        Debug.Log("[PresidentIntroSequence] Second click while typing, will advance after typing.");
+                        readyToAdvance = true;
+                    }
+                }
             }
+            else
+            {
+                if (readyToAdvance)
+                {
+                    Debug.Log("[PresidentIntroSequence] Typing finished and advance was reserved. Moving to next line.");
+                    break;
+                }
+
+                if (IsAdvanceDown())
+                {
+                    Debug.Log("[PresidentIntroSequence] Click after line finished. Moving to next line.");
+                    break;
+                }
+            }
+
             yield return null;
         }
 
-        // Wait until all input is released
+        // 현재 클릭이 끝나기를 한 번 기다렸다가 다음 줄로 진행
         while (IsAdvanceHeld())
         {
             yield return null;
         }
-
-        // Then wait for new press to advance
-        bool waited = false;
-        while (!waited)
-        {
-            if (IsAdvanceDown())
-            {
-                waited = true;
-            }
-            yield return null;
-        }
     }
 
-    // 013 이후: 페이드 아웃 → PlayerRoom 전환 → 좌표 이동 → 앵커 리스냅 → 페이드 인 → 흔들기
+    // 013 이후: 페이드 아웃 → PlayerRoom 전환 → 좌표 이동 → 페이드 인 → 플레이어 흔들기
+    // 이 전체 연출 동안 말풍선 비활성화, 연출 끝난 뒤 다시 켜고 다음 대사 시작
     private IEnumerator HandleMidTransition()
     {
         Debug.Log("[PresidentIntroSequence] HandleMidTransition start");
 
+        // 말풍선 숨기기
+        SetBalloonVisible(false);
+
         // 1) 화면을 완전히 어둡게
         yield return StartCoroutine(FadeTo(1f));
 
-        // 2) 방 오브젝트 전환 (검은 화면 상태에서)
+        // 2) 방 전환
         if (mainRoot != null)
             mainRoot.SetActive(false);
         if (playerRoomRoot != null)
@@ -221,29 +263,28 @@ public class PresidentIntroSequence : MonoBehaviour
         if (presidentTransform != null)
             presidentTransform.position = presidentPosAfter013;
 
-        // 4) 말풍선 앵커를 새 카메라/위치 기준으로 강제 재계산
+        // 4) 앵커 카메라/위치 재연결
         if (anchor != null)
         {
             Debug.Log("[PresidentIntroSequence] Rebind WorldBubbleAnchor in PlayerRoom");
 
-            // 새 메인 카메라로 교체 (ScreenSpaceCamera인 경우 worldCamera도 세팅)
             anchor.SetWorldCamera(Camera.main, snap: false);
-
-            // 혹시 몰라서 화자도 다시 President로 설정
             anchor.SetSpeakerId("President", snapNow: false);
 
-            // 캔버스/카메라 레이아웃이 한 프레임 갱신된 뒤에 스냅
             yield return new WaitForEndOfFrame();
             anchor.SnapNow();
 
             Debug.Log("[PresidentIntroSequence] Anchor snapped after room switch");
         }
 
-        // 5) 이제 밝아지기
+        // 5) 다시 밝게
         yield return StartCoroutine(FadeTo(0f));
 
-        // 6) 플레이어 흔들리는 연출
+        // 6) 플레이어 흔들리는 연출 (이때도 말풍선은 숨김 상태 유지)
         yield return StartCoroutine(ShakePlayer());
+
+        // 7) 전체 연출이 끝난 뒤 다음 대사를 위해 말풍선 다시 켬
+        SetBalloonVisible(true);
     }
 
     private IEnumerator VanishPresident()
@@ -312,13 +353,16 @@ public class PresidentIntroSequence : MonoBehaviour
 
         sceneLoading = true;
 
+        // 마지막 연출에서도 말풍선 숨김
+        SetBalloonVisible(false);
+
         yield return StartCoroutine(FadeTo(1f, fadeDuration));
 
         Debug.Log("[PresidentIntroSequence] SceneManager.LoadScene: " + nextSceneName);
         SceneManager.LoadScene(nextSceneName);
     }
 
-    // durationOverride <= 0 이면 fadeDuration을 사용
+    // 실제 페이드만 담당. 말풍선 on/off는 바깥에서 처리.
     private IEnumerator FadeTo(float targetAlpha, float durationOverride = -1f)
     {
         if (fadeCanvasGroup == null)
@@ -376,6 +420,24 @@ public class PresidentIntroSequence : MonoBehaviour
         return key.Substring(idx + 1).Trim();
     }
 
+    private void SetBalloonVisible(bool visible)
+    {
+        if (balloonRoot == null && balloon != null)
+        {
+            balloonRoot = balloon.gameObject;
+        }
+
+        if (balloonRoot != null)
+        {
+            Debug.Log("[PresidentIntroSequence] SetBalloonVisible(" + visible + ") on " + balloonRoot.name);
+            balloonRoot.SetActive(visible);
+        }
+        else
+        {
+            Debug.LogWarning("[PresidentIntroSequence] balloonRoot is null. Cannot SetBalloonVisible.");
+        }
+    }
+
     private void CreateAutoFadeOverlay()
     {
         Canvas parentCanvas = GetComponentInParent<Canvas>();
@@ -412,7 +474,6 @@ public class PresidentIntroSequence : MonoBehaviour
         fadeCanvasGroup = fadeObj.AddComponent<CanvasGroup>();
         fadeCanvasGroup.alpha = 0f;
 
-        // Ensure fade overlay is on top
         fadeObj.transform.SetAsLastSibling();
 
         Debug.Log("[PresidentIntroSequence] Auto-created fade overlay under Canvas '" + parentCanvas.name + "'.");

@@ -303,7 +303,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_TargetDisplay: 0
 --- !u!224 &297920630
 RectTransform:
@@ -636,17 +636,18 @@ MonoBehaviour:
   presidentTransform: {fileID: 938316311}
   mainRoot: {fileID: 132198677}
   playerRoomRoot: {fileID: 954482753}
-  playerPosAfter013: {x: 22, y: 0, z: 0}
-  presidentPosAfter013: {x: 24, y: 0, z: 0}
+  playerPosAfter013: {x: 0, y: 0, z: 0}
+  presidentPosAfter013: {x: 2, y: 0, z: 0}
   vanishDuration: 0.4
   vanishMoveUp: 0.5
   shakeDuration: 0.8
   shakeAmount: 0.15
   fadeCanvasGroup: {fileID: 297920626}
-  fadeDuration: 0.5
+  fadeDuration: 1
   advanceKey: 32
   advanceMouseButton: 0
   nextSceneName: Player's Room
+  balloonRoot: {fileID: 1974245597}
 --- !u!1001 &1364836970
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1066,6 +1067,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1879951130}
   m_CullTransparentMesh: 1
+--- !u!1 &1974245597 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1183418260988556563, guid: 969816d0cb4b7034584447fd51b0b911, type: 3}
+  m_PrefabInstance: {fileID: 3654263413323312170}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1984392224 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
@@ -1100,7 +1106,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7944413478927274976, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 23
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7944413478927274976, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1362,10 +1368,10 @@ SceneRoots:
   m_Roots:
   - {fileID: 1364836970}
   - {fileID: 1440415677}
+  - {fileID: 297920630}
   - {fileID: 3654263413323312170}
   - {fileID: 132198679}
   - {fileID: 2967788675475997346}
   - {fileID: 1815672469}
   - {fileID: 1250932079}
   - {fileID: 1822847037}
-  - {fileID: 297920630}
