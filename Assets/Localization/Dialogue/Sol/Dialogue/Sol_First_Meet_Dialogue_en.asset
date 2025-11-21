@@ -18,11 +18,6 @@ MonoBehaviour:
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 5172039680
-    m_Localized: "Hi, Sol. This is {playerName}.\nFrom now on, she\u2019ll be looking
-      after you."
-    m_Metadata:
-      m_Items: []
   - m_Id: 238400507904
     m_Localized: "Oh, hello! I\u2019m Sol\u2026!"
     m_Metadata:
@@ -111,6 +106,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 20500135219200
     m_Localized: Why do you act so cheerful like this?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5172039680
+    m_Localized: "Hi, Sol. This is {playerName}.\nFrom now on, she\u2019ll be looking
+      after you."
     m_Metadata:
       m_Items: []
   references:

@@ -1,5 +1,12 @@
 // DialogueRunnerStringTables.cs
 // Common runner for localized string tables.
+// Updated: added "Re" choice flow.
+//  - Re choice S keys: Dialogue_Choice{n}_S{k}_Re_{l:000}
+//  - Re choice A keys: Dialogue_Choice{n}_A{k}_Re_{l:000}
+// Behavior:
+//  - If any Re S{k}_Re_001 exists for a choice n, that choice becomes Re-choice set.
+//  - Picking a Re option shows all its Re answers, then shows remaining Re options only.
+//  - After all Re options are exhausted, continues with normal Same lines and linear flow.
 
 using System;
 using System.Collections;
@@ -100,7 +107,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private string _currentFullText = "";
     private WaitForSeconds _wait;
 
-    private enum Mode { Linear, ChoiceSelect, AnswerRun, SameRun, Done }
+    private enum Mode { Linear, ChoiceSelect, AnswerRun, SameRun, ReChoiceSelect, ReAnswerRun, Done }
     private Mode _mode = Mode.Linear;
 
     private string _eventName;
@@ -124,6 +131,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     // NPC talk-table mode: eventName is key, table is "{Npc}'s_Talk_Dialogue"
     private bool _useNpcTalkTableMode = false;
+
+    // Re-choice runtime
+    private bool _inReChoice = false;
+    private readonly List<int> _reRemainingOptions = new();
+    private int _reChoiceN = -1;
 
     private void Awake()
     {
@@ -239,13 +251,17 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _inputUnlocked = false;
         _advanceCooldownLeft = 0f;
 
-        var initOp = LocalizationSettings.InitializationOperation;
-        if (!initOp.IsDone) yield return initOp;
-
         _speakerTable = null;
         _dialogueTable = null;
         _speakerAvailable = false;
         _useNpcTalkTableMode = false;
+
+        _inReChoice = false;
+        _reRemainingOptions.Clear();
+        _reChoiceN = -1;
+
+        var initOp = LocalizationSettings.InitializationOperation;
+        if (!initOp.IsDone) yield return initOp;
 
         // 1) Default: "{EventName}_Dialogue"
         string defaultTableName = $"{_eventName}_Dialogue";
@@ -280,7 +296,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         string npcId = ExtractNpcIdFromEventName(_eventName);
         if (!string.IsNullOrEmpty(npcId))
         {
-            // Try multiple possible collection names, in order
             string[] candidates =
             {
                 $"{npcId}'s_Talk_Dialogue",
@@ -314,9 +329,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
                     Debug.Log($"[DialogueRunnerStringTables] NPC talk-table mode: table='{usedName}', key='{_eventName}'.");
 
                 if (!HasBody(_eventName))
-                {
                     Debug.LogWarning($"[DialogueRunnerStringTables] Table '{usedName}' does not contain key '{_eventName}'. Text will show the key itself.");
-                }
 
                 OnDialogueBegin();
                 ShowKey(_eventName);
@@ -361,7 +374,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         {
             if (_useNpcTalkTableMode)
             {
-                // Single-line mode for NPC talk-table: one key → end
                 EndDialogue();
             }
             else
@@ -376,16 +388,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private static string KeyChoiceA(int n, int k, int l) => $"Dialogue_Choice{n}_A{k}_{l:000}";
     private static string KeyChoiceSame(int n, int l) => $"Dialogue_Choice{n}_Same_{l:000}";
 
+    private static string KeyChoiceSRe(int n, int k, int l) => $"Dialogue_Choice{n}_S{k}_Re_{l:000}";
+    private static string KeyChoiceARe(int n, int k, int l) => $"Dialogue_Choice{n}_A{k}_Re_{l:000}";
+
     private bool HasBody(string key)
     {
         if (_dialogueTable == null) return false;
         if (_dialogueTable.GetEntry(key) != null) return true;
-
-        // Loose search (trim and case-insensitive)
         return FindEntryLoose(key) != null;
     }
 
-    // Loose entry search for keys with trimming / case-insensitive match
     private StringTableEntry FindEntryLoose(string key)
     {
         if (_dialogueTable == null || string.IsNullOrEmpty(key)) return null;
@@ -417,7 +429,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
             if (e == null)
             {
-                // Log key list once to help debugging
                 string tableName = _dialogueTable.TableCollectionName;
                 List<string> keys = new List<string>();
                 foreach (var entry in _dialogueTable.Values)
@@ -467,7 +478,26 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 Next();
                 return;
 
+            case Mode.ReAnswerRun:
+                if (TryShowReAnswer(_choiceIndex, _answerPick)) return;
+
+                _answerLine = 1;
+
+                if (_reRemainingOptions.Count > 0)
+                {
+                    ShowReChoiceButtons(_choiceIndex, _reRemainingOptions);
+                    return;
+                }
+
+                _inReChoice = false;
+                _reChoiceN = -1;
+                _mode = Mode.SameRun;
+                _sameLine = 1;
+                Next();
+                return;
+
             case Mode.ChoiceSelect:
+            case Mode.ReChoiceSelect:
             case Mode.Done:
                 return;
         }
@@ -484,6 +514,18 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     private bool TryStartChoice(int n)
     {
+        // Re-choice detection first
+        var reOptions = new List<int>();
+        for (int k = 1; k <= 9; k++)
+            if (HasBody(KeyChoiceSRe(n, k, 1))) reOptions.Add(k);
+
+        if (reOptions.Count > 0)
+        {
+            StartReChoice(n, reOptions);
+            return true;
+        }
+
+        // Normal choices
         var options = new List<int>();
         for (int k = 1; k <= 9; k++)
             if (HasBody(KeyChoiceS(n, k, 1))) options.Add(k);
@@ -492,6 +534,16 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         ShowChoiceButtons(n, options);
         return true;
+    }
+
+    private void StartReChoice(int n, List<int> reOptions)
+    {
+        _inReChoice = true;
+        _reChoiceN = n;
+        _reRemainingOptions.Clear();
+        _reRemainingOptions.AddRange(reOptions);
+
+        ShowReChoiceButtons(n, _reRemainingOptions);
     }
 
     private void ShowChoiceButtons(int n, List<int> sList)
@@ -565,6 +617,99 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
 
         if (useCustomLayouts && TryApplyCustomLayout(sList.Count))
+        {
+        }
+        else
+        {
+            EnableDefaultLayout(true);
+        }
+
+        if (blockSpaceSubmitOnChoices)
+        {
+            if (EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(null);
+        }
+        else if (autoSelectFirstChoice && EventSystem.current != null && _activeButtons.Count > 0)
+        {
+            EventSystem.current.SetSelectedGameObject(_activeButtons[0].gameObject);
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_choiceRoot);
+    }
+
+    private void ShowReChoiceButtons(int n, List<int> reList)
+    {
+        _waitingChoice = true;
+        _mode = Mode.ReChoiceSelect;
+
+        SetSpeakerUI(false);
+
+        if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(false);
+        if (bodyText) bodyText.gameObject.SetActive(false);
+        if (nextIndicator) nextIndicator.SetActive(false);
+        if (promptText)
+        {
+            promptText.enableAutoSizing = false;
+            promptText.fontSize = promptFontSize;
+            promptText.text = "";
+            promptText.gameObject.SetActive(true);
+        }
+
+        EnsureChoiceRoot();
+        _choiceRoot.gameObject.SetActive(true);
+        ReleaseAllButtons();
+
+        foreach (var k in reList)
+        {
+            var btn = GetButton();
+            btn.transform.SetParent(_choiceRoot, false);
+            btn.interactable = true;
+
+            var label = btn.GetComponentInChildren<TMP_Text>(true);
+            string optKey = KeyChoiceSRe(n, k, 1);
+            string text = LBody(optKey);
+
+            if (label)
+            {
+                label.richText = true;
+                label.enableAutoSizing = false;
+                label.fontSize = choiceFontSize;
+                label.text = text;
+                label.raycastTarget = false;
+            }
+            else
+            {
+                var legacy = btn.GetComponentInChildren<Text>(true);
+                if (legacy) { legacy.text = text; legacy.raycastTarget = false; }
+            }
+
+            var le = btn.GetComponent<LayoutElement>() ?? btn.gameObject.AddComponent<LayoutElement>();
+            float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2f);
+            le.preferredHeight = h; le.minHeight = h;
+            if (choiceButtonMinWidth > 0f) le.minWidth = choiceButtonMinWidth;
+
+            int capturedK = k;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                SetButtonsInteractable(false);
+                _choiceRoot.gameObject.SetActive(false);
+                if (promptText) promptText.gameObject.SetActive(false);
+                if (toggleDuringChoiceTarget) toggleDuringChoiceTarget.SetActive(true);
+
+                _answerPick = capturedK;
+                _waitingChoice = false;
+                _mode = Mode.ReAnswerRun;
+
+                _reRemainingOptions.Remove(capturedK);
+
+                ShowReAnswerFirstLine(n, _answerPick);
+            });
+
+            _activeButtons.Add(btn);
+        }
+
+        if (useCustomLayouts && TryApplyCustomLayout(reList.Count))
         {
         }
         else
@@ -710,6 +855,40 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
+    private void ShowReAnswerFirstLine(int n, int k)
+    {
+        string k1 = KeyChoiceARe(n, k, 1);
+        if (!HasBody(k1))
+        {
+            if (_reRemainingOptions.Count > 0)
+            {
+                ShowReChoiceButtons(n, _reRemainingOptions);
+            }
+            else
+            {
+                _inReChoice = false;
+                _reChoiceN = -1;
+                _mode = Mode.SameRun;
+                _sameLine = 1;
+                Next();
+            }
+            return;
+        }
+
+        ShowKey(k1);
+        _answerLine = 2;
+    }
+
+    private bool TryShowReAnswer(int n, int k)
+    {
+        string key = KeyChoiceARe(n, k, _answerLine);
+        if (!HasBody(key)) { _answerLine = 1; return false; }
+
+        ShowKey(key);
+        _answerLine++;
+        return true;
+    }
+
     private bool TryShowSame(int n)
     {
         string key = KeyChoiceSame(n, _sameLine);
@@ -720,7 +899,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         return true;
     }
 
-    // ===== System/speaker visibility rules =====
     private static bool IsSystemSpeakerString(string sp)
     {
         if (string.IsNullOrWhiteSpace(sp)) return false;
@@ -732,7 +910,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     private bool ShouldShowSpeakerUI(string sp)
     {
-        if (_mode == Mode.ChoiceSelect) return false;
+        if (_mode == Mode.ChoiceSelect || _mode == Mode.ReChoiceSelect) return false;
         if (!_speakerAvailable) return false;
         if (string.IsNullOrWhiteSpace(sp)) return false;
         if (IsSystemSpeakerString(sp)) return false;
@@ -975,6 +1153,10 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _wasTypingWhenHidden = false;
         _lastKeyShown = "";
 
+        _inReChoice = false;
+        _reRemainingOptions.Clear();
+        _reChoiceN = -1;
+
         OnDialogueEnd();
 
         if (deactivateOnEnd) gameObject.SetActive(false);
@@ -1062,7 +1244,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (!_resumePending) return;
 
-        if (_mode == Mode.ChoiceSelect)
+        if (_mode == Mode.ChoiceSelect || _mode == Mode.ReChoiceSelect)
         {
             SetSpeakerUI(false);
 

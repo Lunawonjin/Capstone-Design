@@ -32,6 +32,7 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
+    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 793b04aae2fba574988cbbdc66fcd22b
     m_Address: Messenger_Content_ko

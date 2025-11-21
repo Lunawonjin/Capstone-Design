@@ -20,6 +20,7 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
+    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1185b50e4d0960f45b0a56aeeb59bea6
     m_Address: Prolog_Table_ja

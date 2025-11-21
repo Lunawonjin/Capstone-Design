@@ -44,6 +44,7 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
+    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 99ea8975099a8384c8dad8b42a1f7ce8
     m_Address: Boss_First_Calling_Dialogue_en

@@ -27,7 +27,10 @@ public class NpcEventDebugLoader : MonoBehaviour
         public string type = "";
         public string npcName = "";
         public float dx = 0f, dy = 0f;
-        public float duration = 1f;
+
+        // duration 미지정(-1)일 때 자동 speed 기반으로 계산되도록 변경
+        public float duration = -1f;
+
         public string message = "";
         public string owner = "";
         public string eventName = "";
@@ -129,9 +132,8 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private float specialObjectShowDuration = 0.5f;
     #endregion
 
-    // ★ 추가: StarestCenter 활성 엣지로 첫방문 이벤트 1회 트리거
     [Header("StarestCenter 연동(첫 방문 트리거)")]
-    [SerializeField] private GameObject starestCenterRoot;                 // StarestCenter 오브젝트 연결
+    [SerializeField] private GameObject starestCenterRoot;
     [SerializeField] private bool runFirstVisitWhenStarestCenterActivates = true;
     private bool _starestCenterPrevActive = false;
     private bool _firstVisitTriggeredByCenter = false;
@@ -204,7 +206,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private string _ctxOwner = "";
     private string _ctxEvent = "";
 
-    // 중복 실행 방지: Dialogue_003 특수 처리 1회만
     private bool _special003Processed = false;
     #endregion
 
@@ -227,7 +228,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (runOnStart_IfSceneAndFlag)
             StartCoroutine(TryRunFirstVisitsOnStart());
 
-        // ── StarestCenter 현재 상태 기록 + 이미 켜져 있으면 즉시 1회 실행
         if (runFirstVisitWhenStarestCenterActivates && starestCenterRoot)
         {
             _starestCenterPrevActive = starestCenterRoot.activeInHierarchy;
@@ -263,7 +263,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
 
-        // ── 추가: StarestCenter 활성 엣지 감지 → 첫방문 이벤트 1회 실행
         if (runFirstVisitWhenStarestCenterActivates && !_firstVisitTriggeredByCenter && starestCenterRoot)
         {
             if (string.Equals(SceneManager.GetActiveScene().name, "Starest", StringComparison.Ordinal))
@@ -332,13 +331,12 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
     }
 
-    // ★ 추가: 특정 씬 이름의 ‘첫 방문 이벤트’들을 1회 트리거
     private IEnumerator RunFirstVisitsForSceneOnce(string sceneName)
     {
         if (_firstVisitTriggeredByCenter) yield break;
         _firstVisitTriggeredByCenter = true;
 
-        yield return null; // 한 프레임 유예
+        yield return null;
 
         if (DataManager.instance == null || DataManager.instance.nowPlayer == null)
             yield break;
@@ -389,7 +387,7 @@ public class NpcEventDebugLoader : MonoBehaviour
                 Debug.LogWarning($"[NpcEventDebugLoader] (StarestCenter) 로드 실패: {item.ownerName}/{item.eventName}");
             }
 
-            break; // 한 건만 실행
+            break;
         }
     }
 
@@ -536,7 +534,9 @@ public class NpcEventDebugLoader : MonoBehaviour
                     else
                     {
                         _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
-                        float dur = (act.duration > 0f) ? act.duration : 1f;
+
+                        float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
+
                         yield return StartCoroutine(NpcMoveByWorld(targetNpc, new Vector2(act.dx, act.dy), dur, specForNpc));
                     }
                 }
@@ -576,7 +576,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
 
-        // 페이드 중 복구(블랙 상태에서)
         yield return StartCoroutine(FadeOutInAndReturn());
 
         ExitEventGuard();
@@ -1411,23 +1410,17 @@ public class NpcEventDebugLoader : MonoBehaviour
         _tempDeactivatedMapNpcs.Clear();
 
         DestroyEventSpawnedNpcs();
-
-        // 오너 복구는 페이드 내부에서 수행
     }
 
     private IEnumerator FadeOutInAndReturn()
     {
-        // 1) 어둡게 (완전 블랙)
         yield return FadeTo(1f, fadeOutDuration);
 
-        // 2) 블랙 상태에서 복구/위치 스냅
         ReactivateOwnersDeactivatedOnEnter();
         SnapPlayerWorld(_savedPlayerPosition, useRbIntent: false);
 
-        // 안정화 프레임
         yield return null;
 
-        // 3) 밝아지기
         yield return FadeTo(0f, fadeInDuration);
     }
 
@@ -1618,8 +1611,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         _ownersDeactivatedOnEnter.Clear();
     }
 
-    // ===== 특수 처리 유틸 =====
-
     private bool HasValidPlayerName()
     {
         if (DataManager.instance == null || DataManager.instance.nowPlayer == null) return false;
@@ -1651,7 +1642,7 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         return false;
     }
-    // HealingEventManager 등 외부에서 임의의 owner/event를 실행하고 싶을 때 사용.
+
     public bool RunEventByName_External(string ownerName, string eventName, Action onComplete = null)
     {
         if (string.IsNullOrWhiteSpace(ownerName) || string.IsNullOrWhiteSpace(eventName))
@@ -1734,7 +1725,6 @@ public class NpcEventDebugLoader : MonoBehaviour
 
             if (specialObjectShowDuration > 0f)
                 yield return new WaitForSeconds(specialObjectShowDuration);
-            // 필요하면 원복: specialObjectToActivate.SetActive(prev);
         }
         else
         {
@@ -1748,7 +1738,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
         else
         {
-            // 이름 입력 흐름이 있다면 여기서 처리
         }
     }
     #endregion
