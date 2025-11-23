@@ -24,6 +24,7 @@
 // 8) Reset_BT 지원
 //    - Reset_BT 클릭 시 모든 퍼즐 조각이 "처음 랜덤 생성된 위치/회전"으로 되돌아감
 //    - 잠금/진행도/선택 상태도 전부 초기화
+//    - 단, 퍼즐이 완성된 상태에서는 Reset_BT이 비활성화되어 동작하지 않음
 // 9) 모든 조각이 고정되면 Debug.Log로 완료 메시지 출력 + onPuzzleCompleted 호출
 //
 // 주의:
@@ -170,12 +171,12 @@ public class PuzzleManager : MonoBehaviour
     private readonly List<PuzzlePieceDrag> spawnedPieceDrags = new List<PuzzlePieceDrag>();
     private readonly List<Rect> placedRectsLocal = new List<Rect>();
 
-    // 초기 랜덤 생성 상태 저장(Reset 용)
     private Vector2[] initialPositions;
     private float[] initialAngles;
 
     private PuzzlePieceDrag currentSelected;
     private bool completionLogged;
+    private bool puzzleCompleted;
 
     public int PieceCount => pieceCount;
     public IReadOnlyList<Sprite> PieceSprites => pieceSprites;
@@ -191,11 +192,14 @@ public class PuzzleManager : MonoBehaviour
         placedFlags = new bool[pieceCount];
         placedCount = 0;
         completionLogged = false;
+        puzzleCompleted = false;
 
         ResizeSpriteListToMatchCount();
 
         initialPositions = new Vector2[pieceCount];
         initialAngles = new float[pieceCount];
+
+        SetResetButtonInteractable(true);
     }
 
     private void Start()
@@ -227,7 +231,24 @@ public class PuzzleManager : MonoBehaviour
         HandleClickOutsideToDeselect();
     }
 
-    // 퍼즐이 아닌 곳 클릭 시(버튼 제외) 선택 해제
+    private void SetResetButtonInteractable(bool on)
+    {
+        if (resetButton != null)
+            resetButton.interactable = on;
+    }
+
+    private void MarkPuzzleCompleted()
+    {
+        puzzleCompleted = true;
+        SetResetButtonInteractable(false);
+    }
+
+    private void ClearPuzzleCompleted()
+    {
+        puzzleCompleted = false;
+        SetResetButtonInteractable(true);
+    }
+
     private void HandleClickOutsideToDeselect()
     {
         if (!Input.GetMouseButtonDown(0)) return;
@@ -322,10 +343,10 @@ public class PuzzleManager : MonoBehaviour
 
     private void OnResetClicked()
     {
+        if (puzzleCompleted) return; // 완성 상태면 리셋 금지
         ResetPiecesToInitial();
     }
 
-    // Reset_BT 동작: 처음 랜덤 생성 상태로 되돌림
     public void ResetPiecesToInitial()
     {
         if (spawnedPieceDrags.Count == 0) return;
@@ -335,6 +356,7 @@ public class PuzzleManager : MonoBehaviour
         placedFlags = new bool[pieceCount];
         placedCount = 0;
         completionLogged = false;
+        ClearPuzzleCompleted();
 
         for (int i = 0; i < spawnedPieceDrags.Count; i++)
         {
@@ -417,7 +439,6 @@ public class PuzzleManager : MonoBehaviour
         return pieceSprites[index];
     }
 
-    // Selection API
     public void SelectPiece(PuzzlePieceDrag piece)
     {
         if (piece == null) return;
@@ -443,7 +464,6 @@ public class PuzzleManager : MonoBehaviour
         RefreshRotateButtonsInteractable();
     }
 
-    // UI 퍼즐 조각 생성/배치
     public void GeneratePiecesUI()
     {
         if (containerImage == null)
@@ -456,6 +476,11 @@ public class PuzzleManager : MonoBehaviour
 
         ClearSpawnedPiecesUI();
         DeselectCurrent();
+
+        placedFlags = new bool[pieceCount];
+        placedCount = 0;
+        completionLogged = false;
+        ClearPuzzleCompleted();
 
         initialPositions = new Vector2[pieceCount];
         initialAngles = new float[pieceCount];
@@ -676,7 +701,6 @@ public class PuzzleManager : MonoBehaviour
         return img;
     }
 
-    // 회전을 고려한 실제 점유 크기 계산(겹침/클램프 용)
     public static Vector2 GetEffectiveScaledSizeConsideringRotation(RectTransform rt)
     {
         float w = rt.rect.width * rt.localScale.x;
@@ -743,9 +767,9 @@ public class PuzzleManager : MonoBehaviour
         placedFlags = new bool[pieceCount];
         placedCount = 0;
         completionLogged = false;
+        ClearPuzzleCompleted();
     }
 
-    // 스냅/고정 로직(난이도 조건 추가)
     public bool TrySnapAndLock(PuzzlePieceDrag piece)
     {
         if (piece == null) return false;
@@ -765,22 +789,18 @@ public class PuzzleManager : MonoBehaviour
         RectTransform containerRT = ContainerRT;
         if (containerRT == null) return false;
 
-        // 1) Z 회전 0 조건
         if (!IsRotationZero(pieceRT.localEulerAngles.z, snapRotationTolerance))
             return false;
 
-        // 2) 슬롯과 겹침 조건
         if (!IsPieceOverlappingTarget(pieceRT, target, out Bounds pieceBounds))
             return false;
 
-        // 3) (옵션) 조각 중심이 슬롯 안에 있어야 함
         Vector3 targetCenterWorld = target.bounds.center + (Vector3)snapWorldOffset;
         Vector3 pieceCenterWorld = pieceBounds.center;
 
         if (requirePieceCenterInsideTarget && !target.bounds.Contains(pieceCenterWorld))
             return false;
 
-        // 4) 조각 중심이 슬롯 중심에 충분히 가까워야 함(로컬 거리)
         Vector2 targetCenterLocal = containerRT.InverseTransformPoint(targetCenterWorld);
         Vector2 pieceCenterLocal = containerRT.InverseTransformPoint(pieceCenterWorld);
 
@@ -788,7 +808,6 @@ public class PuzzleManager : MonoBehaviour
         if (centerDistLocal > snapMaxCenterDistanceLocal)
             return false;
 
-        // 5) 스냅 이동
         pieceRT.anchoredPosition = targetCenterLocal;
         pieceRT.localEulerAngles = Vector3.zero;
 
@@ -831,7 +850,6 @@ public class PuzzleManager : MonoBehaviour
         return pieceBounds.Intersects(target.bounds);
     }
 
-    // 퍼즐 진행도
     public void RegisterPiecePlaced(int index)
     {
         if (index < 0 || index >= pieceCount) return;
@@ -847,6 +865,8 @@ public class PuzzleManager : MonoBehaviour
                 completionLogged = true;
                 Debug.Log("PuzzleManager: 퍼즐이 모두 맞춰졌습니다.");
             }
+
+            MarkPuzzleCompleted();
             onPuzzleCompleted?.Invoke();
         }
     }
@@ -858,17 +878,18 @@ public class PuzzleManager : MonoBehaviour
 
         placedFlags[index] = false;
         placedCount = Mathf.Max(0, placedCount - 1);
+
+        if (placedCount < pieceCount && puzzleCompleted)
+        {
+            // 안전용: 외부에서 강제로 해제하는 경우 대비
+            ClearPuzzleCompleted();
+        }
     }
 }
 
 // ---------------------------------------------------------
 // PuzzlePieceDrag (same file)
 // ---------------------------------------------------------
-// UI 퍼즐 조각 드래그 + 선택 처리.
-// - 클릭하거나 드래그 시작하면 PuzzleManager에 선택 요청
-// - locked면 선택도, 드래그도, 회전도 불가
-// - 드래그 종료 시 스냅/고정 시도
-// - Reset 시 강제로 dragging/selected 해제할 수 있는 API 제공
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(RectTransform))]
@@ -918,7 +939,6 @@ public class PuzzlePieceDrag : MonoBehaviour,
         dragging = false;
     }
 
-    // Reset에서 쓰는 강제 해제
     public void ForceCancelDragAndSelection()
     {
         dragging = false;
