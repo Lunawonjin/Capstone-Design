@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PuzzleManager : MonoBehaviour
+public class PuzzleBridgeManager : MonoBehaviour
 {
     [Header("퍼즐 완료 조건")]
     [Tooltip("퍼즐 완료로 인정하기 위한 총 매칭 수")]

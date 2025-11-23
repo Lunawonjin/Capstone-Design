@@ -50,7 +50,7 @@ public class MouseDragSpringCheck : MonoBehaviour
 
     [Header("연결")]
     [Tooltip("퍼즐 매칭을 집계할 PuzzleManager. 비었으면 자동 탐색.")]
-    public PuzzleManager puzzleManager;
+    public PuzzleBridgeManager puzzleManager;
 
     // 내부 상태 및 캐시
     private Camera cam;                    // 마우스 스크린좌표 -> 월드좌표 변환에 사용
@@ -78,7 +78,7 @@ public class MouseDragSpringCheck : MonoBehaviour
         // 퍼즐 매니저 자동 연결(인스펙터 미지정 시).
         if (puzzleManager == null)
         {
-            puzzleManager = FindObjectOfType<PuzzleManager>();
+            puzzleManager = FindObjectOfType<PuzzleBridgeManager>();
             if (puzzleManager == null)
             {
                 Debug.LogWarning("[드래그] PuzzleManager를 찾지 못했습니다. 매칭 보고가 이뤄지지 않습니다.");
