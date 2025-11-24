@@ -9,6 +9,8 @@
 //    · 현재 씬과 같으면 로그만 남기고 이동하지 않음
 //  - TMP InputField별 "확인" 버튼 지원
 //    · 각 버튼은 자기 입력만 DataManager.nowPlayer에 반영
+//  - TMP Dropdown별 "확인" 버튼 지원 (True/False, 기본 False)
+//    · 각 버튼은 자기 Bool만 DataManager.nowPlayer에 반영
 //  - (선택) 전체 적용 버튼도 유지
 
 using System;
@@ -55,7 +57,7 @@ public class DeveloperMode : MonoBehaviour
     public bool rehookOnPanelOpen = true;
 
     [Header("Dev Data Edit UI (TMP InputField)")]
-    [Tooltip("전체 적용 버튼(선택). 누르면 아래 입력값 전부를 DataManager.nowPlayer에 반영")]
+    [Tooltip("전체 적용 버튼(선택). 누르면 아래 입력값/드롭다운 전부를 DataManager.nowPlayer에 반영")]
     public Button applyDataButton;
 
     [Header("String Fields")]
@@ -82,8 +84,50 @@ public class DeveloperMode : MonoBehaviour
     public TMP_InputField inputWhiteFriendShip;
     public Button applyWhiteFriendShipButton;
 
+    [Header("Bool Fields (TMP Dropdown True/False)")]
+    public TMP_Dropdown ddStartGame;
+    public Button applyStartGameButton;
+
+    public TMP_Dropdown ddCanFirstSleep;
+    public Button applyCanFirstSleepButton;
+
+    public TMP_Dropdown ddStarestFirstVisit;
+    public Button applyStarestFirstVisitButton;
+
+    public TMP_Dropdown ddSolTodayTalk;
+    public Button applySolTodayTalkButton;
+
+    public TMP_Dropdown ddSaltTodayTalk;
+    public Button applySaltTodayTalkButton;
+
+    public TMP_Dropdown ddRyuTodayTalk;
+    public Button applyRyuTodayTalkButton;
+
+    public TMP_Dropdown ddWhiteTodayTalk;
+    public Button applyWhiteTodayTalkButton;
+
+    public TMP_Dropdown ddSolFirstMeet;
+    public Button applySolFirstMeetButton;
+
+    public TMP_Dropdown ddSaltFirstMeet;
+    public Button applySaltFirstMeetButton;
+
+    public TMP_Dropdown ddRyuFirstMeet;
+    public Button applyRyuFirstMeetButton;
+
+    public TMP_Dropdown ddWhiteFirstMeet;
+    public Button applyWhiteFirstMeetButton;
+
+    public TMP_Dropdown ddDiaryOpen;
+    public Button applyDiaryOpenButton;
+
     [Tooltip("Awake에서 확인 버튼 리스너 자동 연결")]
     public bool autoHookApplyButtons = true;
+
+    // True/False 옵션 텍스트
+    [Header("Bool Dropdown Options")]
+    public string boolFalseLabel = "False";
+    public string boolTrueLabel = "True";
 
     private readonly HashSet<int> _wiredSceneButtons = new();
     private bool _applyAllButtonHooked = false;
@@ -102,6 +146,9 @@ public class DeveloperMode : MonoBehaviour
 
         if (autoHookSceneButtons)
             HookSceneButtons();
+
+        // Bool 드롭다운 기본 세팅(False/True, 기본 False)
+        SetupAllBoolDropdowns();
 
         if (autoHookApplyButtons)
         {
@@ -138,6 +185,8 @@ public class DeveloperMode : MonoBehaviour
             {
                 if (autoHookSceneButtons && rehookOnPanelOpen)
                     HookSceneButtons();
+
+                SetupAllBoolDropdowns();
 
                 if (autoHookApplyButtons)
                 {
@@ -333,7 +382,7 @@ public class DeveloperMode : MonoBehaviour
     }
 
     // =========================
-    // Dev InputFields apply to DataManager
+    // Dev InputFields / Dropdown apply to DataManager
     // =========================
     private DataManager GetDataManagerSafe()
     {
@@ -358,6 +407,7 @@ public class DeveloperMode : MonoBehaviour
     {
         if (_applySinglesHooked) return;
 
+        // String/Int
         HookSingle(applyNameButton, ApplyNameOnly);
         HookSingle(applyDayButton, ApplyDayOnly);
         HookSingle(applyCoinButton, ApplyCoinOnly);
@@ -365,6 +415,23 @@ public class DeveloperMode : MonoBehaviour
         HookSingle(applySaltFriendShipButton, ApplySaltFriendShipOnly);
         HookSingle(applyRyuFriendShipButton, ApplyRyuFriendShipOnly);
         HookSingle(applyWhiteFriendShipButton, ApplyWhiteFriendShipOnly);
+
+        // Bool
+        HookSingle(applyStartGameButton, ApplyStartGameOnly);
+        HookSingle(applyCanFirstSleepButton, ApplyCanFirstSleepOnly);
+        HookSingle(applyStarestFirstVisitButton, ApplyStarestFirstVisitOnly);
+
+        HookSingle(applySolTodayTalkButton, ApplySolTodayTalkOnly);
+        HookSingle(applySaltTodayTalkButton, ApplySaltTodayTalkOnly);
+        HookSingle(applyRyuTodayTalkButton, ApplyRyuTodayTalkOnly);
+        HookSingle(applyWhiteTodayTalkButton, ApplyWhiteTodayTalkOnly);
+
+        HookSingle(applySolFirstMeetButton, ApplySolFirstMeetOnly);
+        HookSingle(applySaltFirstMeetButton, ApplySaltFirstMeetOnly);
+        HookSingle(applyRyuFirstMeetButton, ApplyRyuFirstMeetOnly);
+        HookSingle(applyWhiteFirstMeetButton, ApplyWhiteFirstMeetOnly);
+
+        HookSingle(applyDiaryOpenButton, ApplyDiaryOpenOnly);
 
         _applySinglesHooked = true;
     }
@@ -385,6 +452,7 @@ public class DeveloperMode : MonoBehaviour
             return;
         }
 
+        // String/Int
         ApplyNameOnly();
         ApplyDayOnly();
         ApplyCoinOnly();
@@ -393,9 +461,27 @@ public class DeveloperMode : MonoBehaviour
         ApplyRyuFriendShipOnly();
         ApplyWhiteFriendShipOnly();
 
-        Debug.Log("[DeveloperMode] Applied all InputField values to DataManager.");
+        // Bool
+        ApplyStartGameOnly();
+        ApplyCanFirstSleepOnly();
+        ApplyStarestFirstVisitOnly();
+
+        ApplySolTodayTalkOnly();
+        ApplySaltTodayTalkOnly();
+        ApplyRyuTodayTalkOnly();
+        ApplyWhiteTodayTalkOnly();
+
+        ApplySolFirstMeetOnly();
+        ApplySaltFirstMeetOnly();
+        ApplyRyuFirstMeetOnly();
+        ApplyWhiteFirstMeetOnly();
+
+        ApplyDiaryOpenOnly();
+
+        Debug.Log("[DeveloperMode] Applied all InputField/Dropdown values to DataManager.");
     }
 
+    // -------- String --------
     private void ApplyNameOnly()
     {
         DataManager dm = GetDataManagerSafe();
@@ -409,6 +495,7 @@ public class DeveloperMode : MonoBehaviour
         Debug.Log($"[DeveloperMode] Applied Name = '{nameVal}'");
     }
 
+    // -------- Int --------
     private void ApplyDayOnly()
     {
         DataManager dm = GetDataManagerSafe();
@@ -502,5 +589,172 @@ public class DeveloperMode : MonoBehaviour
         {
             Debug.LogWarning($"[DeveloperMode] '{label}' input is not a valid int: '{raw}'");
         }
+    }
+
+    // -------- Bool (Dropdown) --------
+    private void SetupAllBoolDropdowns()
+    {
+        SetupBoolDropdown(ddStartGame);
+        SetupBoolDropdown(ddCanFirstSleep);
+        SetupBoolDropdown(ddStarestFirstVisit);
+
+        SetupBoolDropdown(ddSolTodayTalk);
+        SetupBoolDropdown(ddSaltTodayTalk);
+        SetupBoolDropdown(ddRyuTodayTalk);
+        SetupBoolDropdown(ddWhiteTodayTalk);
+
+        SetupBoolDropdown(ddSolFirstMeet);
+        SetupBoolDropdown(ddSaltFirstMeet);
+        SetupBoolDropdown(ddRyuFirstMeet);
+        SetupBoolDropdown(ddWhiteFirstMeet);
+
+        SetupBoolDropdown(ddDiaryOpen);
+    }
+
+    private void SetupBoolDropdown(TMP_Dropdown dd)
+    {
+        if (dd == null) return;
+
+        // 옵션이 2개 미만이면 False/True로 자동 구성
+        if (dd.options == null || dd.options.Count < 2)
+        {
+            dd.options = new List<TMP_Dropdown.OptionData>
+            {
+                new TMP_Dropdown.OptionData(boolFalseLabel),
+                new TMP_Dropdown.OptionData(boolTrueLabel)
+            };
+            dd.RefreshShownValue();
+        }
+
+        // 값이 이상하면 기본 False로
+        if (dd.value < 0 || dd.value > 1)
+            dd.value = 0;
+    }
+
+    private bool ReadBoolFromDropdown(TMP_Dropdown dd)
+    {
+        if (dd == null) return false;
+        if (dd.value == 1) return true;
+        return false;
+    }
+
+    private void ApplyStartGameOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddStartGame);
+        dm.nowPlayer.StartGame = val;
+        Debug.Log($"[DeveloperMode] Applied StartGame = {val}");
+    }
+
+    private void ApplyCanFirstSleepOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddCanFirstSleep);
+        dm.nowPlayer.CanFirstSleep = val;
+        Debug.Log($"[DeveloperMode] Applied CanFirstSleep = {val}");
+    }
+
+    private void ApplyStarestFirstVisitOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddStarestFirstVisit);
+        dm.nowPlayer.Starest_First_Visit = val;
+        Debug.Log($"[DeveloperMode] Applied Starest_First_Visit = {val}");
+    }
+
+    private void ApplySolTodayTalkOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddSolTodayTalk);
+        dm.nowPlayer.Sol_Today_Talk = val;
+        Debug.Log($"[DeveloperMode] Applied Sol_Today_Talk = {val}");
+    }
+
+    private void ApplySaltTodayTalkOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddSaltTodayTalk);
+        dm.nowPlayer.Salt_Today_Talk = val;
+        Debug.Log($"[DeveloperMode] Applied Salt_Today_Talk = {val}");
+    }
+
+    private void ApplyRyuTodayTalkOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddRyuTodayTalk);
+        dm.nowPlayer.Ryu_Today_Talk = val;
+        Debug.Log($"[DeveloperMode] Applied Ryu_Today_Talk = {val}");
+    }
+
+    private void ApplyWhiteTodayTalkOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddWhiteTodayTalk);
+        dm.nowPlayer.White_Today_Talk = val;
+        Debug.Log($"[DeveloperMode] Applied White_Today_Talk = {val}");
+    }
+
+    private void ApplySolFirstMeetOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddSolFirstMeet);
+        dm.nowPlayer.Sol_First_Meet = val;
+        Debug.Log($"[DeveloperMode] Applied Sol_First_Meet = {val}");
+    }
+
+    private void ApplySaltFirstMeetOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddSaltFirstMeet);
+        dm.nowPlayer.Salt_First_Meet = val;
+        Debug.Log($"[DeveloperMode] Applied Salt_First_Meet = {val}");
+    }
+
+    private void ApplyRyuFirstMeetOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddRyuFirstMeet);
+        dm.nowPlayer.Ryu_First_Meet = val;
+        Debug.Log($"[DeveloperMode] Applied Ryu_First_Meet = {val}");
+    }
+
+    private void ApplyWhiteFirstMeetOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddWhiteFirstMeet);
+        dm.nowPlayer.White_First_Meet = val;
+        Debug.Log($"[DeveloperMode] Applied White_First_Meet = {val}");
+    }
+
+    private void ApplyDiaryOpenOnly()
+    {
+        DataManager dm = GetDataManagerSafe();
+        if (dm == null || dm.nowPlayer == null) return;
+
+        bool val = ReadBoolFromDropdown(ddDiaryOpen);
+        dm.nowPlayer.DiaryOpen = val;
+        Debug.Log($"[DeveloperMode] Applied DiaryOpen = {val}");
     }
 }
