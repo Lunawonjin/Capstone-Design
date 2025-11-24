@@ -39,7 +39,7 @@
       ]
     },
 
-    { "onKey": "Dialogue_Choice4_Same_001",
+    { "onKey": "Dialogue_Choice3_Same_001",
       "actions": [
         { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
       ]

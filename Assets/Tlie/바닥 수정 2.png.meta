@@ -1,7 +1,10 @@
 fileFormatVersion: 2
-guid: 482ab2907755447468cfc7e208eb0ccc
+guid: 6905141be26e9bc40acf24a039a5541b
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -7351781263183585295
+    second: "\uBC14\uB2E5 \uC218\uC815 2_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -48,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 10
+  spritePixelsToUnits: 160
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -93,52 +96,39 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Abigail_Walk_1
+      name: "\uBC14\uB2E5_1"
       rect:
         serializedVersion: 2
         x: 0
-        y: 384
-        width: 15
-        height: 28
+        y: 320
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: 0
+      tessellationDetail: -1
       bones: []
-      spriteID: c5b652ceeb865594793696d881ce13ce
-      internalID: 1186539713
+      spriteID: 1ffd19d74e939f990800000000000000
+      internalID: -7351781263183585295
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Walk_2
+      name: "\uBC14\uB2E5_2"
       rect:
         serializedVersion: 2
-        x: 16
-        y: 384
-        width: 14
-        height: 28
+        x: 160
+        y: 320
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -147,20 +137,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 48e66a081c8dc5248add15c0166c970e
-      internalID: -1280981788
+      spriteID: 261b3cd35d533b041a33ec0627aad3ac
+      internalID: -462987736
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Walk_3
+      name: "\uBC14\uB2E5_3"
       rect:
         serializedVersion: 2
-        x: 32
-        y: 384
-        width: 14
-        height: 28
+        x: 320
+        y: 320
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -169,42 +159,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8b5e4f40cfdebb74494751d233b691e7
-      internalID: 1249811955
+      spriteID: 0e5dc58f77a764040844feb458b9adcf
+      internalID: -2138843094
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Walk_4
-      rect:
-        serializedVersion: 2
-        x: 48
-        y: 384
-        width: 14
-        height: 28
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f6fb08473daa70b499d417df8fc95bb2
-      internalID: 1626870509
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Abigail_Happy_1
+      name: "\uBC14\uB2E5_4"
       rect:
         serializedVersion: 2
         x: 0
-        y: 288
-        width: 16
-        height: 28
+        y: 160
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -213,20 +181,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c3479aa98fdb63443ba2f528f1cf4203
-      internalID: -2133314188
+      spriteID: 06b96075fd9aeea438a9148aad4692b9
+      internalID: 1226603434
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Happy_2
+      name: "\uBC14\uB2E5_5"
       rect:
         serializedVersion: 2
-        x: 16
-        y: 288
-        width: 16
-        height: 28
+        x: 160
+        y: 160
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -235,20 +203,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9aae7ab8071f04240b003f83767c6013
-      internalID: 1950498874
+      spriteID: a9d418d945f746a49abd6288758b0de5
+      internalID: -152271892
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Happy_3
+      name: "\uBC14\uB2E5_6"
       rect:
         serializedVersion: 2
-        x: 32
-        y: 288
-        width: 16
-        height: 28
+        x: 320
+        y: 160
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -257,42 +225,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8997f0bfbe0df3e4ab3e84079ad95d73
-      internalID: -1477392768
+      spriteID: 18a85cb588fd7b046a15d285e463009e
+      internalID: -2083313035
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Happy_4
-      rect:
-        serializedVersion: 2
-        x: 48
-        y: 288
-        width: 16
-        height: 28
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 0839cea99297feb48abec046aa050c8b
-      internalID: 349098675
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Abigail_GameOver
+      name: "\uBC14\uB2E5_7"
       rect:
         serializedVersion: 2
         x: 0
-        y: 162
-        width: 16
-        height: 29
+        y: 0
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -301,20 +247,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1ce5c5889f91fc04fb512e4ee353a15c
-      internalID: -422639775
+      spriteID: a4653716226ea114486ba99802eafb43
+      internalID: 126511796
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_GameOve
+      name: "\uBC14\uB2E5_8"
       rect:
         serializedVersion: 2
-        x: 17
-        y: 224
-        width: 14
-        height: 24
+        x: 160
+        y: 0
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -323,20 +269,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 79eba259a80e64f4fbf77e9eac4710b2
-      internalID: -1368879840
+      spriteID: 2b1c355b92ff817459feb3c10a8252f4
+      internalID: -928099318
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Abigail_Up_Walk1
+      name: "\uBC14\uB2E5_9"
       rect:
         serializedVersion: 2
-        x: 1
-        y: 352
-        width: 15
-        height: 28
+        x: 320
+        y: 0
+        width: 160
+        height: 160
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -345,74 +291,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e02fefad10702d247bbac13fc3fa395a
-      internalID: 1945384816
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Abigail_Up_Walk2
-      rect:
-        serializedVersion: 2
-        x: 17
-        y: 352
-        width: 15
-        height: 27
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f93dff9dd0646b04197457c7525cbcf1
-      internalID: 363099150
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Abigail_Up_Walk3
-      rect:
-        serializedVersion: 2
-        x: 33
-        y: 352
-        width: 15
-        height: 28
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f57133b8a6a739c42b356a622c8e7101
-      internalID: 1073023145
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Abigail_Up_Walk4
-      rect:
-        serializedVersion: 2
-        x: 49
-        y: 352
-        width: 15
-        height: 27
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 9f7436d7d3ad0c04d83382833dca6f14
-      internalID: -183385246
+      spriteID: e3186b8f6d746f64e92d384adc007ce8
+      internalID: 1306558747
       vertices: []
       indices: 
       edges: []
@@ -421,7 +301,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 003921a1c65697e4fab9b0d4bce6c52f
     internalID: 0
     vertices: []
     indices: 
@@ -431,20 +311,15 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Abigail_GameOve: -1368879840
-      Abigail_GameOver: -422639775
-      Abigail_Happy_1: -2133314188
-      Abigail_Happy_2: 1950498874
-      Abigail_Happy_3: -1477392768
-      Abigail_Happy_4: 349098675
-      Abigail_Up_Walk1: 1945384816
-      Abigail_Up_Walk2: 363099150
-      Abigail_Up_Walk3: 1073023145
-      Abigail_Up_Walk4: -183385246
-      Abigail_Walk_1: 1186539713
-      Abigail_Walk_2: -1280981788
-      Abigail_Walk_3: 1249811955
-      Abigail_Walk_4: 1626870509
+      "\uBC14\uB2E5_1": -7351781263183585295
+      "\uBC14\uB2E5_2": -462987736
+      "\uBC14\uB2E5_3": -2138843094
+      "\uBC14\uB2E5_4": 1226603434
+      "\uBC14\uB2E5_5": -152271892
+      "\uBC14\uB2E5_6": -2083313035
+      "\uBC14\uB2E5_7": 126511796
+      "\uBC14\uB2E5_8": -928099318
+      "\uBC14\uB2E5_9": 1306558747
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

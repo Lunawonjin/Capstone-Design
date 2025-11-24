@@ -68,6 +68,9 @@ public class PresidentIntroSequence : MonoBehaviour
     [SerializeField] private PlayerMove playerMove;
     [SerializeField] private bool autoFindPlayerMove = true;
 
+    [Header("미션 패널")]
+    [SerializeField] private Image MissionUI;
+
     private bool sequenceRunning;
     private bool endingRoutine;
 
@@ -183,6 +186,7 @@ public class PresidentIntroSequence : MonoBehaviour
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 시작(씬 이동 없음)");
                 yield return StartCoroutine(FadeOutThenIn());
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 종료");
+                MissionUI.gameObject.SetActive(true);
             }
         }
 
