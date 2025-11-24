@@ -637,12 +637,12 @@ MonoBehaviour:
   bodyText: {fileID: 2111196740}
   balloonBg: {fileID: 821127090}
   canvasGroup: {fileID: 0}
-  padding: {x: 100, y: 100}
+  padding: {x: 100, y: 150}
   minWidth: 120
   maxWidth: 1500
   autoWrap: 1
   textOffsetX: 50
-  textOffsetY: 20
+  textOffsetY: 25
   textExtraPadding: {x: 0, y: 0, z: 0, w: 0}
   charsPerSecond: 30
   extraPauseOnPunct: 1
@@ -1394,8 +1394,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4605059419371540563, guid: 969816d0cb4b7034584447fd51b0b911, type: 3}
+      propertyPath: m_fontSize
+      value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 4605059419371540563, guid: 969816d0cb4b7034584447fd51b0b911, type: 3}
       propertyPath: m_fontStyle
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4605059419371540563, guid: 969816d0cb4b7034584447fd51b0b911, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 4605059419371540563, guid: 969816d0cb4b7034584447fd51b0b911, type: 3}
       propertyPath: m_HorizontalAlignment
