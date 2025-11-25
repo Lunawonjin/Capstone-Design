@@ -2,35 +2,34 @@
 // 퍼즐 데이터 관리 + UI 컨테이너(Image) 안에 퍼즐 조각 UI(Image)를 생성/배치.
 // 같은 파일 안에 드래그/선택/회전/스냅 고정 기능(PuzzlePieceDrag)까지 전부 포함.
 //
-// 포함 기능:
-// 1) 인스펙터에서 퍼즐 조각 개수(pieceCount, 기본 8)와 조각 스프라이트(pieceSprites) 설정
-// 2) 컨테이너 UI(Image) 안에 조각 UI(Image)들을 랜덤 배치(겹치지 않게)
-// 3) 마우스로 조각을 드래그 가능(1920x1080 영역 밖으로 못 나감)
-// 4) 마지막으로 클릭/드래그한 조각 1개만 선택 상태 유지(백플레이트로 표시)
-//    - 퍼즐 조각이 아닌 곳을 클릭하면(버튼/셀렉터블 제외) 선택 해제되어 백플레이트 꺼짐
-//    - 고정된(locked) 조각은 클릭해도 선택되지 않으며 백플레이트가 나오지 않음
-// 5) 생성 시 조각 Z 회전 0/90/180/270 랜덤
-// 6) 회전 버튼 지원
-//    - Clockwise_BT 클릭: 선택된 조각 -90도
-//    - Counterclockwise_BT 클릭: 선택된 조각 +90도
-// 7) 스냅/고정 기능(난이도 조절 포함)
-//    - 인스펙터로 BoxCollider2D 슬롯들을 여러 개 받음(targetColliders)
-//    - "조각 인덱스 == 슬롯 인덱스"일 때만 검사
-//    - 조각 Z 회전이 0(허용 오차 내)이고
-//    - 해당 슬롯(BoxCollider2D)과 겹치며
-//    - 조각 중심이 슬롯 중심에 충분히 가까울 때만( snapMaxCenterDistanceLocal )
-//    - (옵션) 조각 중심이 슬롯 안에 들어와 있어야 할 때( requirePieceCenterInsideTarget )
-//    - 마우스가 눌려있지 않을 때 고정
-// 8) Reset_BT 지원
-//    - Reset_BT 클릭 시 모든 퍼즐 조각이 "처음 랜덤 생성된 위치/회전"으로 되돌아감
-//    - 잠금/진행도/선택 상태도 전부 초기화
-//    - 단, 퍼즐이 완성된 상태에서는 Reset_BT이 비활성화되어 동작하지 않음
-// 9) 모든 조각이 고정되면 Debug.Log로 완료 메시지 출력 + onPuzzleCompleted 호출
+// 핵심 규칙:
+//  - pieceSprites[i]   : i번째 퍼즐 조각 스프라이트
+//  - targetColliders[i]: i번째 퍼즐 슬롯(BoxCollider2D)
+//  => "인덱스가 같은 것끼리"만 자기 자리로 취급. 코드에서 순서를 자동으로 바꾸지 않는다.
 //
-// 주의:
-// - Canvas에 GraphicRaycaster, 씬에 EventSystem이 있어야 입력이 동작합니다.
-// - 조각은 UI(Image), 슬롯은 BoxCollider2D(월드)로 가정합니다.
-//   OnTrigger를 쓰지 않고 Bounds 교차로 겹침을 판정합니다.
+// 기능 요약:
+// 1) 인스펙터에서 퍼즐 조각 개수(pieceCount)와 스프라이트 리스트(pieceSprites) 설정
+// 2) 컨테이너 UI(Image) 안에 조각 UI(Image)를 겹치지 않게 랜덤 배치
+// 3) 마우스로 조각 드래그(1920x1080 영역 밖 이동 불가)
+// 4) 마지막으로 클릭/드래그한 조각만 선택(백플레이트 표시)
+//    - 퍼즐이 아닌 빈 곳 클릭(버튼/Selectable 제외) 시 선택 해제
+//    - locked 조각은 선택/백플레이트 안 켜짐
+// 5) 생성 시 각 조각의 Z 회전 0/90/180/270 랜덤
+// 6) 회전 버튼
+//    - Clockwise_BT : 선택 조각 -90도
+//    - Counter_BT   : 선택 조각 +90도
+// 7) 스냅/고정
+//    - index 같은 BoxCollider2D와 겹치고, 회전이 0 근처이고,
+//      중심 거리가 snapMaxCenterDistanceLocal 이하일 때만 스냅 + 잠금
+//      스냅 기준 위치는 BoxCollider2D의 transform.position + snapWorldOffset
+// 8) Reset_BT
+//    - 시작 시 상태(랜덤 배치 + 프리솔브 상태)를 그대로 복원
+//    - 퍼즐 완성 상태에서는 Reset 비활성화
+// 9) 시작할 때 10~13개의 조각을 자기 슬롯(targetColliders[i])에 미리 붙여서 잠금(회전 0)
+// 10) logTargetIndexMapping 켜면 인덱스/스프라이트/콜라이더 매핑 로그 출력
+// 11) 맞춰서 고정된 퍼즐 조각은 항상 레이어를 가장 뒤로 보냄
+//     - 나중에 맞추는 조각들도 자동으로 뒤로 내려가서,
+//       아직 안 맞춘 조각들이 앞에서 잘 보이도록 함.
 
 using System;
 using System.Collections.Generic;
@@ -50,11 +49,11 @@ public class PuzzleManager : MonoBehaviour
 
     [Header("Puzzle Settings")]
     [SerializeField, Min(1)]
-    private int pieceCount = 8;
+    private int pieceCount = 25;
 
-    [Tooltip("퍼즐 조각 개수만큼 스프라이트를 넣어주세요.")]
+    [Tooltip("퍼즐 조각 개수만큼 스프라이트를 넣어주세요. index=슬롯 index와 매칭됩니다.")]
     [SerializeField]
-    private List<Sprite> pieceSprites = new List<Sprite>(8);
+    private List<Sprite> pieceSprites = new List<Sprite>(25);
 
     [Header("UI Spawn Settings")]
     [Tooltip("퍼즐 조각들이 생성될 UI 컨테이너 Image.")]
@@ -125,21 +124,14 @@ public class PuzzleManager : MonoBehaviour
     private float selectedBackplatePadding = 12f;
 
     [Header("Rotate Buttons")]
-    [Tooltip("시계방향 회전 버튼(클릭 시 -90도).")]
-    [SerializeField]
-    private Button clockwiseButton;
-
-    [Tooltip("반시계방향 회전 버튼(클릭 시 +90도).")]
-    [SerializeField]
-    private Button counterclockwiseButton;
+    [SerializeField] private Button clockwiseButton;
+    [SerializeField] private Button counterclockwiseButton;
 
     [Header("Reset Button")]
-    [Tooltip("Reset_BT. 클릭 시 모든 퍼즐 조각을 처음 위치/회전으로 되돌립니다.")]
-    [SerializeField]
-    private Button resetButton;
+    [SerializeField] private Button resetButton;
 
-    [Header("Snap Targets")]
-    [Tooltip("퍼즐 슬롯(BoxCollider2D)들. 인덱스가 조각 인덱스와 1:1로 매칭됩니다.")]
+    [Header("Snap Targets (index 매칭)")]
+    [Tooltip("퍼즐 슬롯(BoxCollider2D)들. index가 조각 index와 그대로 매칭됩니다.")]
     [SerializeField]
     private List<BoxCollider2D> targetColliders = new List<BoxCollider2D>();
 
@@ -147,7 +139,7 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField, Min(0f)]
     private float snapRotationTolerance = 3f;
 
-    [Tooltip("조각 중심이 슬롯 중심에서 이 거리(로컬 px) 안에 들어와야 스냅됩니다. 값이 작을수록 어렵습니다.")]
+    [Tooltip("조각 중심이 슬롯 기준 위치에서 이 거리(로컬 px) 안에 들어와야 스냅됩니다. 값이 작을수록 어렵습니다.")]
     [SerializeField, Min(0f)]
     private float snapMaxCenterDistanceLocal = 25f;
 
@@ -155,9 +147,18 @@ public class PuzzleManager : MonoBehaviour
     [SerializeField]
     private bool requirePieceCenterInsideTarget = true;
 
-    [Tooltip("스냅 시 슬롯 중심에서 더할 오프셋(월드). 필요 없으면 (0,0).")]
+    [Tooltip("스냅 시 사용할 기준 위치 = target.transform.position + snapWorldOffset.")]
     [SerializeField]
     private Vector2 snapWorldOffset = Vector2.zero;
+
+    [Header("Debug Logs")]
+    [Tooltip("index별 sprite/slot/targetPos 매핑 로그 출력.")]
+    [SerializeField]
+    private bool logTargetIndexMapping = true;
+
+    [Tooltip("초기 조각 상태(위치/각도/잠금 여부)를 로그로 출력.")]
+    [SerializeField]
+    private bool logPieceInitialState = false;
 
     [Header("Events")]
     [Tooltip("퍼즐이 전부 맞춰졌을 때 호출됩니다.")]
@@ -173,6 +174,7 @@ public class PuzzleManager : MonoBehaviour
 
     private Vector2[] initialPositions;
     private float[] initialAngles;
+    private bool[] initialLockedFlags;
 
     private PuzzlePieceDrag currentSelected;
     private bool completionLogged;
@@ -198,6 +200,7 @@ public class PuzzleManager : MonoBehaviour
 
         initialPositions = new Vector2[pieceCount];
         initialAngles = new float[pieceCount];
+        initialLockedFlags = new bool[pieceCount];
 
         SetResetButtonInteractable(true);
     }
@@ -249,13 +252,29 @@ public class PuzzleManager : MonoBehaviour
         SetResetButtonInteractable(true);
     }
 
+    // 맞춰진 퍼즐 조각을 레이어 가장 뒤로 보내는 함수
+    private void SendLockedPieceToBack(PuzzlePieceDrag piece)
+    {
+        if (piece == null) return;
+        RectTransform rt = piece.PieceRectTransform;
+        if (rt == null) return;
+        Transform parent = rt.parent;
+        if (parent == null) return;
+
+        // 컨테이너 안에서 가장 첫 번째(가장 뒤)로 보냄
+        rt.SetSiblingIndex(0);
+    }
+
+    // 빈 곳 클릭 시 선택 해제
     private void HandleClickOutsideToDeselect()
     {
         if (!Input.GetMouseButtonDown(0)) return;
         if (EventSystem.current == null) return;
 
-        PointerEventData ped = new PointerEventData(EventSystem.current);
-        ped.position = Input.mousePosition;
+        PointerEventData ped = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
 
         List<RaycastResult> results = new List<RaycastResult>();
         EventSystem.current.RaycastAll(ped, results);
@@ -343,7 +362,7 @@ public class PuzzleManager : MonoBehaviour
 
     private void OnResetClicked()
     {
-        if (puzzleCompleted) return; // 완성 상태면 리셋 금지
+        if (puzzleCompleted) return;
         ResetPiecesToInitial();
     }
 
@@ -353,10 +372,11 @@ public class PuzzleManager : MonoBehaviour
 
         DeselectCurrent();
 
-        placedFlags = new bool[pieceCount];
-        placedCount = 0;
         completionLogged = false;
         ClearPuzzleCompleted();
+
+        placedFlags = new bool[pieceCount];
+        placedCount = 0;
 
         for (int i = 0; i < spawnedPieceDrags.Count; i++)
         {
@@ -366,7 +386,11 @@ public class PuzzleManager : MonoBehaviour
             RectTransform rt = piece.PieceRectTransform;
             if (rt == null) continue;
 
-            piece.SetLocked(false);
+            bool initiallyLocked = (initialLockedFlags != null &&
+                                    i < initialLockedFlags.Length &&
+                                    initialLockedFlags[i]);
+
+            piece.SetLocked(initiallyLocked);
             piece.ForceCancelDragAndSelection();
 
             float angle = (i < initialAngles.Length) ? initialAngles[i] : rt.localEulerAngles.z;
@@ -376,11 +400,19 @@ public class PuzzleManager : MonoBehaviour
             rt.anchoredPosition = pos;
 
             ClampPieceToDragArea(rt);
+
+            if (initiallyLocked)
+            {
+                placedFlags[i] = true;
+                placedCount++;
+                // 초기부터 맞춰져 있던 조각은 리셋 후에도 뒤로 보냄
+                SendLockedPieceToBack(piece);
+            }
         }
 
         RefreshRotateButtonsInteractable();
 
-        Debug.Log("PuzzleManager: Reset 완료. 모든 조각을 초기 위치로 되돌렸습니다.");
+        Debug.Log("PuzzleManager: Reset 완료. 모든 조각을 초기 상태로 되돌렸습니다.");
     }
 
     public void RotateSelectedPiece(int deltaAngle)
@@ -484,7 +516,11 @@ public class PuzzleManager : MonoBehaviour
 
         initialPositions = new Vector2[pieceCount];
         initialAngles = new float[pieceCount];
+        initialLockedFlags = new bool[pieceCount];
 
+        LogIndexMappingIfNeeded();
+
+        // 1) 조각 생성
         for (int i = 0; i < pieceCount; i++)
         {
             Sprite sprite = GetPieceSprite(i);
@@ -508,6 +544,7 @@ public class PuzzleManager : MonoBehaviour
 
         ForceUILayoutUpdate();
 
+        // 2) 랜덤 배치(겹치지 않게)
         Vector2 spawnRegionSize = GetSpawnRegionSize(containerRT);
         Vector2 halfRegion = spawnRegionSize * 0.5f;
 
@@ -535,6 +572,10 @@ public class PuzzleManager : MonoBehaviour
             );
         }
 
+        // 3) 일부 조각을 제자리로 스냅 + 잠금(회전 0)
+        PreSolveSomePieces();
+
+        // 4) 최종 상태(일부는 이미 잠금) 기준으로 초기값 기록
         for (int i = 0; i < spawnedPieceDrags.Count; i++)
         {
             PuzzlePieceDrag drag = spawnedPieceDrags[i];
@@ -548,7 +589,126 @@ public class PuzzleManager : MonoBehaviour
 
             if (i < initialAngles.Length)
                 initialAngles[i] = rt.localEulerAngles.z;
+
+            if (logPieceInitialState)
+            {
+                string spriteName = (i < pieceSprites.Count && pieceSprites[i] != null)
+                    ? pieceSprites[i].name
+                    : "(null sprite)";
+                Debug.Log($"PuzzleManager: 초기 조각 index={i}, sprite={spriteName}, " +
+                          $"locked={drag.IsLocked}, posLocal={rt.anchoredPosition}, angleZ={rt.localEulerAngles.z}");
+            }
         }
+    }
+
+    // index별 sprite/slot/targetPos 매핑 로그
+    private void LogIndexMappingIfNeeded()
+    {
+        if (!logTargetIndexMapping) return;
+
+        int max = Mathf.Max(pieceCount, targetColliders != null ? targetColliders.Count : 0);
+        Debug.Log($"PuzzleManager: 인덱스 매핑 로그 (pieceCount={pieceCount}, targetCount={targetColliders.Count})");
+
+        for (int i = 0; i < max; i++)
+        {
+            string spriteName = (i < pieceSprites.Count && pieceSprites[i] != null)
+                ? pieceSprites[i].name
+                : "(null sprite)";
+
+            string colliderName = "(no collider)";
+            string colliderPos = "";
+            if (targetColliders != null && i < targetColliders.Count && targetColliders[i] != null)
+            {
+                colliderName = targetColliders[i].name;
+                Vector3 c = targetColliders[i].transform.position;
+                colliderPos = $" targetPos=({c.x:F2}, {c.y:F2})";
+            }
+
+            Debug.Log($"  index={i}, sprite={spriteName}, collider={colliderName}{colliderPos}");
+        }
+    }
+
+    // 시작 시 랜덤으로 10~13개의 조각을 자기 슬롯에 스냅 + 잠금(회전 0)
+    private void PreSolveSomePieces()
+    {
+        if (targetColliders == null || targetColliders.Count == 0)
+            return;
+
+        int upperBound = Mathf.Min(pieceCount, targetColliders.Count, spawnedPieceDrags.Count);
+        if (upperBound <= 0)
+            return;
+
+        int minPreSolve = 10;
+        int maxPreSolve = 13;
+
+        int maxPossible = Mathf.Min(upperBound, maxPreSolve);
+        if (maxPossible <= 0)
+            return;
+
+        int desiredCount;
+        if (maxPossible <= minPreSolve)
+            desiredCount = maxPossible;
+        else
+            desiredCount = UnityEngine.Random.Range(minPreSolve, maxPossible + 1);
+
+        List<int> pool = new List<int>(upperBound);
+        for (int i = 0; i < upperBound; i++)
+            pool.Add(i);
+
+        Debug.Log($"PuzzleManager: 시작 시 미리 맞춰 둘 조각 개수={desiredCount} (전체={upperBound})");
+
+        for (int n = 0; n < desiredCount && pool.Count > 0; n++)
+        {
+            int r = UnityEngine.Random.Range(0, pool.Count);
+            int index = pool[r];
+            pool.RemoveAt(r);
+
+            ForcePlaceAndLockAtTarget(index);
+
+            if (initialLockedFlags != null && index < initialLockedFlags.Length)
+                initialLockedFlags[index] = true;
+        }
+    }
+
+    // index 조각을 index 슬롯 위치에 바로 스냅 + 잠금(회전 0)
+    private void ForcePlaceAndLockAtTarget(int index)
+    {
+        if (index < 0 || index >= spawnedPieceDrags.Count) return;
+        if (targetColliders == null || index >= targetColliders.Count) return;
+
+        PuzzlePieceDrag piece = spawnedPieceDrags[index];
+        BoxCollider2D target = targetColliders[index];
+        if (piece == null || target == null) return;
+
+        RectTransform containerRT = ContainerRT;
+        RectTransform pieceRT = piece.PieceRectTransform;
+        if (containerRT == null || pieceRT == null) return;
+
+        Vector3 targetWorldPos = target.transform.position + (Vector3)snapWorldOffset;
+        Vector2 targetLocalPos = containerRT.InverseTransformPoint(targetWorldPos);
+
+        pieceRT.localRotation = Quaternion.identity;
+        pieceRT.localEulerAngles = Vector3.zero;
+        pieceRT.anchoredPosition = targetLocalPos;
+
+        ClampPieceToDragArea(pieceRT);
+
+        piece.SetLocked(true);
+        // 프리솔브된 조각도 레이어를 가장 뒤로 보냄
+        SendLockedPieceToBack(piece);
+
+        RegisterPiecePlaced(index);
+
+        if (initialPositions != null && index < initialPositions.Length)
+            initialPositions[index] = pieceRT.anchoredPosition;
+        if (initialAngles != null && index < initialAngles.Length)
+            initialAngles[index] = 0f;
+
+        string spriteName = (index < pieceSprites.Count && pieceSprites[index] != null)
+            ? pieceSprites[index].name
+            : "(null sprite)";
+
+        Debug.Log($"PuzzleManager: 프리솔브 index={index}, sprite={spriteName}, target={target.name}");
     }
 
     private Vector2 GetSpawnRegionSize(RectTransform containerRT)
@@ -795,13 +955,13 @@ public class PuzzleManager : MonoBehaviour
         if (!IsPieceOverlappingTarget(pieceRT, target, out Bounds pieceBounds))
             return false;
 
-        Vector3 targetCenterWorld = target.bounds.center + (Vector3)snapWorldOffset;
+        Vector3 targetWorldPos = target.transform.position + (Vector3)snapWorldOffset;
         Vector3 pieceCenterWorld = pieceBounds.center;
 
         if (requirePieceCenterInsideTarget && !target.bounds.Contains(pieceCenterWorld))
             return false;
 
-        Vector2 targetCenterLocal = containerRT.InverseTransformPoint(targetCenterWorld);
+        Vector2 targetCenterLocal = containerRT.InverseTransformPoint(targetWorldPos);
         Vector2 pieceCenterLocal = containerRT.InverseTransformPoint(pieceCenterWorld);
 
         float centerDistLocal = Vector2.Distance(pieceCenterLocal, targetCenterLocal);
@@ -814,11 +974,19 @@ public class PuzzleManager : MonoBehaviour
         ClampPieceToDragArea(pieceRT);
 
         piece.SetLocked(true);
+        // 유저가 맞춰서 고정시킨 조각도 레이어를 가장 뒤로 보냄
+        SendLockedPieceToBack(piece);
 
         if (currentSelected == piece)
             DeselectCurrent();
 
         RegisterPiecePlaced(index);
+
+        string spriteName = (index < pieceSprites.Count && pieceSprites[index] != null)
+            ? pieceSprites[index].name
+            : "(null sprite)";
+
+        Debug.Log($"PuzzleManager: 스냅 성공 index={index}, sprite={spriteName}, target={target.name}");
 
         return true;
     }
@@ -858,6 +1026,8 @@ public class PuzzleManager : MonoBehaviour
         placedFlags[index] = true;
         placedCount++;
 
+        Debug.Log($"PuzzleManager: 조각 고정 index={index}, 현재 고정 개수={placedCount}/{pieceCount}");
+
         if (placedCount >= pieceCount)
         {
             if (!completionLogged)
@@ -879,9 +1049,10 @@ public class PuzzleManager : MonoBehaviour
         placedFlags[index] = false;
         placedCount = Mathf.Max(0, placedCount - 1);
 
+        Debug.Log($"PuzzleManager: 조각 해제 index={index}, 현재 고정 개수={placedCount}/{pieceCount}");
+
         if (placedCount < pieceCount && puzzleCompleted)
         {
-            // 안전용: 외부에서 강제로 해제하는 경우 대비
             ClearPuzzleCompleted();
         }
     }
