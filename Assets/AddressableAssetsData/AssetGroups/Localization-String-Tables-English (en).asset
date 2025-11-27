@@ -39,6 +39,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 669623bd4a51a3f41a06325620d2393d
+    m_Address: Sol_Second_Meet_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8075b5ddf7eebf74a9db3e3a6b95d3fa
+    m_Address: Sol_Puzzle_Clear_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 937ad5e1abf68b94cbdd154ad558fdb1
     m_Address: Sol_First_Meet_Dialogue_en
     m_ReadOnly: 1
@@ -60,6 +72,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b2d1d11b134c94243a3fdbc082a17187
     m_Address: Starest_First_Visit_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4786da00feb265449453198fed5b853
+    m_Address: Chatting_Detail_Sero_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

@@ -25,6 +25,17 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c6be3474c810b947a60447b5bef645e
+    m_Address: Assets/Localization/Chatting/Sero/Chatting_Detail_Sero Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ca002c8c3df5e04ab67ebe99025e931
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Puzzle_Clear_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3d4d168b851240847bf1d6a09ef8f32d
     m_Address: Assets/Localization/Dialogue/sol_first_meet Shared Data.asset
     m_ReadOnly: 1
@@ -37,6 +48,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4e495e59b4ed0d245bbc771a6d06ec71
     m_Address: Assets/Localization/Dialogue/Boss/Starest_Frist_Visit Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b756e10fafc51c42a1784b8768b4145
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Second_Meet_Dialogue
+      Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
