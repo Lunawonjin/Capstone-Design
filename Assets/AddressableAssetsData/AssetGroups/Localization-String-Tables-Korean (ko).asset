@@ -15,8 +15,20 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Korean (ko)
   m_GUID: 69fafdd9737c1a540899a392702ae672
   m_SerializeEntries:
+  - m_GUID: 0c469a967bf09294185476d77388db4f
+    m_Address: Prolog_Table_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1770f5e428214894482f498caa6d7255
     m_Address: Starest_First_Visit_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3cd8924f7ec48a1458c9436866cd052c
+    m_Address: Sol_Second_Meet_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
@@ -26,6 +38,7 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
+    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 793b04aae2fba574988cbbdc66fcd22b
     m_Address: Messenger_Content_ko
@@ -53,6 +66,30 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c5ae947734d189147aac50c26071cd28
     m_Address: Sol_First_Meet_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cbdfa5655f720214c9cf3b2dd1e027ff
+    m_Address: Chatting_Detail_Sero_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d616bb205bde38541ade4c76be202ccf
+    m_Address: Sol's_Talk_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e82657ec670e60e41a1dd06af9edbe7e
+    m_Address: Sol_Puzzle_Clear_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f24650601800b944ea0d2a553ab77bb3
+    m_Address: Salt's_Talk_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko

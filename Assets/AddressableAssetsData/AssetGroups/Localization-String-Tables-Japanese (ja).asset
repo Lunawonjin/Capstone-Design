@@ -20,6 +20,13 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
+    - Preload
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1185b50e4d0960f45b0a56aeeb59bea6
+    m_Address: Prolog_Table_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d05518455e2eb642876804932625bfc
     m_Address: Boss_First_Calling_Dialogue_ja
@@ -29,6 +36,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d7b434bb54046148b4bf2eb03bbfad9
     m_Address: Starest_First_Visit_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2f36e5b8e5fe9db4288e41dd479f9600
+    m_Address: Sol's_Talk_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
@@ -45,6 +58,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70ffdec26e2fa564da5be16230b2efd1
+    m_Address: Chatting_Detail_Sero_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 74bc57e0855430c48a1bb799b1a86ab4
     m_Address: Messenger_Content_ja
     m_ReadOnly: 1
@@ -53,6 +72,24 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 756ae4d022afd9e489de7b80367d6f51
     m_Address: Starest_First_Visit_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7e984497676ff654bae9e0075e35c035
+    m_Address: Sol_Second_Meet_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 85ebcc07d7081234da9264a44357d875
+    m_Address: Sol_Puzzle_Clear_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d0e1bf8308c2b074185b4429304cfc47
+    m_Address: Salt's_Talk_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja

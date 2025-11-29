@@ -636,7 +636,7 @@ public class MessageSystem : MonoBehaviour
             var rf = GetReadFlagByRawKey(k);
             if (rf.HasValue) return rf;
 
-            var v = GetTeleporterFlagNullable(k);
+            var v = GetTeleporterFlagNullable(k); // ← 예외 흡수형 안전 호출
             if (v.HasValue) return v;
 
             return null;
@@ -1094,9 +1094,23 @@ public class MessageSystem : MonoBehaviour
 
         if (!teleporter) return null;
 
-        if (teleporter.TryGetFlag(key, out var v))
-            return v;
-
-        return null;
+        // ★★★ 안전 가드: 텔레포터 내부에서 인덱스 오류가 나더라도 여기서 흡수하고 false(미충족)로 처리
+        try
+        {
+            if (teleporter.TryGetFlag(key, out var v))
+                return v;
+            return null;
+        }
+        catch (IndexOutOfRangeException ex)
+        {
+            LogWarn($"GetTeleporterFlagNullable: IndexOutOfRange for key='{key}'. " +
+                    $"조건은 'false'로 간주합니다. 상세: {ex.Message}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            LogError($"GetTeleporterFlagNullable: 예외 발생 key='{key}'\n{ex}");
+            return null;
+        }
     }
 }

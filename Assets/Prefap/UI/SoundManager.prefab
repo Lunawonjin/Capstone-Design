@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4616045820766984285
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8387950941794838254}
+  - component: {fileID: 921148846851034826}
+  - component: {fileID: 2898536825459386561}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: HUD
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8387950941794838254
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4616045820766984285}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.38188, y: -1.67298, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &921148846851034826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4616045820766984285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4305baafb9954104fb32eeee1e76666f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  bgmGroup: {fileID: 6207582839022664928, guid: ee82fb9c91ca6ba439d4d158486fffa3, type: 2}
+  sfxGroup: {fileID: -4220375662582010775, guid: ee82fb9c91ca6ba439d4d158486fffa3, type: 2}
+  bgmClips:
+  - key: Starest
+    clip: {fileID: 8300000, guid: 29b2ada5ad0cb8147ad8a73974897401, type: 3}
+  sfxClips: []
+  bgmVolume: 0.5
+  bgmMute: 0
+  sfxVolume: 0.5
+  sfxMute: 0
+  sfxPoolSize: 10
+  sfxPoolHardLimit: 32
+--- !u!114 &2898536825459386561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4616045820766984285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c41f12a76cd07a0459cdd55afc690f08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneBgmRouter
+  routes:
+  - sceneName: StartMenu
+    bgmKey: Starest
+    startTime: 0
+    fadeSeconds: 0
+  defaultFadeSeconds: 1.5
+  missingRoutePolicy: 1

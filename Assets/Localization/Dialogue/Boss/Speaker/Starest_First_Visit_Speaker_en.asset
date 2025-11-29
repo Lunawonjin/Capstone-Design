@@ -62,10 +62,6 @@ MonoBehaviour:
     m_Localized: Boss
     m_Metadata:
       m_Items: []
-  - m_Id: 17809992052736
-    m_Localized: '{System}'
-    m_Metadata:
-      m_Items: []
   - m_Id: 2857856768872448
     m_Localized: Boss
     m_Metadata:

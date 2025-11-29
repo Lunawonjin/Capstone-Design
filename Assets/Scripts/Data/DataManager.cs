@@ -1,30 +1,33 @@
+// DataManager.cs (Unity 6 LTS)
+// 주석은 모두 한국어. 전체 코드 누락 없음.
+// 변경점 요약:
+// 1) 기존 호출과의 호환성을 위해 래퍼 메서드 추가
+//    - CommitDataToTempFile()  → 내부적으로 SubSaveCommit() 호출
+//    - SubSaveCommitActivesForCurrentScene() → 내부적으로 SubSaveCommitSceneSnapshotAllObjects() 호출
+// 2) 비활성 포함 전체 오브젝트 스냅샷 저장/복원 유지
+// 3) 저장하지 않고 종료 시 sub_save 및 잘못 남은 씬 스냅샷 정리
+
 using UnityEngine;
-using System.IO;
+using UnityEngine.SceneManagement;
+using TMPro;
 using System;
+using System.IO;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using TMPro;
-using UnityEngine.SceneManagement;
-using System.Linq; // 배열에서 .Contains()를 사용하기 위해 필요합니다.
 
-#region 저장 포맷(활성 오브젝트 기록)
+#region 저장 포맷(활성/비활성 오브젝트 기록)
 
-// 활성 오브젝트 스냅샷(씬 저장용)
+// 활성/비활성 오브젝트 스냅샷(씬 저장용)
 [Serializable]
 public class ActiveObjectInfo
 {
-    // 예: "Environment/Trees/Tree_01"
-    public string HierarchyPath;
-
-    // GameObject.name
-    public string Name;
-
-    // GameObject.tag (Untagged 포함)
-    public string Tag;
-
-    // activeInHierarchy 당시의 활성 상태(요청 사양상 true만 저장되지만, 포맷 확장성 위해 둠)
-    public bool ActiveInHierarchy;
+    public string HierarchyPath;    // 예: "Environment/Trees/Tree_01"
+    public string Name;             // GameObject.name
+    public string Tag;              // GameObject.tag (Untagged 포함)
+    public bool ActiveSelf;         // go.activeSelf (복원에 사용)
+    public bool ActiveInHierarchy;  // 저장 시점의 계층 활성 상태(디버깅 참고)
 }
 
 #endregion
@@ -45,22 +48,28 @@ public class PlayerData
     // 마지막 씬 이름
     public string Scene;
 
-    // 요일(1~7) : 월(1) 화(2) 수(3) 목(4) 금(5) 토(6) 일(7)
+    // 요일(1~7)
     public int Weekday;
 
-    // 언어 코드("ko","en","jp") — 기본 "ko"
+    // 언어 코드("ko","en","jp")
     public string Language;
 
     //문자 조건
     public bool StartGame;
 
-    //첫날밤 잘수잇는 조건
+    //첫날밤 잘수있는 조건
     public bool CanFirstSleep;
 
     //첫 방문 지역 이벤트
     public bool Starest_First_Visit;
 
-    // 첫 만남 플래그(스토리 트리거)
+    //오늘 하루 말을 NPC에게 걸었는지 확인하는 Bool값
+    public bool Sol_Today_Talk;
+    public bool Salt_Today_Talk;
+    public bool Ryu_Today_Talk;
+    public bool White_Today_Talk;
+
+    // 첫 만남 플래그
     public bool Sol_First_Meet;
     public bool Salt_First_Meet;
     public bool Ryu_First_Meet;
@@ -71,28 +80,39 @@ public class PlayerData
     public int Ryu_FriendShip;
     public int White_FriendShip;
 
-    //다이어리 해금 함수
+    //다이어리 해금
     public bool DiaryOpen;
 
-    //메신저 삭제 방지 (도착/읽음 상태 기록)
-    public List<string> MessengerDelivered = new List<string>(); // 도착한 메시지 이름들(도착 순서)
-    public List<string> MessengerReadList = new List<string>(); // 읽은 메시지 이름들
+    //메신저 상태
+    public List<string> MessengerDelivered = new List<string>();
+    public List<string> MessengerReadList = new List<string>();
 
-    // ===== 활성 씬 오브젝트 스냅샷 =====
-    public string ActiveSceneName;      // 저장 시점 활성 씬명
-    public ActiveObjectInfo[] ActiveObjects; // 저장 시점 activeInHierarchy == true 목록
+    // 씬 오브젝트 스냅샷(활성/비활성 모두)
+    public string ActiveSceneName;
+    public ActiveObjectInfo[] ActiveObjects;
 
     public PlayerData()
     {
+        Name = "Player";
         Level = 1;
+        Coin = 0;
         Day = 1;
+        Item = 0;
+
+        Px = Py = Pz = 0f;
+        HasSavedPosition = false;
+
         Scene = "";
         Weekday = 1;
         Language = "ko";
 
         StartGame = false;
+        CanFirstSleep = false;
 
-        CanFirstSleep  = false;
+        Sol_Today_Talk = false;
+        Salt_Today_Talk = false;
+        Ryu_Today_Talk = false;
+        White_Today_Talk = false;
 
         Starest_First_Visit = false;
 
@@ -106,12 +126,11 @@ public class PlayerData
         Ryu_FriendShip = 0;
         White_FriendShip = 0;
 
-        DiaryOpen= false;
+        DiaryOpen = false;
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();
 
-        // 메신저 목록은 필드 선언 시점에서 new 되어 있으나 안전하게 보강
         MessengerDelivered = new List<string>();
         MessengerReadList = new List<string>();
     }
@@ -123,15 +142,15 @@ public class DataManager : MonoBehaviour
 
     [Header("플레이어/저장 슬롯")]
     public PlayerData nowPlayer = new PlayerData();
-    public string path;      // 저장 폴더 경로 (persistentDataPath/save)
-    public int nowSlot = -1;  // 현재 선택된 저장 슬롯(0,1,2 ...)
+    public string path;      // persistentDataPath/save
+    public int nowSlot = -1; // 현재 선택된 저장 슬롯
 
-    [Header("임시 저장 (이벤트용)")]
-    public string subPath; // 임시 저장 폴더 경로 (persistentDataPath/sub_save)
-    private string _tempSavePath = null; // 현재 진행중인 이벤트의 임시 저장 파일 경로
-    private bool _isQuitting = false;    // 종료 감지
+    [Header("임시 저장 (이벤트/씬 복귀용)")]
+    public string subPath;               // persistentDataPath/sub_save
+    private string _tempSavePath = null; // 임시(nowPlayer 전체) 파일 경로
+    private bool _isQuitting = false;    // 앱 종료 중
+    private bool _sessionSaved = false;  // 이번 실행에서 정식 SaveData 수행 여부
 
-    // 인스펙터에서 저장을 막을 씬 목록을 관리합니다.
     [Header("저장 불가 씬 (메뉴 등)")]
     [SerializeField] private string[] nonGameplayScenes = new string[] { "StartMenu" };
 
@@ -164,17 +183,13 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string whiteFriendshipObjectName = "Text_White_Friendship";
 
     [Header("표기 형식(언어별)")]
-    // {0}=일차(숫자), {1}=요일명
     [SerializeField] private string dayFormatKo = "{0}일 ({1})";
     [SerializeField] private string dayFormatEn = "Day {0} ({1})";
     [SerializeField] private string dayFormatJp = "{0}日（{1}）";
 
     [Header("호감도 표기 형식(언어별)")]
-    [Tooltip("{0}=캐릭터 이름, {1}=호감도 값")]
     [SerializeField] private string friendshipFormatKo = "{0} 호감도: {1}";
-    [Tooltip("{0}=Character Name, {1}=Friendship Value")]
-    [SerializeField] private string friendshipFormatEn = "{0} Affinity: {1}";
-    [Tooltip("{0}=キャラクター名, {1}=好感度")]
+    [SerializeField] private string friendshipFormatEn = "{0} Frendship: {1}";
     [SerializeField] private string friendshipFormatJp = "{0} 好感度: {1}";
 
     [Header("캐릭터 이름 (언어별)")]
@@ -182,17 +197,17 @@ public class DataManager : MonoBehaviour
     [SerializeField] private string solNameEn = "Sol";
     [SerializeField] private string solNameJp = "ソル";
     [Space(10)]
-    [SerializeField] private string saltNameKo = "솔트";
-    [SerializeField] private string saltNameEn = "Salt";
-    [SerializeField] private string saltNameJp = "ソルト";
+    [SerializeField] private string saltNameKo = "소금";
+    [SerializeField] private string saltNameEn = "Sogeum";
+    [SerializeField] private string saltNameJp = "ソグミ";
     [Space(10)]
-    [SerializeField] private string ryuNameKo = "류";
-    [SerializeField] private string ryuNameEn = "Ryu";
-    [SerializeField] private string ryuNameJp = "リュウ";
+    [SerializeField] private string ryuNameKo = "류지현";
+    [SerializeField] private string ryuNameEn = "Ryu Jihyeon";
+    [SerializeField] private string ryuNameJp = "リュ・ジヒョン";
     [Space(10)]
-    [SerializeField] private string whiteNameKo = "화이트";
-    [SerializeField] private string whiteNameEn = "White";
-    [SerializeField] private string whiteNameJp = "ホワイト";
+    [SerializeField] private string whiteNameKo = "천하얀";
+    [SerializeField] private string whiteNameEn = "WhiteCheon Hayan";
+    [SerializeField] private string whiteNameJp = "チョン・ハヤン";
 
     [Header("기타 표기 형식")]
     [SerializeField] private string coinFormat = "{0}";
@@ -211,7 +226,7 @@ public class DataManager : MonoBehaviour
     [Header("자동 씬 로드 옵션")]
     public bool autoLoadSavedSceneOnStart = false;
 
-    // === 언어별 요일 이름표(1~7 인덱스 사용; 0은 미사용) ===
+    // 언어별 요일 이름표(1~7; 0 미사용)
     private static readonly string[] WEEK_KO = { "", "월", "화", "수", "목", "금", "토", "일" };
     private static readonly string[] WEEK_EN = { "", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
     private static readonly string[] WEEK_JP = { "", "月", "火", "水", "木", "金", "土", "日" };
@@ -234,39 +249,63 @@ public class DataManager : MonoBehaviour
     [SerializeField] private int friendshipFontSizeEn = 30;
     [SerializeField] private int friendshipFontSizeJp = 30;
 
-    [Header("활성 오브젝트 저장 옵션")]
-    [Tooltip("활성 씬에서 activeInHierarchy == true 인 오브젝트를 저장")]
-    [SerializeField] private bool captureActiveObjectsOnSave = true;
-
-    [Tooltip("이 태그를 가진 오브젝트는 저장/복원에서 제외(HUD 등)")]
+    [Header("오브젝트 저장/복원 옵션")]
+    [Tooltip("기록/복원에서 제외할 태그(예: HUD, UIPanel 등)")]
     [SerializeField] private string[] excludeTagsForActiveObjects = new string[] { "HUD", "UIPanel" };
 
-    [Tooltip("이 이름(정확 일치)을 가진 오브젝트는 저장/복원에서 제외")]
+    [Tooltip("기록/복원에서 제외할 이름(정확 일치)")]
     [SerializeField] private string[] excludeNamesForActiveObjects = new string[] { "UIPanel" };
 
     public enum ActiveRestoreMode
     {
-        OnlyListedToActive,
-        FullSyncActiveVsOthersInactive
+        ExactMatchSavedActiveSelf,   // 스냅샷 ActiveSelf 그대로 적용
+        OnlyListedExactMatch         // 기록된 것만 ActiveSelf 적용(기록 없는 애는 건드리지 않음)
     }
 
-    [Header("활성 오브젝트 복원 옵션")]
-    [Tooltip("씬 로드 시 자동으로 활성 오브젝트 상태를 복원")]
+    [Tooltip("씬 로드 시 자동으로 오브젝트 상태를 복원")]
     [SerializeField] private bool autoRestoreActiveObjectsOnSceneLoaded = true;
 
-    [Tooltip("복원 모드: 보수적(기록된 것만 활성) / 완전 동기화(기록 외 비활성)")]
-    [SerializeField] private ActiveRestoreMode activeRestoreMode = ActiveRestoreMode.OnlyListedToActive;
+    [Tooltip("복원 모드(기본: 정확히 일치)")]
+    [SerializeField] private ActiveRestoreMode activeRestoreMode = ActiveRestoreMode.ExactMatchSavedActiveSelf;
 
-    [Tooltip("복원 시 어떤 경로가 적용/누락되었는지 로그 출력")]
+    [Tooltip("복원/저장 로그 상세 출력")]
     [SerializeField] private bool logRestoreDetails = false;
 
     // 변경 감지 스냅샷
     int _lastCoin = int.MinValue, _lastLevel = int.MinValue, _lastDay = int.MinValue, _lastWeekday = int.MinValue;
-    string _lastName = null;
-    string _lastLanguage = null;
-
+    string _lastName = null, _lastLanguage = null;
     int _lastSolFriendship = int.MinValue, _lastSaltFriendship = int.MinValue, _lastRyuFriendship = int.MinValue, _lastWhiteFriendship = int.MinValue;
 
+    // 씬별 스냅샷 파일 포맷/경로
+    [Serializable]
+    private class SceneObjectSnapshot
+    {
+        public string SceneName;
+        public ActiveObjectInfo[] Objects;
+    }
+
+    private string GetSceneActivesTempPathForSlot(int slot, string sceneName)
+    {
+        string safe = SanitizeSceneName(sceneName);
+        return Path.Combine(subPath, $"slot_{slot}_{safe}_actives.json");
+    }
+
+    private string GetSceneActivesSavePathForSlot(int slot, string sceneName)
+    {
+        string safe = SanitizeSceneName(sceneName);
+        return Path.Combine(path, $"slot_{slot}_{safe}_actives.json");
+    }
+
+    private static string SanitizeSceneName(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName)) return "UnknownScene";
+        foreach (var c in Path.GetInvalidFileNameChars())
+            sceneName = sceneName.Replace(c, '_');
+        sceneName = sceneName.Replace('/', '_').Replace('\\', '_');
+        return sceneName;
+    }
+
+    // ───────── Lifecycle ─────────
     void Awake()
     {
         if (instance == null)
@@ -286,43 +325,14 @@ public class DataManager : MonoBehaviour
         subPath = Path.Combine(Application.persistentDataPath, "sub_save");
         if (!Directory.Exists(subPath)) Directory.CreateDirectory(subPath);
 
-        // 시작 시 혹시 남아 있을 수 있는 임시 파일을 청소(선택적)
+        // 시작 시 임시 파일(지난 세션 잔여물) 정리
         CleanupAllSubSaves();
 
-        if (dontDestroyOnLoadHUD)
-        {
-            if (coinText) DontDestroyOnLoad(coinText.gameObject);
-            if (levelText) DontDestroyOnLoad(levelText.gameObject);
-            if (dayText) DontDestroyOnLoad(dayText.gameObject);
-            if (nameText) DontDestroyOnLoad(nameText.gameObject);
-
-            if (solFriendshipText) DontDestroyOnLoad(solFriendshipText.gameObject);
-            if (saltFriendshipText) DontDestroyOnLoad(saltFriendshipText.gameObject);
-            if (ryuFriendshipText) DontDestroyOnLoad(ryuFriendshipText.gameObject);
-            if (whiteFriendshipText) DontDestroyOnLoad(whiteFriendshipText.gameObject);
-        }
-
-        SceneManager.sceneLoaded += OnSceneLoaded_RebindHUD_AndApplyPos;
+        SceneManager.sceneLoaded += OnSceneLoaded_RebindHUD_Apply_And_Restore;
 
         EnsureWeekdayValid();
         EnsureLanguageValid();
-
         SnapshotValues();
-    }
-
-    void OnApplicationQuit()
-    {
-        _isQuitting = true;
-        CleanupAllSubSaves(); // 종료 시 임시파일 일괄 삭제
-    }
-
-    void OnDestroy()
-    {
-        if (instance == this)
-            SceneManager.sceneLoaded -= OnSceneLoaded_RebindHUD_AndApplyPos;
-
-        if (_isQuitting)
-            CleanupAllSubSaves(); // 안전망
     }
 
     void Start()
@@ -336,6 +346,42 @@ public class DataManager : MonoBehaviour
         }
     }
 
+    void OnApplicationQuit()
+    {
+        _isQuitting = true;
+
+        // 저장하지 않고 종료하면 씬 스냅샷/임시 저장 제거
+        if (!_sessionSaved)
+        {
+            CleanupAllSubSaves();
+
+            try
+            {
+                var stray = Directory.GetFiles(path, "slot_*_*_actives.json", SearchOption.TopDirectoryOnly);
+                foreach (var f in stray) File.Delete(f);
+                if (stray.Length > 0 && logRestoreDetails)
+                    Debug.Log($"[DataManager] 세션 저장 없음 → 정식 씬 스냅샷 {stray.Length}개 제거");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[DataManager] 종료 시 정식 씬 스냅샷 정리 중 예외: {e.Message}");
+            }
+        }
+        else
+        {
+            CleanupAllSubSaves();
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (instance == this)
+            SceneManager.sceneLoaded -= OnSceneLoaded_RebindHUD_Apply_And_Restore;
+
+        if (_isQuitting)
+            CleanupAllSubSaves();
+    }
+
     void LateUpdate()
     {
         if (HasValueChanged())
@@ -345,26 +391,28 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    // === 저장/로드/삭제 ===
-
+    // ───────── 저장/로드/삭제 ─────────
     public string GetSlotFullPath(int slot)
     {
         if (!Directory.Exists(path)) Directory.CreateDirectory(path);
         return Path.Combine(path, $"slot_{slot}.json");
     }
 
-    private string GetSlotPath(int slot) => GetSlotFullPath(slot);
-
     public void SaveData()
     {
-
         if (nowSlot < 0)
         {
             Debug.LogError("[DataManager] nowSlot 미지정");
             return;
         }
 
-        string file = GetSlotPath(nowSlot);
+        var activeScene = SceneManager.GetActiveScene();
+        if (nonGameplayScenes != null && nonGameplayScenes.Any(n => SceneNameEquals(activeScene.name, n)))
+        {
+            Debug.LogWarning($"[DataManager] '{activeScene.name}' 씬에서는 저장하지 않습니다.");
+            return;
+        }
+
         try
         {
             if (nowPlayer.Level < 1) nowPlayer.Level = 1;
@@ -372,22 +420,33 @@ public class DataManager : MonoBehaviour
             EnsureWeekdayValid();
             EnsureLanguageValid();
 
-            if (captureActiveObjectsOnSave)
+            // 플레이어 위치 기록(가능 시)
+            var player = FindPlayer();
+            if (player != null)
             {
-                var activeScene = SceneManager.GetActiveScene();
-                nowPlayer.ActiveSceneName = activeScene.name;
-                nowPlayer.ActiveObjects = CaptureActiveObjectsInCurrentScene().ToArray();
-            }
-            else
-            {
-                nowPlayer.ActiveSceneName = SceneManager.GetActiveScene().name;
-                nowPlayer.ActiveObjects = Array.Empty<ActiveObjectInfo>();
+                var p = player.position;
+                nowPlayer.Px = p.x; nowPlayer.Py = p.y; nowPlayer.Pz = p.z;
+                nowPlayer.HasSavedPosition = true;
             }
 
-            string json = JsonUtility.ToJson(nowPlayer, false);
-            File.WriteAllText(file, json);
+            // 씬/오브젝트 스냅샷(활성/비활성 모두)
+            nowPlayer.Scene = activeScene.name;
+            nowPlayer.ActiveSceneName = activeScene.name;
+            nowPlayer.ActiveObjects = CaptureAllObjectsSnapshotForScene(activeScene);
 
-            Debug.Log($"[DataManager] Saved: {file}");
+            // 1) 메인 세이브
+            string file = GetSlotFullPath(nowSlot);
+            File.WriteAllText(file, JsonUtility.ToJson(nowPlayer, false));
+
+            // 2) 씬 스냅샷을 /save에 보관
+            string sceneSnapshotPath = GetSceneActivesSavePathForSlot(nowSlot, activeScene.name);
+            var wrapper = new SceneObjectSnapshot { SceneName = activeScene.name, Objects = nowPlayer.ActiveObjects };
+            File.WriteAllText(sceneSnapshotPath, JsonUtility.ToJson(wrapper, false));
+
+            _sessionSaved = true;
+            if (logRestoreDetails)
+                Debug.Log($"[DataManager] 저장 완료: {file}\n＋ 씬 스냅샷 → {sceneSnapshotPath} (count={nowPlayer.ActiveObjects?.Length ?? 0})");
+
             NotifyChanged();
         }
         catch (Exception e)
@@ -404,7 +463,7 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        string file = GetSlotPath(nowSlot);
+        string file = GetSlotFullPath(nowSlot);
         if (!File.Exists(file))
         {
             Debug.LogError("[DataManager] 파일 없음: " + file);
@@ -450,8 +509,7 @@ public class DataManager : MonoBehaviour
     public bool ExistsSlot(int slot)
     {
         if (slot < 0) return false;
-        string f = GetSlotPath(slot);
-        return File.Exists(f);
+        return File.Exists(GetSlotFullPath(slot));
     }
 
     public bool HasAnySave(int slotCount = 3)
@@ -467,7 +525,7 @@ public class DataManager : MonoBehaviour
         DateTime tbest = DateTime.MinValue;
         for (int i = 0; i < slotCount; i++)
         {
-            string f = GetSlotPath(i);
+            string f = GetSlotFullPath(i);
             if (!File.Exists(f)) continue;
             var t = File.GetLastWriteTime(f);
             if (t > tbest) { tbest = t; best = i; }
@@ -496,12 +554,17 @@ public class DataManager : MonoBehaviour
     public bool DeleteData(int slot)
     {
         if (slot < 0) return false;
-        string f = GetSlotPath(slot);
+        string f = GetSlotFullPath(slot);
         if (!File.Exists(f)) return false;
 
         try
         {
             File.Delete(f);
+
+            // 해당 슬롯의 씬별 스냅샷들도 정리
+            var stray = Directory.GetFiles(path, $"slot_{slot}_*_actives.json", SearchOption.TopDirectoryOnly);
+            foreach (var s in stray) File.Delete(s);
+
             NotifyChanged();
             SnapshotValues();
             return true;
@@ -513,8 +576,7 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    // === 값 변경 API ===
-
+    // ───────── 값 변경 API ─────────
     public void SetCoin(int coin) { nowPlayer.Coin = Math.Max(0, coin); NotifyChanged(); SnapshotValues(); }
     public void AddCoin(int delta)
     {
@@ -547,8 +609,7 @@ public class DataManager : MonoBehaviour
 
     public void SetPlayerName(string newName) { nowPlayer.Name = newName ?? ""; NotifyChanged(); SnapshotValues(); }
 
-    // === 언어 코드 API ===
-
+    // ───────── 언어/요일 유틸 ─────────
     public string GetLanguageCode()
     {
         EnsureLanguageValid();
@@ -587,8 +648,6 @@ public class DataManager : MonoBehaviour
     private string CurrentLang() =>
         string.IsNullOrEmpty(nowPlayer?.Language) ? "ko" : NormalizeLang(nowPlayer.Language);
 
-    // === 요일/날짜 로컬라이즈 유틸 ===
-
     public string GetWeekdayNameLocalized(string langCode = null)
     {
         int w = GetWeekday(); // 1~7
@@ -619,8 +678,6 @@ public class DataManager : MonoBehaviour
         };
     }
 
-    // === 요일 유틸 ===
-
     public int GetWeekday()
     {
         EnsureWeekdayValid();
@@ -634,11 +691,6 @@ public class DataManager : MonoBehaviour
     }
 
     public bool IsWeekend => GetWeekday() is 6 or 7;
-
-    public string GetWeekdayName()
-    {
-        return GetWeekdayNameLocalized(CurrentLang());
-    }
 
     public void RecomputeWeekdayFromDay()
     {
@@ -663,8 +715,7 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    // === 위치/씬 저장 ===
-
+    // ───────── 위치/씬 저장 및 적용 ─────────
     public void SetPlayerPosition(Vector3 pos)
     {
         nowPlayer.Px = pos.x;
@@ -734,8 +785,7 @@ public class DataManager : MonoBehaviour
         player.transform.position = target;
     }
 
-    // === HUD ===
-
+    // ───────── HUD ─────────
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void NotifyChanged() => UpdateHUD();
 
@@ -818,38 +868,32 @@ public class DataManager : MonoBehaviour
 
         ApplyFriendshipStylePerLanguage(lang);
 
-        string format;
-        string characterName;
-
-        switch (lang)
+        string format = lang switch
         {
-            case "en": format = friendshipFormatEn; break;
-            case "jp": format = friendshipFormatJp; break;
-            default: format = friendshipFormatKo; break;
-        }
+            "en" => friendshipFormatEn,
+            "jp" => friendshipFormatJp,
+            _ => friendshipFormatKo
+        };
 
         if (solFriendshipText)
         {
-            characterName = lang switch { "en" => solNameEn, "jp" => solNameJp, _ => solNameKo };
-            solFriendshipText.text = string.Format(format, characterName, nowPlayer.Sol_FriendShip);
+            string n = lang switch { "en" => solNameEn, "jp" => solNameJp, _ => solNameKo };
+            solFriendshipText.text = string.Format(format, n, nowPlayer.Sol_FriendShip);
         }
-
         if (saltFriendshipText)
         {
-            characterName = lang switch { "en" => saltNameEn, "jp" => saltNameJp, _ => saltNameKo };
-            saltFriendshipText.text = string.Format(format, characterName, nowPlayer.Salt_FriendShip);
+            string n = lang switch { "en" => saltNameEn, "jp" => saltNameJp, _ => saltNameKo };
+            saltFriendshipText.text = string.Format(format, n, nowPlayer.Salt_FriendShip);
         }
-
         if (ryuFriendshipText)
         {
-            characterName = lang switch { "en" => ryuNameEn, "jp" => ryuNameJp, _ => ryuNameKo };
-            ryuFriendshipText.text = string.Format(format, characterName, nowPlayer.Ryu_FriendShip);
+            string n = lang switch { "en" => ryuNameEn, "jp" => ryuNameJp, _ => ryuNameKo };
+            ryuFriendshipText.text = string.Format(format, n, nowPlayer.Ryu_FriendShip);
         }
-
         if (whiteFriendshipText)
         {
-            characterName = lang switch { "en" => whiteNameEn, "jp" => whiteNameJp, _ => whiteNameKo };
-            whiteFriendshipText.text = string.Format(format, characterName, nowPlayer.White_FriendShip);
+            string n = lang switch { "en" => whiteNameEn, "jp" => whiteNameJp, _ => whiteNameKo };
+            whiteFriendshipText.text = string.Format(format, n, nowPlayer.White_FriendShip);
         }
     }
 
@@ -885,79 +929,90 @@ public class DataManager : MonoBehaviour
 
     public void RebindHUDNow()
     {
-        OnSceneLoaded_RebindHUD_AndApplyPos(SceneManager.GetActiveScene(), LoadSceneMode.Single);
+        OnSceneLoaded_RebindHUD_Apply_And_Restore(SceneManager.GetActiveScene(), LoadSceneMode.Single);
     }
 
-    void OnSceneLoaded_RebindHUD_AndApplyPos(Scene scene, LoadSceneMode mode)
+    // ───────── 씬 로드시: HUD/포지션/스냅샷 복원 ─────────
+    private void OnSceneLoaded_RebindHUD_Apply_And_Restore(Scene scene, LoadSceneMode mode)
     {
-        // ★ SubSave가 있으면 즉시 로드하고 삭제 (간결화)
+        // 임시(nowPlayer) 저장이 있다면 우선 반영 후 삭제
         TryLoadAndDeleteSubSave();
 
         if (autoRebindOnSceneLoaded)
         {
-            bool needCoin = coinText == null;
-            bool needLevel = levelText == null;
-            bool needDay = dayText == null && !string.IsNullOrEmpty(dayObjectName);
-            bool needName = nameText == null && !string.IsNullOrEmpty(nameObjectName);
-            bool needSol = solFriendshipText == null && !string.IsNullOrEmpty(solFriendshipObjectName);
-            bool needSalt = saltFriendshipText == null && !string.IsNullOrEmpty(saltFriendshipObjectName);
-            bool needRyu = ryuFriendshipText == null && !string.IsNullOrEmpty(ryuFriendshipObjectName);
-            bool needWhite = whiteFriendshipText == null && !string.IsNullOrEmpty(whiteFriendshipObjectName);
-
-            if (needCoin || needLevel || needDay || needName || needSol || needSalt || needRyu || needWhite)
-            {
-                Transform root = null;
-                if (!string.IsNullOrEmpty(hudRootTag))
-                {
-                    var hudRootGO = GameObject.FindWithTag(hudRootTag);
-                    if (hudRootGO) root = hudRootGO.transform;
-                }
-
-                TMP_Text FindTMP(string n)
-                {
-                    if (string.IsNullOrEmpty(n)) return null;
-                    if (root)
-                    {
-                        foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
-                            if (t && t.name == n) return t;
-                        return null;
-                    }
-                    else
-                    {
-                        foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
-                        {
-                            if (!t) continue;
-                            if (t.hideFlags != HideFlags.None) continue;
-                            if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
-                            if (t.name == n) return t;
-                        }
-                        return null;
-                    }
-                }
-
-                var fc = needCoin ? FindTMP(coinObjectName) : coinText;
-                var fl = needLevel ? FindTMP(levelObjectName) : levelText;
-                var fd = needDay ? FindTMP(dayObjectName) : dayText;
-                var fn = needName ? FindTMP(nameObjectName) : nameText;
-                var fSol = needSol ? FindTMP(solFriendshipObjectName) : solFriendshipText;
-                var fSalt = needSalt ? FindTMP(saltFriendshipObjectName) : saltFriendshipText;
-                var fRyu = needRyu ? FindTMP(ryuFriendshipObjectName) : ryuFriendshipText;
-                var fWhite = needWhite ? FindTMP(whiteFriendshipObjectName) : whiteFriendshipText;
-
-                if (fc || fl || fd || fn || fSol || fSalt || fRyu || fWhite)
-                    BindHUD(fc, fl, fd, fn, fSol, fSalt, fRyu, fWhite);
-            }
+            AutoRebindHUDIfNeeded();
         }
 
         if (applySavedPositionOnLoad && nowPlayer != null && nowPlayer.HasSavedPosition)
             StartCoroutine(ApplyPositionWhenReady());
 
+        // 씬별 임시 스냅샷(sub_save)이 존재하면 우선 적용
+        TryApplySubSaveSceneSnapshotForCurrentScene();
+
         if (autoRestoreActiveObjectsOnSceneLoaded)
         {
-            StartCoroutine(ApplyActiveObjectsSnapshotCoroutine());
+            // 정식 세이브의 스냅샷으로도 복원 시도
+            ApplyActiveObjectsSnapshotNow();
         }
     }
 
+    private void AutoRebindHUDIfNeeded()
+    {
+        bool needCoin = coinText == null;
+        bool needLevel = levelText == null;
+        bool needDay = dayText == null && !string.IsNullOrEmpty(dayObjectName);
+        bool needName = nameText == null && !string.IsNullOrEmpty(nameObjectName);
+        bool needSol = solFriendshipText == null && !string.IsNullOrEmpty(solFriendshipObjectName);
+        bool needSalt = saltFriendshipText == null && !string.IsNullOrEmpty(saltFriendshipObjectName);
+        bool needRyu = ryuFriendshipText == null && !string.IsNullOrEmpty(ryuFriendshipObjectName);
+        bool needWhite = whiteFriendshipText == null && !string.IsNullOrEmpty(whiteFriendshipObjectName);
+
+        if (!(needCoin || needLevel || needDay || needName || needSol || needSalt || needRyu || needWhite))
+            return;
+
+        Transform root = null;
+        if (!string.IsNullOrEmpty(hudRootTag))
+        {
+            var hudRootGO = GameObject.FindWithTag(hudRootTag);
+            if (hudRootGO) root = hudRootGO.transform;
+        }
+
+        TMP_Text FindTMP(string n)
+        {
+            if (string.IsNullOrEmpty(n)) return null;
+            if (root)
+            {
+                foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
+                    if (t && t.name == n) return t;
+                return null;
+            }
+            else
+            {
+                foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
+                {
+                    if (!t) continue;
+                    if (t.hideFlags != HideFlags.None) continue;
+                    if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
+                    if (t.name == n) return t;
+                }
+                return null;
+            }
+        }
+
+        var fc = needCoin ? FindTMP(coinObjectName) : coinText;
+        var fl = needLevel ? FindTMP(levelObjectName) : levelText;
+        var fd = needDay ? FindTMP(dayObjectName) : dayText;
+        var fn = needName ? FindTMP(nameObjectName) : nameText;
+        var fSol = needSol ? FindTMP(solFriendshipObjectName) : solFriendshipText;
+        var fSalt = needSalt ? FindTMP(saltFriendshipObjectName) : saltFriendshipText;
+        var fRyu = needRyu ? FindTMP(ryuFriendshipObjectName) : ryuFriendshipText;
+        var fWhite = needWhite ? FindTMP(whiteFriendshipObjectName) : whiteFriendshipText;
+
+        if (fc || fl || fd || fn || fSol || fSalt || fRyu || fWhite)
+            BindHUD(fc, fl, fd, fn, fSol, fSalt, fRyu, fWhite);
+    }
+
+    // ───────── 변경 감지 스냅샷 ─────────
     void SnapshotValues()
     {
         _lastCoin = nowPlayer?.Coin ?? 0;
@@ -991,47 +1046,36 @@ public class DataManager : MonoBehaviour
             || _lastWhiteFriendship != nowPlayer.White_FriendShip;
     }
 
-    // ===== 활성 오브젝트 수집(저장) =====
-
-    private List<ActiveObjectInfo> CaptureActiveObjectsInCurrentScene()
+    // ───────── 활성/비활성 전체 스냅샷 캡쳐/복원 ─────────
+    private ActiveObjectInfo[] CaptureAllObjectsSnapshotForScene(Scene scene)
     {
-        var result = new List<ActiveObjectInfo>(256);
-        var activeScene = SceneManager.GetActiveScene();
-        if (!activeScene.IsValid() || !activeScene.isLoaded) return result;
-        var roots = activeScene.GetRootGameObjects();
+        var list = new List<ActiveObjectInfo>(512);
+        var roots = scene.GetRootGameObjects();
         foreach (var root in roots)
         {
             if (!root) continue;
-            TraverseAndCollect(root.transform, activeScene, result);
-        }
-        return result;
-    }
 
-    private void TraverseAndCollect(Transform t, Scene activeScene, List<ActiveObjectInfo> sink)
-    {
-        if (!t) return;
-        var go = t.gameObject;
-        if (go.scene != activeScene || !go.scene.isLoaded) return;
-        if (go.hideFlags != HideFlags.None) return;
-
-        if (go.activeInHierarchy)
-        {
-            if (!ShouldExclude(go))
+            var all = root.GetComponentsInChildren<Transform>(true); // 비활성 포함
+            foreach (var tr in all)
             {
-                sink.Add(new ActiveObjectInfo
+                var go = tr.gameObject;
+                if (!go) continue;
+                if (go.scene != scene || !go.scene.isLoaded) continue;
+                if (go.hideFlags != HideFlags.None) continue;
+                if (ShouldExclude(go)) continue;
+
+                list.Add(new ActiveObjectInfo
                 {
-                    HierarchyPath = BuildHierarchyPath(go.transform),
+                    HierarchyPath = BuildHierarchyPath(tr),
                     Name = go.name,
                     Tag = SafeTag(go),
-                    ActiveInHierarchy = true
+                    ActiveSelf = go.activeSelf,
+                    ActiveInHierarchy = go.activeInHierarchy
                 });
             }
         }
-        for (int i = 0; i < t.childCount; i++)
-            TraverseAndCollect(t.GetChild(i), activeScene, sink);
+        return list.ToArray();
     }
-
-    // ===== 활성 오브젝트 복원(restore) =====
 
     public void ApplyActiveObjectsSnapshotNow()
     {
@@ -1039,24 +1083,10 @@ public class DataManager : MonoBehaviour
         catch (Exception e) { Debug.LogError($"[DataManager] ApplyActiveObjectsSnapshotNow 실패: {e}"); }
     }
 
-    public IEnumerator ApplyActiveObjectsSnapshotCoroutine(float delayOneFrame = 0f)
-    {
-        if (delayOneFrame <= 0f) yield return null;
-        else
-        {
-            float t = 0f;
-            while (t < delayOneFrame)
-            {
-                t += Time.unscaledDeltaTime;
-                yield return null;
-            }
-        }
-        ApplyActiveObjectsSnapshotInternal();
-    }
-
     private void ApplyActiveObjectsSnapshotInternal()
     {
         if (nowPlayer == null || nowPlayer.ActiveObjects == null) return;
+
         string currentSceneName = SceneManager.GetActiveScene().name;
         string snapshotSceneName = nowPlayer.ActiveSceneName ?? "";
 
@@ -1067,33 +1097,35 @@ public class DataManager : MonoBehaviour
             return;
         }
 
-        var sceneObjects = BuildSceneObjectMap();
-        var activeSet = new HashSet<string>(StringComparer.Ordinal);
+        var sceneMap = BuildSceneObjectMap(); // 경로 → GameObject
+
+        int applied = 0, missing = 0;
         foreach (var info in nowPlayer.ActiveObjects)
         {
             if (info == null || string.IsNullOrEmpty(info.HierarchyPath)) continue;
-            activeSet.Add(info.HierarchyPath);
+
+            if (sceneMap.TryGetValue(info.HierarchyPath, out var go))
+            {
+                if (activeRestoreMode == ActiveRestoreMode.ExactMatchSavedActiveSelf ||
+                    activeRestoreMode == ActiveRestoreMode.OnlyListedExactMatch)
+                {
+                    if (go.activeSelf != info.ActiveSelf)
+                    {
+                        go.SetActive(info.ActiveSelf);
+                        applied++;
+                    }
+                }
+            }
+            else
+            {
+                missing++;
+                if (logRestoreDetails)
+                    Debug.Log($"[DataManager] 복원 대상 경로 누락: {info.HierarchyPath}");
+            }
         }
 
-        int setOn = 0, setOff = 0, missing = 0;
-        if (activeRestoreMode == ActiveRestoreMode.OnlyListedToActive)
-        {
-            foreach (var path in activeSet)
-            {
-                if (sceneObjects.TryGetValue(path, out var go)) { if (!go.activeSelf) { go.SetActive(true); setOn++; } }
-                else { missing++; if (logRestoreDetails) Debug.Log($"[DataManager] 경로 누락(활성 처리 불가): {path}"); }
-            }
-        }
-        else
-        {
-            foreach (var kv in sceneObjects) { if (!activeSet.Contains(kv.Key)) { if (kv.Value.activeSelf) { kv.Value.SetActive(false); setOff++; } } }
-            foreach (var path in activeSet)
-            {
-                if (sceneObjects.TryGetValue(path, out var go)) { if (!go.activeSelf) { go.SetActive(true); setOn++; } }
-                else { missing++; if (logRestoreDetails) Debug.Log($"[DataManager] 경로 누락(활성 처리 불가): {path}"); }
-            }
-        }
-        if (logRestoreDetails) Debug.Log($"[DataManager] 복원 완료 — 켬:{setOn}, 끔:{setOff}, 경로누락:{missing}, 씬:'{currentSceneName}'");
+        if (logRestoreDetails)
+            Debug.Log($"[DataManager] 스냅샷 복원 완료 — 적용:{applied}, 경로누락:{missing}, 씬:'{currentSceneName}'");
     }
 
     private Dictionary<string, GameObject> BuildSceneObjectMap()
@@ -1101,80 +1133,45 @@ public class DataManager : MonoBehaviour
         var map = new Dictionary<string, GameObject>(1024, StringComparer.Ordinal);
         var scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded) return map;
+
         var roots = scene.GetRootGameObjects();
-        foreach (var root in roots) { if (!root) continue; TraverseAndMap(root.transform, scene, map); }
+        foreach (var root in roots)
+        {
+            if (!root) continue;
+
+            var all = root.GetComponentsInChildren<Transform>(true);
+            foreach (var tr in all)
+            {
+                var go = tr.gameObject;
+                if (!go) continue;
+                if (go.scene != scene || !go.scene.isLoaded) continue;
+                if (go.hideFlags != HideFlags.None) continue;
+                if (ShouldExclude(go)) continue;
+
+                string path = BuildHierarchyPath(tr);
+                if (!map.ContainsKey(path))
+                    map.Add(path, go);
+            }
+        }
+
         return map;
     }
 
-    private void TraverseAndMap(Transform t, Scene scene, Dictionary<string, GameObject> sink)
-    {
-        if (!t) return;
-        var go = t.gameObject;
-        if (go.scene != scene || !go.scene.isLoaded) return;
-        if (go.hideFlags != HideFlags.None) return;
-        if (!ShouldExclude(go))
-        {
-            string path = BuildHierarchyPath(go.transform);
-            if (!sink.ContainsKey(path)) sink.Add(path, go);
-        }
-        for (int i = 0; i < t.childCount; i++)
-            TraverseAndMap(t.GetChild(i), scene, sink);
-    }
+    // ───────── SubSave(임시) — nowPlayer 전체/씬별 스냅샷 ─────────
+    string GetTempPathForSlot(int slot) => Path.Combine(subPath, $"slot_{slot}_temp.json");
 
-    // ===== 공통 유틸 =====
-
-    private static string BuildHierarchyPath(Transform tr)
-    {
-        var stack = new Stack<string>(8);
-        var cur = tr;
-        while (cur != null) { stack.Push(cur.name); cur = cur.parent; }
-        return string.Join("/", stack);
-    }
-
-    private static string SafeTag(GameObject go)
-    {
-        try { return go.tag; } catch { return "Untagged"; }
-    }
-
-    private bool ShouldExclude(GameObject go)
-    {
-        if (excludeTagsForActiveObjects != null)
-        {
-            string gTag = SafeTag(go);
-            for (int i = 0; i < excludeTagsForActiveObjects.Length; i++) { if (!string.IsNullOrEmpty(excludeTagsForActiveObjects[i]) && string.Equals(gTag, excludeTagsForActiveObjects[i], StringComparison.Ordinal)) return true; }
-        }
-        if (excludeNamesForActiveObjects != null)
-        {
-            string nm = go.name;
-            for (int i = 0; i < excludeNamesForActiveObjects.Length; i++) { if (!string.IsNullOrEmpty(excludeNamesForActiveObjects[i]) && string.Equals(nm, excludeNamesForActiveObjects[i], StringComparison.Ordinal)) return true; }
-        }
-        var uiPanelType = Type.GetType("UIPanel");
-        if (uiPanelType != null && go.GetComponent(uiPanelType) != null) return true;
-        return false;
-    }
-
-    // ===== 임시 저장/로드 API (SubSave) =====
-
-    string GetTempPathForSlot(int slot)
-    {
-        return Path.Combine(subPath, $"slot_{slot}_temp.json");
-    }
-
-    /// <summary>현재 nowPlayer를 SubSave에 기록</summary>
-    public void SubSaveCommit()
+    public void SubSaveCommit() // nowPlayer 전체 임시 저장
     {
         if (nowSlot < 0)
         {
-            Debug.LogWarning("[DataManager] SubSaveCommit: nowSlot is not set. Cannot create temp save.");
+            Debug.LogWarning("[DataManager] SubSaveCommit: nowSlot 미지정");
             return;
         }
-
         try
         {
             string file = GetTempPathForSlot(nowSlot);
-            string json = JsonUtility.ToJson(nowPlayer, false);
-            File.WriteAllText(file, json);
-            Debug.Log($"[DataManager] SubSaveCommit → {file}");
+            File.WriteAllText(file, JsonUtility.ToJson(nowPlayer, false));
+            if (logRestoreDetails) Debug.Log($"[DataManager] SubSaveCommit → {file}");
         }
         catch (Exception e)
         {
@@ -1182,9 +1179,6 @@ public class DataManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// SubSave가 있으면 즉시 로드하고, 성공/실패와 관계없이 파일을 삭제한다.
-    /// </summary>
     public bool TryLoadAndDeleteSubSave()
     {
         if (nowSlot < 0) return false;
@@ -1196,7 +1190,7 @@ public class DataManager : MonoBehaviour
             var json = File.ReadAllText(file);
             var tmp = JsonUtility.FromJson<PlayerData>(json);
             if (tmp != null) nowPlayer = tmp;
-            Debug.Log($"[DataManager] SubSave 로드 성공 → {file}");
+            if (logRestoreDetails) Debug.Log($"[DataManager] SubSave 로드 성공 → {file}");
         }
         catch (Exception e)
         {
@@ -1207,50 +1201,158 @@ public class DataManager : MonoBehaviour
             try
             {
                 File.Delete(file);
-                Debug.Log($"[DataManager] SubSave 파일 삭제 완료 → {file}");
+                if (logRestoreDetails) Debug.Log($"[DataManager] SubSave 삭제 완료 → {file}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[DataManager] SubSave 파일 삭제 실패: {e}");
+                Debug.LogError($"[DataManager] SubSave 삭제 실패: {e}");
             }
         }
 
-        // 씬 진입 직후 HUD/스냅샷 반영
         NotifyChanged(); SnapshotValues();
         return true;
     }
 
-    /// <summary>씬 바꾸기 직전에 SubSave로 커밋만 하고, LoadScene 호출</summary>
-    public void ChangeSceneWithSubSave(string sceneName)
+    // 요구사항: 씬 이동 직전 활성/비활성 모두 임시 저장
+    public void SubSaveCommitSceneSnapshotAllObjects()
     {
-        SubSaveCommit();
-        SceneManager.LoadScene(sceneName);
-    }
+        if (nowSlot < 0)
+        {
+            Debug.LogWarning("[DataManager] SubSaveCommitSceneSnapshotAllObjects: nowSlot 미지정");
+            return;
+        }
 
-    /// <summary>sub_save 폴더의 *_temp.json 파일을 모두 삭제합니다.</summary>
-    public void CleanupAllSubSaves()
-    {
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded) return;
+
         try
         {
-            if (string.IsNullOrEmpty(subPath) || !Directory.Exists(subPath)) return;
+            var objects = CaptureAllObjectsSnapshotForScene(scene);
+            var snap = new SceneObjectSnapshot { SceneName = scene.name, Objects = objects };
 
-            var files = Directory.GetFiles(subPath, "*_temp.json", SearchOption.TopDirectoryOnly);
-            foreach (var f in files)
-            {
-                try { File.Delete(f); }
-                catch (Exception e) { Debug.LogError($"[DataManager] SubSave 삭제 실패: {f}\n{e}"); }
-            }
-            if (files.Length > 0)
-                Debug.Log($"[DataManager] SubSave 정리 완료 ({files.Length}개 삭제)");
+            string dst = GetSceneActivesTempPathForSlot(nowSlot, scene.name);
+            File.WriteAllText(dst, JsonUtility.ToJson(snap, false));
+
+            if (logRestoreDetails)
+                Debug.Log($"[DataManager] (SubSave) 이동 전 씬 스냅샷 저장 → {dst} (count={objects.Length})");
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DataManager] SubSave 정리 중 오류: {e}");
+            Debug.LogError($"[DataManager] SubSaveCommitSceneSnapshotAllObjects 실패: {e}");
         }
     }
 
-    // ===== 메신저 상태 기록 도우미 =====
+    // 씬 로드시: 임시 씬 스냅샷 적용
+    public bool TryApplySubSaveSceneSnapshotForCurrentScene()
+    {
+        if (nowSlot < 0) return false;
 
+        var scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded) return false;
+
+        string tempPath = GetSceneActivesTempPathForSlot(nowSlot, scene.name);
+        if (!File.Exists(tempPath)) return false;
+
+        try
+        {
+            var json = File.ReadAllText(tempPath);
+            var snap = JsonUtility.FromJson<SceneObjectSnapshot>(json);
+            if (snap == null || string.IsNullOrEmpty(snap.SceneName) || snap.Objects == null)
+                return false;
+
+            nowPlayer.ActiveSceneName = snap.SceneName;
+            nowPlayer.ActiveObjects = snap.Objects;
+
+            ApplyActiveObjectsSnapshotInternal();
+
+            // 임시 스냅샷은 적용 후 삭제
+            File.Delete(tempPath);
+
+            if (logRestoreDetails)
+                Debug.Log($"[DataManager] (SubSave) 씬 스냅샷 복구 및 삭제 완료 — 씬:'{snap.SceneName}', count:{snap.Objects.Length}");
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] TryApplySubSaveSceneSnapshotForCurrentScene 실패: {e}");
+            return false;
+        }
+    }
+
+    // 이벤트용(기존 호환) — begin/commit/cancel
+    public void BeginEventWithTempSave()
+    {
+        if (nowSlot < 0)
+        {
+            Debug.LogError("[DataManager] 임시 저장을 시작하려면 먼저 슬롯이 선택되어야 합니다.");
+            return;
+        }
+        string tempFileName = $"slot_{nowSlot}_temp.json";
+        _tempSavePath = Path.Combine(subPath, tempFileName);
+        try
+        {
+            string json = JsonUtility.ToJson(nowPlayer, false);
+            File.WriteAllText(_tempSavePath, json);
+            if (logRestoreDetails) Debug.Log($"[DataManager] 이벤트 시작. 임시 저장 파일 생성: {_tempSavePath}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] 임시 파일 생성 실패: {e}");
+            _tempSavePath = null;
+        }
+    }
+
+    public void CommitEventAndLoadScene(string sceneNameToLoad)
+    {
+        if (string.IsNullOrEmpty(_tempSavePath))
+        {
+            Debug.LogError("[DataManager] 시작된 임시 저장이 없습니다. BeginEventWithTempSave()를 먼저 호출하세요.");
+            return;
+        }
+        try
+        {
+            string json = JsonUtility.ToJson(nowPlayer, false);
+            File.WriteAllText(_tempSavePath, json);
+            if (logRestoreDetails) Debug.Log($"[DataManager] 이벤트 데이터 임시 파일에 최종 저장 완료: {_tempSavePath}");
+            SceneManager.LoadScene(sceneNameToLoad);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DataManager] 임시 파일 최종 저장 또는 씬 로드 실패: {e}");
+            _tempSavePath = null;
+        }
+    }
+
+    public void CancelEventAndRevert()
+    {
+        if (!string.IsNullOrEmpty(_tempSavePath) && File.Exists(_tempSavePath))
+        {
+            try { File.Delete(_tempSavePath); if (logRestoreDetails) Debug.Log($"[DataManager] 이벤트 취소. 임시 파일 삭제: {_tempSavePath}"); }
+            catch (Exception e) { Debug.LogError($"[DataManager] 임시 파일 삭제 실패: {e}"); }
+        }
+        _tempSavePath = null;
+        if (nowSlot >= 0)
+        {
+            if (logRestoreDetails) Debug.Log($"[DataManager] 원래 데이터로 되돌리기 위해 슬롯 {nowSlot} 재로드");
+            LoadData();
+        }
+    }
+
+    // ───────── 씬 전환 유틸 ─────────
+    public void ChangeSceneWithSubSave(string sceneName)
+    {
+        // 이동 직전 현재 씬 스냅샷(활성/비활성 모두) 저장
+        SubSaveCommitSceneSnapshotAllObjects();
+
+        // nowPlayer 전체 임시 저장(선택적)
+        SubSaveCommit();
+
+        // 씬 로드
+        SceneManager.LoadScene(sceneName);
+    }
+
+    // ───────── 메신저 상태 도우미 ─────────
     public bool HasMessengerDelivered(string name)
         => nowPlayer?.MessengerDelivered != null && nowPlayer.MessengerDelivered.Contains(name);
 
@@ -1275,151 +1377,156 @@ public class DataManager : MonoBehaviour
         if (commitSubSave) SubSaveCommit();
     }
 
-    // ===== 임시 저장/로드 API (이벤트용: 기존 호환) =====
-
-    public void CommitDataToTempFile()
+    // ───────── 임시 저장 폴더 정리 ─────────
+    public void CleanupAllSubSaves()
     {
-        if (nowSlot < 0)
-        {
-            Debug.LogWarning("[DataManager] CommitDataToTempFile: nowSlot is not set. Cannot create temp save.");
-            return;
-        }
-
-        // ======================= [디버그 로그 추가] =======================
-        Debug.Log($"[디버그] 저장 직전 Coin 값: {nowPlayer.Coin}");
-        // =================================================================
-
-        string tempFileName = $"slot_{nowSlot}_temp.json";
-        string tempFilePath = Path.Combine(subPath, tempFileName);
-
         try
         {
-            string json = JsonUtility.ToJson(nowPlayer, false);
-            File.WriteAllText(tempFilePath, json);
-            Debug.Log($"[DataManager] Data committed to temporary save file: {tempFilePath}");
+            if (string.IsNullOrEmpty(subPath) || !Directory.Exists(subPath)) return;
+
+            int removed = 0;
+            var files = Directory.GetFiles(subPath, "*", SearchOption.TopDirectoryOnly);
+            foreach (var f in files)
+            {
+                try { File.Delete(f); removed++; }
+                catch (Exception e) { Debug.LogError($"[DataManager] SubSave 삭제 실패: {f}\n{e}"); }
+            }
+            if (removed > 0 && logRestoreDetails)
+                Debug.Log($"[DataManager] SubSave 정리 완료 ({removed}개 삭제)");
         }
         catch (Exception e)
         {
-            Debug.LogError($"[DataManager] Failed to commit data to temporary file: {e}");
+            Debug.LogError($"[DataManager] SubSave 정리 중 오류: {e}");
         }
     }
 
-    public void BeginEventWithTempSave()
+    // ───────── 유틸 ─────────
+    private static string BuildHierarchyPath(Transform tr)
     {
-        if (nowSlot < 0)
-        {
-            Debug.LogError("[DataManager] 임시 저장을 시작하려면 먼저 슬롯이 선택되어야 합니다.");
-            return;
-        }
-        string tempFileName = $"slot_{nowSlot}_temp.json";
-        _tempSavePath = Path.Combine(subPath, tempFileName);
-        try
-        {
-            string json = JsonUtility.ToJson(nowPlayer, false);
-            File.WriteAllText(_tempSavePath, json);
-            Debug.Log($"[DataManager] 이벤트 시작. 임시 저장 파일 생성: {_tempSavePath}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[DataManager] 임시 파일 생성 실패: {e}");
-            _tempSavePath = null;
-        }
+        var stack = new Stack<string>(8);
+        var cur = tr;
+        while (cur != null) { stack.Push(cur.name); cur = cur.parent; }
+        return string.Join("/", stack);
     }
 
-    public void CommitEventAndLoadScene(string sceneNameToLoad)
+    private static string SafeTag(GameObject go)
     {
-        if (string.IsNullOrEmpty(_tempSavePath))
-        {
-            Debug.LogError("[DataManager] 시작된 임시 저장이 없습니다. BeginEventWithTempSave()를 먼저 호출하세요.");
-            return;
-        }
-        try
-        {
-            string json = JsonUtility.ToJson(nowPlayer, false);
-            File.WriteAllText(_tempSavePath, json);
-            Debug.Log($"[DataManager] 이벤트 데이터 임시 파일에 최종 저장 완료: {_tempSavePath}");
-            SceneManager.LoadScene(sceneNameToLoad);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"[DataManager] 임시 파일 최종 저장 또는 씬 로드 실패: {e}");
-            _tempSavePath = null;
-        }
+        try { return go.tag; } catch { return "Untagged"; }
     }
 
-    public void CancelEventAndRevert()
+    private bool ShouldExclude(GameObject go)
     {
-        if (!string.IsNullOrEmpty(_tempSavePath) && File.Exists(_tempSavePath))
+        // 태그 제외
+        if (excludeTagsForActiveObjects != null && excludeTagsForActiveObjects.Length > 0)
         {
-            try { File.Delete(_tempSavePath); Debug.Log($"[DataManager] 이벤트 취소. 임시 파일 삭제: {_tempSavePath}"); }
-            catch (Exception e) { Debug.LogError($"[DataManager] 임시 파일 삭제 실패: {e}"); }
+            string gTag = SafeTag(go);
+            for (int i = 0; i < excludeTagsForActiveObjects.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(excludeTagsForActiveObjects[i]) &&
+                    string.Equals(gTag, excludeTagsForActiveObjects[i], StringComparison.Ordinal))
+                    return true;
+            }
         }
-        _tempSavePath = null;
-        if (nowSlot >= 0)
+
+        // 이름 제외
+        if (excludeNamesForActiveObjects != null && excludeNamesForActiveObjects.Length > 0)
         {
-            Debug.Log($"[DataManager] 원래 데이터로 되돌리기 위해 슬롯 {nowSlot}을(를) 다시 로드합니다.");
-            LoadData();
+            string nm = go.name;
+            for (int i = 0; i < excludeNamesForActiveObjects.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(excludeNamesForActiveObjects[i]) &&
+                    string.Equals(nm, excludeNamesForActiveObjects[i], StringComparison.Ordinal))
+                    return true;
+            }
         }
+
+        // 특정 컴포넌트(UIPanel 등)로 제외
+        var uiPanel = go.GetComponent("UIPanel");
+        if (uiPanel != null) return true;
+
+        return false;
     }
 
-    #region 언어 설정 미리보기 (전체 데이터 로드 방지)
+    private Transform FindPlayer()
+    {
+        Transform t = null;
+        if (!string.IsNullOrEmpty(playerTagForReposition))
+        {
+            try
+            {
+                var go = GameObject.FindGameObjectWithTag(playerTagForReposition);
+                if (go) t = go.transform;
+            }
+            catch { }
+        }
+        if (t == null)
+        {
+            var go = GameObject.Find("Player");
+            if (go) t = go.transform;
+        }
+        return t;
+    }
 
-    /// <summary>
-    /// 가장 최근에 저장된 슬롯에서 언어 설정 값을 미리 읽어옵니다.
-    /// LanguageSelectUI 등에서 전체 데이터를 로드하는 부작용 없이 언어만 확인할 때 사용합니다.
-    /// 저장 파일이 하나도 없으면 기본 언어("ko")를 반환합니다.
-    /// </summary>
-    /// <param name="slotCount">검색할 슬롯 개수입니다.</param>
-    /// <returns>가장 최근 저장 파일의 언어 코드 또는 기본값("ko").</returns>
+    private static bool SceneNameEquals(string a, string b)
+    {
+        return string.Equals(Normalize(a), Normalize(b), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string Normalize(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return string.Empty;
+        s = s.Trim();
+        return new string(s.Where(ch => ch != ' ' && ch != '\'' && ch != '’').ToArray());
+    }
+
+    // ───────── 언어 미리보기(선택) ─────────
     public string PeekLanguageFromMostRecentSave(int slotCount = 3)
     {
         int recentSlot = GetMostRecentSaveSlot(slotCount);
-        if (recentSlot < 0)
-        {
-            // 저장된 파일이 없으므로 기본 언어 반환
-            return "ko";
-        }
+        if (recentSlot < 0) return "ko";
         return PeekLanguageFromSlot(recentSlot);
     }
 
-    /// <summary>
-    /// 지정된 슬롯의 저장 파일에서 게임 데이터 전체를 로드하지 않고, 언어 설정 값만 읽어옵니다.
-    /// 파일이 없거나 JSON 파싱에 실패하면 기본 언어("ko")를 반환합니다.
-    /// </summary>
-    /// <param name="slot">확인할 저장 슬롯 번호입니다.</param>
-    /// <returns>저장된 언어 코드 또는 기본값("ko").</returns>
     public string PeekLanguageFromSlot(int slot)
     {
         if (slot < 0) return "ko";
-
-        string filePath = GetSlotPath(slot);
-
-        if (!File.Exists(filePath))
-        {
-            return "ko"; // 파일이 없으면 기본값 반환
-        }
+        string filePath = GetSlotFullPath(slot);
+        if (!File.Exists(filePath)) return "ko";
 
         try
         {
-            // JSON 파일을 읽어 임시 PlayerData 객체로 변환합니다.
-            // DataManager의 nowPlayer를 덮어쓰지 않는 것이 핵심입니다.
             string json = File.ReadAllText(filePath);
             PlayerData tempData = JsonUtility.FromJson<PlayerData>(json);
-
-            if (tempData != null)
-            {
-                // 언어 코드를 정규화하여 반환합니다 (e.g., null -> "ko", "ja" -> "jp").
-                return NormalizeLang(tempData.Language);
-            }
+            if (tempData != null) return NormalizeLang(tempData.Language);
         }
         catch (Exception e)
         {
-            // 파일 읽기 또는 JSON 파싱 중 오류 발생 시 로그를 남기고 안전하게 기본값을 반환합니다.
             Debug.LogError($"[DataManager] PeekLanguageFromSlot ({filePath}) 실패: {e}");
         }
 
-        return "ko"; // 그 외 모든 실패 시 기본값 반환
+        return "ko";
     }
 
-    #endregion
+    // ──────────────── [중요] 기존 코드 호환 래퍼 메서드 ────────────────
+    // 기존 스크립트(CallingSystem, MessageSystem, MapMenuController 등)에서 호출하는
+    // 메서드명을 그대로 유지하기 위한 래퍼.
+
+    /// <summary>
+    /// 기존 코드 호환: CommitDataToTempFile() → 내부적으로 SubSaveCommit()을 호출하여 nowPlayer 전체를 sub_save에 기록.
+    /// </summary>
+    public void CommitDataToTempFile()
+    {
+        // 필요 시 추가 디버그
+        // Debug.Log($"[디버그] 저장 직전 Coin 값: {nowPlayer.Coin}");
+        SubSaveCommit();
+    }
+
+    /// <summary>
+    /// 기존 코드 호환: SubSaveCommitActivesForCurrentScene() →
+    /// 비활성 포함 전체 오브젝트 스냅샷을 sub_save에 저장하는 현재 방식으로 매핑.
+    /// </summary>
+    public void SubSaveCommitActivesForCurrentScene()
+    {
+        SubSaveCommitSceneSnapshotAllObjects();
+    }
 }

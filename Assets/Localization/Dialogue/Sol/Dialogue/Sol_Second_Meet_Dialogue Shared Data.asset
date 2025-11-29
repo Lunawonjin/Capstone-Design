@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Sol_Second_Meet_Dialogue Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Sol_Second_Meet_Dialogue
+  m_TableCollectionNameGuidString: 6b756e10fafc51c42a1784b8768b4145
+  m_Entries:
+  - m_Id: 2339134443520
+    m_Key: Dialogue_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339188969472
+    m_Key: Dialogue_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163776
+    m_Key: Dialogue_Choice1_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163777
+    m_Key: Dialogue_Choice1_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163778
+    m_Key: Dialogue_Choice1_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163779
+    m_Key: Dialogue_Choice1_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163780
+    m_Key: Dialogue_Choice2_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163781
+    m_Key: Dialogue_Choice2_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163782
+    m_Key: Dialogue_Choice2_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163783
+    m_Key: Dialogue_Choice2_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163784
+    m_Key: Dialogue_Choice3_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163785
+    m_Key: Dialogue_Choice3_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163786
+    m_Key: Dialogue_Choice3_Same_001
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 4657101970231001088
+  references:
+    version: 2
+    RefIds:
+    - rid: 4657101970231001088
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1764249241054

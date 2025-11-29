@@ -19,35 +19,11 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 5172039680
-    m_Localized: "\u4E0A\u53F8"
+    m_Localized: "\u30BB\u30ED"
     m_Metadata:
       m_Items: []
   - m_Id: 238400507904
-    m_Localized: "\u30BD\u30EB"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 667238731776
-    m_Localized: '{playerName}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 679607734272
-    m_Localized: '{playerName}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 940057235456
-    m_Localized: "\u4E0A\u53F8"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 942737395712
-    m_Localized: '{playerName}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8863063937024
-    m_Localized: "\u30BD\u30EB"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8992483381248
-    m_Localized: '{playerName}'
+    m_Localized: "\u30BB\u30ED"
     m_Metadata:
       m_Items: []
   - m_Id: 9147165118464
@@ -59,11 +35,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9567400824832
-    m_Localized: '{playerName}'
+    m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 20500135219200
-    m_Localized: '{playerName}'
+    m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 220647078752256
@@ -74,55 +50,63 @@ MonoBehaviour:
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 220657409323008
-    m_Localized: '{System}'
-    m_Metadata:
-      m_Items: []
   - m_Id: 221271946162176
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 221799711240192
+  - m_Id: 16216976980905984
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 221862810349568
+  - m_Id: 16216976980905985
+    m_Localized: "\u30BB\u30ED"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100288
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 221903335714816
+  - m_Id: 16216976985100289
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 221943181602816
-    m_Localized: "\u30BD\u30EB"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222058420105216
+  - m_Id: 16216976985100290
     m_Localized: '{playerName}'
     m_Metadata:
       m_Items: []
-  - m_Id: 222098752532480
-    m_Localized: '{playerName}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 222176154218496
+  - m_Id: 16216976985100291
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 222220244742144
-    m_Localized: '{System}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 243722453250048
+  - m_Id: 16216976985100292
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 243804032462848
-    m_Localized: '{System}'
+  - m_Id: 16216976985100293
+    m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []
-  - m_Id: 268584311844864
+  - m_Id: 16216976985100294
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100295
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100296
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100297
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100298
+    m_Localized: "\u30BD\u30EB"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100299
     m_Localized: "\u30BD\u30EB"
     m_Metadata:
       m_Items: []

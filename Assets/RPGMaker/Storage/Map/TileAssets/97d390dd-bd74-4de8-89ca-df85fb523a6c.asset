@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1526fcc0de4f4083ff88c57902b6c4, type: 3}
+  m_Name: 97d390dd-bd74-4de8-89ca-df85fb523a6c
+  m_EditorClassIdentifier: 
+  m_DefaultSprite: {fileID: 21300000, guid: 69ddfc1330589294fa0b6f4a8771af99, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  animationFrame: 0
+  animationSpeed: 0
+  damageFloorType: 0
+  damageFloorValue: 0
+  terrainTagValue: 0
+  filename: 
+  hasAnimation: 0
+  id: 97d390dd-bd74-4de8-89ca-df85fb523a6c
+  imageAdjustType: 0
+  isBush: 0
+  isCounter: 0
+  isDamageFloor: 0
+  isLadder: 0
+  isPassBottom: 0
+  isPassLeft: 0
+  isPassRight: 0
+  isPassTop: 0
+  largePartsDataModel:
+    parentId: a0b0f832-9d3e-4472-92a4-0226e5df8e51
+    x: 0
+    y: 1
+  name: 
+  passType: 2
+  regionId: 0
+  serialNumber: 10379
+  listNumber: 0
+  tileImageDataModel:
+    filename: eggchair_b_1.png
+    texture: {fileID: 0}
+  type: 7
+  vehicleTypes: []

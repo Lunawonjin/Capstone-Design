@@ -2,14 +2,14 @@
   "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
-  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
+  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 2.5 },
 
   "npcSpawns": [
-    { "npcName": "Boss", "x": 1.0, "y": 2.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+    { "npcName": "Boss", "x": 0.5, "y": 4.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
   ],
 
   "steps": [
-    { "axis": "y", "delta": 1.0 }
+    { "axis": "y", "delta": 1.5 }
   ],
 
   "afterPlayerActions": [
@@ -18,13 +18,14 @@
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_Choice1_Same_002",
+      "onKey": "Dialogue_Choice1_Same_001",
       "actions": [
         { "type": "dialoguePanelActive", "active": false },
-        { "type": "npcMove", "npcName": "Boss", "dx": -1, "dy": 0.0 },
         { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": 2.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": -8, "dy": 0.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": 2.5 },
         { "type": "npcSetActive", "npcName": "Boss", "active": false },
-    	{ "type": "delay", "duration": 0.5 }
+        { "type": "delay", "duration": 0.5 }
       ]
     }
   ]

@@ -67,10 +67,6 @@ MonoBehaviour:
     m_Key: Dialogue_Choice1_Same_001
     m_Metadata:
       m_Items: []
-  - m_Id: 17311670988800
-    m_Key: Dialogue_Choice1_Same_002
-    m_Metadata:
-      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
