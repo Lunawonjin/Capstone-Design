@@ -30,11 +30,11 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1129713117826420869}
+  m_Father: {fileID: 6555375635856310723}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -255, y: 250}
+  m_AnchoredPosition: {x: 5, y: -10}
   m_SizeDelta: {x: 10, y: 10}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7071003033900475019
@@ -105,11 +105,11 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1129713117826420869}
+  m_Father: {fileID: 2446339538662427713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -200, y: 285}
+  m_AnchoredPosition: {x: 160, y: -25}
   m_SizeDelta: {x: 100, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6354128621377635196
@@ -220,6 +220,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1129713117826420869}
+  - component: {fileID: 7289733085617254149}
   m_Layer: 5
   m_Name: ChattingPrefab
   m_TagString: Untagged
@@ -239,18 +240,34 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7014121399773069137}
-  - {fileID: 6449571475104522360}
-  - {fileID: 582246691720657495}
+  - {fileID: 2446339538662427713}
+  - {fileID: 3057724988093287463}
   - {fileID: 5903886045888269122}
-  - {fileID: 9180238861417451518}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 15, y: -15}
   m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &7289733085617254149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2616928022536387600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd91fea0b3e2b3248874ec8986b120dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChattingItemView
+  nameText: {fileID: 8429781830149569311}
+  profileImage: {fileID: 3192199961783363992}
+  balloonContainer: {fileID: 3057724988093287463}
+  balloonTemplate: {fileID: 6705665006820679517}
+  typingIndicator: {fileID: 8995466359790767495}
+  verticalSpacing: 10
 --- !u!1 &3471988649394582278
 GameObject:
   m_ObjectHideFlags: 0
@@ -316,8 +333,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC774\uAC83\uB9CC\uD07C\uC740 \uB9F9\uC138\uD560\uAC8C \uB0B4\uC804\uBD80\uB97C
-    \uB2E4 \uBC14\uCE60\uAC8C "
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
   m_sharedMaterial: {fileID: -3523289834934110302, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
@@ -405,7 +421,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &582246691720657495
 RectTransform:
   m_ObjectHideFlags: 0
@@ -419,12 +435,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8569775090152037071}
-  m_Father: {fileID: 1129713117826420869}
+  m_Father: {fileID: 6555375635856310723}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -200, y: 215}
-  m_SizeDelta: {x: 550, y: 50}
+  m_AnchoredPosition: {x: 60, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &3789009687490265324
 CanvasRenderer:
@@ -464,6 +480,42 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &4759479420283022353
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3057724988093287463}
+  m_Layer: 0
+  m_Name: BalloonContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3057724988093287463
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4759479420283022353}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6555375635856310723}
+  m_Father: {fileID: 1129713117826420869}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 50, y: -50}
+  m_SizeDelta: {x: 100, y: 0}
+  m_Pivot: {x: 0, y: 1}
 --- !u!1 &5535830578702028778
 GameObject:
   m_ObjectHideFlags: 0
@@ -539,6 +591,39 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &7225541009869553001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2446339538662427713}
+  m_Layer: 0
+  m_Name: Header
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2446339538662427713
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7225541009869553001}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7014121399773069137}
+  - {fileID: 9180238861417451518}
+  m_Father: {fileID: 1129713117826420869}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7779866884284872127
 GameObject:
   m_ObjectHideFlags: 0
@@ -571,13 +656,13 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7017214176468827732}
-  m_Father: {fileID: 1129713117826420869}
+  m_Father: {fileID: 2446339538662427713}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: -305, y: 255}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 50, y: -50}
   m_SizeDelta: {x: 90, y: 90}
-  m_Pivot: {x: 0, y: 1}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &94621453550779461
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -629,6 +714,64 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Mask
   m_ShowMaskGraphic: 1
+--- !u!1 &8558156220029558148
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6555375635856310723}
+  - component: {fileID: 6705665006820679517}
+  m_Layer: 0
+  m_Name: BalloonTemplate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6555375635856310723
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8558156220029558148}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6449571475104522360}
+  - {fileID: 582246691720657495}
+  m_Father: {fileID: 3057724988093287463}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 0}
+  m_Pivot: {x: 0, y: 1}
+--- !u!114 &6705665006820679517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8558156220029558148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb024a8f9458dcf4f823b14323c2bdd6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChattingBalloonItemView
+  tailImage: {fileID: 22473715764336256}
+  balloonRect: {fileID: 582246691720657495}
+  chattingText: {fileID: 7002430504329163601}
+  textMaxWidth: 520
+  balloonPaddingX: 30
+  textLineHeight: 30
+  balloonBaseHeight: 50
+  balloonExtraPerLine: 30
 --- !u!1001 &3709928511827255432
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -699,11 +842,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7102881705568037834, guid: 06dc7192a1203d24d948b5072092912d, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -200
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7102881705568037834, guid: 06dc7192a1203d24d948b5072092912d, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 215
+      value: -50
       objectReference: {fileID: 0}
     - target: {fileID: 7102881705568037834, guid: 06dc7192a1203d24d948b5072092912d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -731,3 +874,14 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 7102881705568037834, guid: 06dc7192a1203d24d948b5072092912d, type: 3}
   m_PrefabInstance: {fileID: 3709928511827255432}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8995466359790767495 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5740401421652634895, guid: 06dc7192a1203d24d948b5072092912d, type: 3}
+  m_PrefabInstance: {fileID: 3709928511827255432}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab72fea1a733b0f4fa11d42010b3bcad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DotSequenceAnimator

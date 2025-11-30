@@ -27,6 +27,28 @@ public class DotSequenceAnimator : MonoBehaviour
 
     private Coroutine playRoutine;
 
+    /// <summary>
+    /// 이 시퀀스가 한 번 재생되는 총 시간(초)
+    ///  = (scaleUp+scaleDown)*점 개수 + delayBetweenDots*(점 개수-1)
+    /// </summary>
+    public float TotalDuration
+    {
+        get
+        {
+            if (dotImages == null || dotImages.Length == 0)
+                return 0f;
+
+            int count = dotImages.Length;
+            float perDot = scaleUpDuration + scaleDownDuration;
+            float total = perDot * count;
+
+            if (count > 1)
+                total += delayBetweenDots * (count - 1);
+
+            return total;
+        }
+    }
+
     private void OnEnable()
     {
         InitDots();
@@ -131,7 +153,7 @@ public class DotSequenceAnimator : MonoBehaviour
             rt.localScale = Vector3.one * targetScale;
             img.color = activeColor;
 
-            if (delayBetweenDots > 0f)
+            if (delayBetweenDots > 0f && i < dotImages.Length - 1)
             {
                 yield return new WaitForSeconds(delayBetweenDots);
             }

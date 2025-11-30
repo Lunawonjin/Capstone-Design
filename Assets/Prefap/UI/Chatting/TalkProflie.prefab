@@ -148,8 +148,8 @@ GameObject:
   - component: {fileID: 929481443762529840}
   - component: {fileID: 1849848136036979075}
   - component: {fileID: 7753233365225928721}
-  - component: {fileID: 1840732201325073854}
   - component: {fileID: 602568315921222990}
+  - component: {fileID: 6320277261889766793}
   m_Layer: 5
   m_Name: TalkProflie
   m_TagString: Untagged
@@ -263,32 +263,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1840732201325073854
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4180062406485830451}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3c79163b44aab640a4010d2680892c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MessageItemUI
-  profileImage: {fileID: 3766791262916726339}
-  recipientNameText: {fileID: 465663175478290493}
-  previewText: {fileID: 1029685175239754739}
-  grayTargetGraphics: []
-  disableOnReadTarget: {fileID: 7224638902694218633}
-  unreadTextColor: {r: 0, g: 0, b: 0, a: 1}
-  readTextColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-  logEnabled: 1
-  logPrefix: '[MessageItemUI] '
-  messageName: 
-  isRead: 0
-  onClick:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &602568315921222990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -309,6 +283,21 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &6320277261889766793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4180062406485830451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51a39248be5614c4f97a05e7ab398b06, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TalkProflie
+  nameText: {fileID: 465663175478290493}
+  profileImage: {fileID: 3766791262916726339}
+  messengerPreviewText: {fileID: 1029685175239754739}
 --- !u!1 &4616167972425064367
 GameObject:
   m_ObjectHideFlags: 0
