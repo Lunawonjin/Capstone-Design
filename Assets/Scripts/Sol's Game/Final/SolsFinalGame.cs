@@ -17,6 +17,10 @@ public class SolsFinalGame : MonoBehaviour
     [Tooltip("Ground 태그 바닥과 닿지 않았을 때 플레이어 스프라이트로 바꿀 이미지")]
     [SerializeField] private Sprite fallingSprite;
 
+    [Header("주사기 줍고 나서 모습(애니메이터용)")]
+    [Tooltip("오른쪽을 바라보는 상태 이름(예: Right_Walk)")]
+    [SerializeField] private string rightIdleStateName = "Right_Walk";
+
     [Header("바닥 판정")]
     [Tooltip("바닥 오브젝트는 Tag가 Ground여야 합니다.")]
     [SerializeField] private string groundTag = "Ground";
@@ -31,6 +35,10 @@ public class SolsFinalGame : MonoBehaviour
     [Tooltip("비우면 syringeObject에서 자동 탐색")]
     [SerializeField] private Collider2D syringeCollider;
     [SerializeField] private KeyCode interactKey = KeyCode.F;
+
+    [Header("주사기 발사 컨트롤")]
+    [Tooltip("플레이어가 사용하는 주사기 발사 스크립트(SyringePoolShooter)")]
+    [SerializeField] private SyringePoolShooter syringeShooter;
 
     [Header("Wall 비활성화")]
     [Tooltip("카메라 연출 시작 전에 비활성화할 Wall 오브젝트")]
@@ -64,7 +72,6 @@ public class SolsFinalGame : MonoBehaviour
     [Tooltip("카메라 연출이 끝난 뒤 Activate()할 적들")]
     [SerializeField] private SolsFinalGameEnemy[] enemiesToActivate;
 
-    private Sprite originalSprite;
     private bool moveWasEnabledBeforeAir = true;
     private bool animatorWasEnabledBeforeAir = true;
 
@@ -75,6 +82,13 @@ public class SolsFinalGame : MonoBehaviour
 
     // 카메라 연출 이후 강제 컨트롤 잠금
     private bool forceControlLocked = false;
+
+    // Rigidbody2D 원래 제약값과 X 고정 상태 추적
+    private RigidbodyConstraints2D originalConstraints;
+    private bool lastCanMoveX = true;
+
+    // 주사기를 실제로 먹었는지 여부
+    private bool hasPickedUpSyringe = false;
 
     void Awake()
     {
@@ -104,25 +118,59 @@ public class SolsFinalGame : MonoBehaviour
         if (targetCamera == null && Camera.main != null)
             targetCamera = Camera.main.transform;
 
-        if (playerSpriteRenderer != null)
-            originalSprite = playerSpriteRenderer.sprite;
-
         if (syringeCollider == null && syringeObject != null)
             syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
+
+        // 발사 스크립트 자동 탐색
+        if (syringeShooter == null)
+            syringeShooter = GetComponentInChildren<SyringePoolShooter>();
+
+        // 시작 시에는 절대 발사 못 하게
+        if (syringeShooter != null)
+            syringeShooter.SetShootingEnabled(false);
+
+        if (playerRb != null)
+        {
+            originalConstraints = playerRb.constraints;
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
     }
 
     void Update()
     {
         bool syringeOverlapped = CheckSyringeOverlap();
 
+        // 아직 카메라 연출 중이 아니고, 주사기와 겹친 상태에서 F 누르면 줍기
         if (!cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
         {
             syringeObject.SetActive(false);
+            hasPickedUpSyringe = true;
 
+            // 이 시점부터만 발사 허용
+            if (syringeShooter != null)
+                syringeShooter.SetShootingEnabled(true);
+
+            // 오른쪽 바라보는 정지 포즈(Animator는 켜둔 채로 speed 0)
+            SetLookRightStatic();
+
+            // 카메라 연출 전에 벽 비활성화
             if (wallObject != null)
                 wallObject.SetActive(false);
 
+            // 카메라 이동 시작
             MoveCameraToX(cameraTargetX);
+        }
+
+        // 매 프레임 컨트롤 가능 여부에 따라 X 고정 상태 갱신
+        if (playerRb != null)
+        {
+            bool canMoveXNow = CanMoveX();
+            if (canMoveXNow != lastCanMoveX)
+            {
+                lastCanMoveX = canMoveXNow;
+                ApplyRigidbodyXConstraint(lastCanMoveX);
+            }
         }
     }
 
@@ -148,6 +196,7 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (!grounded)
         {
+            // 공중: 낙하 스프라이트 보여주기 위해 Animator를 잠깐 끔
             if (playerSpriteRenderer != null && fallingSprite != null)
                 playerSpriteRenderer.sprite = fallingSprite;
 
@@ -165,23 +214,52 @@ public class SolsFinalGame : MonoBehaviour
         }
         else
         {
-            if (playerSpriteRenderer != null)
-                playerSpriteRenderer.sprite = originalSprite;
-
-            if (playerAnimator != null)
-                playerAnimator.enabled = animatorWasEnabledBeforeAir;
-
-            if (movementComponent != null)
+            // 착지 후
+            if (!hasPickedUpSyringe)
             {
-                if (forceControlLocked)
+                // 아직 주사기 안 주운 상태: 원래대로 복구
+                if (playerAnimator != null)
+                    playerAnimator.enabled = animatorWasEnabledBeforeAir;
+
+                if (movementComponent != null)
                 {
-                    movementComponent.enabled = false;
-                }
-                else
-                {
-                    movementComponent.enabled = moveWasEnabledBeforeAir;
+                    if (forceControlLocked)
+                        movementComponent.enabled = false;
+                    else
+                        movementComponent.enabled = moveWasEnabledBeforeAir;
                 }
             }
+            else
+            {
+                // 이미 주사기 주운 상태: 오른쪽 정지 포즈 유지
+                SetLookRightStatic();
+            }
+        }
+
+        // 착지/낙하 전환 시에도 X 고정 상태 다시 적용
+        if (playerRb != null)
+        {
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
+    }
+
+    private bool CanMoveX()
+    {
+        return movementComponent != null && movementComponent.enabled && !forceControlLocked;
+    }
+
+    private void ApplyRigidbodyXConstraint(bool canMoveX)
+    {
+        if (playerRb == null) return;
+
+        if (canMoveX)
+        {
+            playerRb.constraints = originalConstraints & ~RigidbodyConstraints2D.FreezePositionX;
+        }
+        else
+        {
+            playerRb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionX;
         }
     }
 
@@ -253,6 +331,12 @@ public class SolsFinalGame : MonoBehaviour
             playerRb.angularVelocity = 0f;
         }
 
+        if (playerRb != null)
+        {
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
+
         Vector3 startPos = targetCamera.position;
         Vector3 endPos = new Vector3(x, startPos.y, startPos.z);
 
@@ -282,7 +366,6 @@ public class SolsFinalGame : MonoBehaviour
 
         ApplyGroundState(isGrounded);
 
-        // 카메라 연출 "완전히 끝난 뒤" 적 시작
         ActivateEnemies();
 
         cameraMoving = false;
@@ -345,6 +428,17 @@ public class SolsFinalGame : MonoBehaviour
             targetCamera.position = basePos + new Vector3(ox, oy, 0f);
             yield return null;
         }
+    }
+
+    // 오른쪽을 바라보는 정지 포즈(애니메이터는 켜둔 채로 해당 상태를 0프레임에서 멈춤)
+    private void SetLookRightStatic()
+    {
+        if (playerAnimator == null) return;
+        if (string.IsNullOrEmpty(rightIdleStateName)) return;
+
+        playerAnimator.enabled = true;
+        playerAnimator.Play(rightIdleStateName, 0, 0f);
+        playerAnimator.speed = 0f;
     }
 
 #if UNITY_EDITOR

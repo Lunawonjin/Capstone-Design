@@ -16,6 +16,7 @@ TagManager:
   - Bed
   - House
   - Object
+  - Enemy
   layers:
   - Default
   - TransparentFX

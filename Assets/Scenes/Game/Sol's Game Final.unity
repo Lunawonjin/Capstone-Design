@@ -304,7 +304,7 @@ GameObject:
   - component: {fileID: 117612418}
   m_Layer: 0
   m_Name: Enemy7
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -340,7 +340,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &117612419
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -500,12 +502,14 @@ MonoBehaviour:
   playerAnimator: {fileID: 0}
   movementComponent: {fileID: 0}
   fallingSprite: {fileID: -422639775, guid: 482ab2907755447468cfc7e208eb0ccc, type: 3}
+  rightIdleStateName: Right_Walk
   groundTag: Ground
   groundCheckHeight: 0.08
   groundCheckPadding: 0.02
   syringeObject: {fileID: 1525107278}
   syringeCollider: {fileID: 1525107282}
   interactKey: 102
+  syringeShooter: {fileID: 0}
   wallObject: {fileID: 91241848}
   targetCamera: {fileID: 1100042413}
   cameraTargetX: 7
@@ -525,6 +529,65 @@ MonoBehaviour:
   - {fileID: 1938882240}
   - {fileID: 117612418}
   - {fileID: 863229008}
+--- !u!4 &220807422 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+  m_PrefabInstance: {fileID: 2108940976}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &220807423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220807398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34083c7491aa59b4388574ea881822de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SyringePoolShooter
+  fireCooldown: 1
+  fireKey: 323
+  firePoint: {fileID: 220807422}
+  shootDirection: {x: 1, y: 0}
+  projectilePrefab: {fileID: 8855737722752510577, guid: 50e5368ad9a7e054fbf6a7708d6992a7, type: 3}
+  poolSize: 10
+  attackAnimator: {fileID: 0}
+  attackStateName: Attack
+  returnStateName: Right_Walk
+  attackDuration: 0.4
+--- !u!1 &334859630
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 334859631}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &334859631
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334859630}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1525107281}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &450002392
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,7 +830,7 @@ GameObject:
   - component: {fileID: 539296951}
   m_Layer: 0
   m_Name: Enemy1
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -924,7 +987,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!1 &586349681
 GameObject:
   m_ObjectHideFlags: 0
@@ -1077,7 +1142,7 @@ GameObject:
   - component: {fileID: 699581808}
   m_Layer: 0
   m_Name: Enemy3
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1113,7 +1178,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &699581809
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1250,7 +1317,7 @@ GameObject:
   - component: {fileID: 756739858}
   m_Layer: 0
   m_Name: Enemy4
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1286,7 +1353,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &756739859
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1423,7 +1492,7 @@ GameObject:
   - component: {fileID: 863229008}
   m_Layer: 0
   m_Name: Enemy8
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1459,7 +1528,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &863229009
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1596,7 +1667,7 @@ GameObject:
   - component: {fileID: 982063255}
   m_Layer: 0
   m_Name: Enemy2
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1632,7 +1703,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &982063256
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2034,12 +2107,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1525107278}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalRotation: {x: -0, y: -0, z: 0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 1.08, y: -2.01, z: 0}
   m_LocalScale: {x: 0.3, y: 0.3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 334859631}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
 --- !u!61 &1525107282
 BoxCollider2D:
@@ -2102,7 +2175,7 @@ GameObject:
   - component: {fileID: 1555802373}
   m_Layer: 0
   m_Name: Enemy5
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2138,7 +2211,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &1555802374
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2314,7 +2389,7 @@ GameObject:
   - component: {fileID: 1938882240}
   m_Layer: 0
   m_Name: Enemy6
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2350,7 +2425,9 @@ MonoBehaviour:
   ySpeed: 1
   yMax: 1
   yMin: -1.8
-  startActive: 0
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.3
 --- !u!58 &1938882241
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2590,6 +2667,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 220807416}
+    - targetCorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 220807423}
   m_SourcePrefab: {fileID: 100100000, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -2597,6 +2677,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 1100042413}
   - {fileID: 2108940976}
-  - {fileID: 1525107281}
   - {fileID: 91378649}
   - {fileID: 1600751662}
+  - {fileID: 334859631}

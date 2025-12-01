@@ -4,137 +4,166 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SyringePoolShooter : MonoBehaviour
 {
-    [Header("Prefab / Pool")]
-    [Tooltip("주사기 발사체 프리팹")]
+    [Header("발사 설정")]
+    [Tooltip("발사 간 최소 간격(초)")]
+    [SerializeField] private float fireCooldown = 1.0f;
+
+    [Tooltip("발사 키 (기본: 마우스 좌클릭)")]
+    [SerializeField] private KeyCode fireKey = KeyCode.Mouse0;
+
+    [Tooltip("발사 시작 위치")]
+    [SerializeField] private Transform firePoint;
+
+    [Tooltip("발사 방향 (기본 오른쪽)")]
+    [SerializeField] private Vector2 shootDirection = Vector2.right;
+
+    [Header("풀 설정")]
     [SerializeField] private SyringeProjectile projectilePrefab;
+    [SerializeField] private int poolSize = 10;
 
-    [Tooltip("미리 생성해 둘 풀 크기")]
-    [SerializeField] private int poolSize = 20;
+    [Header("공격 애니메이션")]
+    [Tooltip("플레이어 Animator (비워두면 상위에서 자동 탐색)")]
+    [SerializeField] private Animator attackAnimator;
+    [Tooltip("주사기를 던질 때 재생할 상태 이름(예: Attack)")]
+    [SerializeField] private string attackStateName = "Attack";
 
-    [Tooltip("풀 오브젝트들이 들어갈 부모(비우면 자동 생성)")]
-    [SerializeField] private Transform poolParent;
+    [Tooltip("Attack 재생 후 자동으로 되돌릴 상태 이름(예: Right_Walk, 없으면 사용 안 함)")]
+    [SerializeField] private string returnStateName = "Right_Walk";
 
-    [Header("Shoot")]
-    [Tooltip("좌클릭으로 발사")]
-    [SerializeField] private bool shootOnLeftClick = true;
+    [Tooltip("Attack 애니메이션 길이(초). 이 시간이 지나면 returnStateName으로 되돌립니다.")]
+    [SerializeField] private float attackDuration = 0.3f;
 
-    [Tooltip("한 발 쏘고 나서 다음 발까지의 시간(초). 기본 1초")]
-    [SerializeField] private float fireInterval = 1.0f;
+    private readonly List<SyringeProjectile> pool = new List<SyringeProjectile>();
+    private float fireTimer = 0f;
 
-    [Tooltip("발사 위치(비우면 이 오브젝트 위치)")]
-    [SerializeField] private Transform muzzle;
+    // 외부에서 주사기 먹기 전까지 false, 먹고 나면 true로 변경
+    private bool shootingEnabled = false;
+    private bool attackPlaying = false;
+    private float attackTimer = 0f;
 
-    [Tooltip("마우스 방향으로 발사")]
-    [SerializeField] private bool aimToMouse = true;
-
-    [Tooltip("마우스 조준에 쓸 카메라(비우면 MainCamera)")]
-    [SerializeField] private Camera aimCamera;
-
-    private readonly Queue<SyringeProjectile> poolQueue = new Queue<SyringeProjectile>();
-    private readonly List<SyringeProjectile> allProjectiles = new List<SyringeProjectile>();
-
-    private float nextFireTime = 0f;
+    public void SetShootingEnabled(bool enabled)
+    {
+        shootingEnabled = enabled;
+    }
 
     void Awake()
     {
-        if (aimCamera == null) aimCamera = Camera.main;
+        if (firePoint == null)
+            firePoint = transform;
 
-        if (poolParent == null)
+        if (projectilePrefab == null)
         {
-            GameObject p = new GameObject("SyringePool");
-            poolParent = p.transform;
+            Debug.LogWarning("[SyringePoolShooter] projectilePrefab이 비어 있습니다.");
+            return;
         }
 
-        PrewarmPool();
+        // 풀 초기화
+        for (int i = 0; i < Mathf.Max(1, poolSize); i++)
+        {
+            SyringeProjectile proj = Instantiate(projectilePrefab, transform);
+            proj.gameObject.SetActive(false);
+            proj.Init(this);
+            pool.Add(proj);
+        }
+
+        // 공격 애니메이터 자동 탐색
+        if (attackAnimator == null)
+            attackAnimator = GetComponentInParent<Animator>();
+
+        // 시작 시에는 발사 비활성화 (주사기 줍기 전까지)
+        shootingEnabled = false;
     }
 
     void Update()
     {
-        if (!shootOnLeftClick) return;
+        fireTimer += Time.deltaTime;
 
-        if (Input.GetMouseButtonDown(0))
+        // Attack 재생 중이면 타이머 체크해서 원래 상태로 돌리기
+        if (attackPlaying)
         {
-            TryShoot();
+            attackTimer += Time.deltaTime;
+            if (attackTimer >= attackDuration)
+            {
+                attackPlaying = false;
+                attackTimer = 0f;
+                PlayReturnState();
+            }
+        }
+
+        // 아직 발사 권한이 없으면 리턴
+        if (!shootingEnabled)
+            return;
+
+        if (Input.GetKeyDown(fireKey) && fireTimer >= fireCooldown)
+        {
+            Fire();
         }
     }
 
-    private void TryShoot()
+    private void Fire()
     {
-        if (Time.time < nextFireTime) return;
-        nextFireTime = Time.time + Mathf.Max(0.01f, fireInterval);
-
-        SyringeProjectile proj = GetProjectile();
+        SyringeProjectile proj = GetFromPool();
         if (proj == null) return;
 
-        Vector3 spawnPos = (muzzle != null) ? muzzle.position : transform.position;
+        fireTimer = 0f;
+
+        Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
         proj.transform.position = spawnPos;
-        proj.transform.rotation = Quaternion.identity;
-
-        Vector2 direction = Vector2.right;
-
-        if (aimToMouse && aimCamera != null)
-        {
-            Vector3 mouseWorld = aimCamera.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorld.z = spawnPos.z;
-            Vector3 d3 = mouseWorld - spawnPos;
-            direction = new Vector2(d3.x, d3.y);
-        }
-
         proj.gameObject.SetActive(true);
-        proj.Launch(direction, this);
+
+        proj.Launch(shootDirection);
+
+        PlayAttackAnimation();
     }
 
-    private void PrewarmPool()
+    private void PlayAttackAnimation()
     {
-        poolQueue.Clear();
-        allProjectiles.Clear();
+        if (attackAnimator == null) return;
+        if (string.IsNullOrEmpty(attackStateName)) return;
 
-        for (int i = 0; i < poolSize; i++)
-        {
-            SyringeProjectile proj = Instantiate(projectilePrefab, poolParent);
-            proj.gameObject.SetActive(false);
-            poolQueue.Enqueue(proj);
-            allProjectiles.Add(proj);
-        }
+        // 혹시 꺼져 있으면 켠다
+        if (!attackAnimator.enabled)
+            attackAnimator.enabled = true;
+
+        // Attack 상태를 강제로 처음부터 재생
+        attackAnimator.Play(attackStateName, 0, 0f);
+
+        // Attack 애니가 도는 동안에는 속도 1로
+        attackAnimator.speed = 1f;
+
+        attackPlaying = true;
+        attackTimer = 0f;
     }
 
-    private SyringeProjectile GetProjectile()
+    private void PlayReturnState()
     {
-        if (poolQueue.Count > 0)
+        if (attackAnimator == null) return;
+        if (string.IsNullOrEmpty(returnStateName)) return;
+
+        // Right_Walk 같은 기본 포즈 상태로 돌리고, 그 상태는 정지(속도 0)
+        attackAnimator.Play(returnStateName, 0, 0f);
+        attackAnimator.speed = 0f;
+    }
+
+    private SyringeProjectile GetFromPool()
+    {
+        for (int i = 0; i < pool.Count; i++)
         {
-            return poolQueue.Dequeue();
+            if (!pool[i].gameObject.activeInHierarchy)
+                return pool[i];
         }
 
-        SyringeProjectile proj = Instantiate(projectilePrefab, poolParent);
-        proj.gameObject.SetActive(false);
-        allProjectiles.Add(proj);
-        return proj;
+        // 모두 사용 중이면 하나 더 생성
+        SyringeProjectile extra = Instantiate(projectilePrefab, transform);
+        extra.gameObject.SetActive(false);
+        extra.Init(this);
+        pool.Add(extra);
+        return extra;
     }
 
     public void ReturnProjectile(SyringeProjectile proj)
     {
         if (proj == null) return;
-
         proj.gameObject.SetActive(false);
-        proj.transform.SetParent(poolParent, false);
-        poolQueue.Enqueue(proj);
     }
-
-#if UNITY_EDITOR
-    [ContextMenu("Rebuild Pool")]
-    private void CtxRebuildPool()
-    {
-        for (int i = 0; i < allProjectiles.Count; i++)
-        {
-            if (allProjectiles[i] != null)
-            {
-                if (Application.isPlaying) Destroy(allProjectiles[i].gameObject);
-                else DestroyImmediate(allProjectiles[i].gameObject);
-            }
-        }
-        allProjectiles.Clear();
-        poolQueue.Clear();
-        PrewarmPool();
-    }
-#endif
 }

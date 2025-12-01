@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -17,35 +18,49 @@ public class SolsFinalGameEnemy : MonoBehaviour
     [Tooltip("Lower Y limit.")]
     [SerializeField] private float yMin = -1.8f;
 
-    [Header("Activation")]
-    [Tooltip("처음부터 움직일지 여부. 보통 false로 두고 SolsFinalGame에서 Activate()로 시작합니다.")]
-    [SerializeField] private bool startActive = false;
+    [Header("피격/생명")]
+    [Tooltip("몇 대 맞으면 사라질지(기본 2)")]
+    [SerializeField] private int hitsToDie = 2;
+
+    [Header("피격 색 연출")]
+    [Tooltip("피격 시 잠깐 바꿀 색")]
+    [SerializeField] private Color hitColor = Color.red;
+    [Tooltip("피격 색 유지 시간(초)")]
+    [SerializeField] private float hitColorDuration = 0.1f;
 
     private Rigidbody2D rb;
     private int yDir; // +1 up, -1 down
+    private bool isActive = false;
+    private int currentHits = 0;
 
-    private bool activeMove = false;
+    private SpriteRenderer[] spriteRenderers;
+    private Color[] originalColors;
+    private Coroutine hitColorRoutine;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // Random initial direction: + or -
+        // 랜덤 초기 방향
         yDir = (Random.value < 0.5f) ? 1 : -1;
 
-        activeMove = startActive;
+        // 자식 포함 모든 SpriteRenderer 저장
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        if (spriteRenderers != null && spriteRenderers.Length > 0)
+        {
+            originalColors = new Color[spriteRenderers.Length];
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                originalColors[i] = spriteRenderers[i].color;
+            }
+        }
     }
 
-    public void Activate()
+    void OnEnable()
     {
-        activeMove = true;
-    }
-
-    public void Deactivate()
-    {
-        activeMove = false;
         if (rb != null)
         {
+            rb.gravityScale = 0f;
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
         }
@@ -53,7 +68,8 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
     void Update()
     {
-        if (!activeMove) return;
+        if (!isActive)
+            return;
 
         if (rb == null)
         {
@@ -63,7 +79,8 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!activeMove) return;
+        if (!isActive)
+            return;
 
         if (rb != null)
         {
@@ -75,10 +92,7 @@ public class SolsFinalGameEnemy : MonoBehaviour
     {
         Vector3 p = transform.position;
 
-        // X decreases
         p.x -= xSpeed * dt;
-
-        // Y oscillates between yMin and yMax
         p.y += ySpeed * yDir * dt;
 
         if (yDir > 0 && p.y >= yMax)
@@ -99,10 +113,7 @@ public class SolsFinalGameEnemy : MonoBehaviour
     {
         Vector2 p = rb.position;
 
-        // X decreases
         p.x -= xSpeed * dt;
-
-        // Y oscillates between yMin and yMax
         p.y += ySpeed * yDir * dt;
 
         if (yDir > 0 && p.y >= yMax)
@@ -117,5 +128,66 @@ public class SolsFinalGameEnemy : MonoBehaviour
         }
 
         rb.MovePosition(p);
+    }
+
+    // SolsFinalGame에서 호출하는 활성화 함수
+    public void Activate()
+    {
+        isActive = true;
+    }
+
+    public void Deactivate()
+    {
+        isActive = false;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+    }
+
+    // 주사기에게 맞았을 때 호출
+    public void TakeHit(Vector2 hitPosition)
+    {
+        currentHits++;
+
+        // 피격 색 연출
+        if (hitColorRoutine != null)
+            StopCoroutine(hitColorRoutine);
+        hitColorRoutine = StartCoroutine(HitColorFlashRoutine());
+
+        if (currentHits >= hitsToDie)
+        {
+            Die();
+        }
+    }
+
+    private IEnumerator HitColorFlashRoutine()
+    {
+        if (spriteRenderers == null || spriteRenderers.Length == 0)
+            yield break;
+
+        // 빨간색으로 변경
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            spriteRenderers[i].color = hitColor;
+        }
+
+        yield return new WaitForSeconds(hitColorDuration);
+
+        // 아직 살아 있으면 원래 색으로 복원
+        if (currentHits < hitsToDie && originalColors != null && originalColors.Length == spriteRenderers.Length)
+        {
+            for (int i = 0; i < spriteRenderers.Length; i++)
+            {
+                spriteRenderers[i].color = originalColors[i];
+            }
+        }
+    }
+
+    private void Die()
+    {
+        // 죽을 때는 그냥 비활성화
+        gameObject.SetActive(false);
     }
 }
