@@ -5,8 +5,7 @@
   "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
 
   "npcSpawns": [
-    { "npcName": "Salt",  "x": 33.0, "y": 19.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false },
-    { "npcName": "Boss", "x": 34.5, "y": 18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+    { "npcName": "Salt",  "x": 33.0, "y": 19.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
   ],
 
   "steps": [
@@ -15,7 +14,7 @@
 
   "afterPlayerActions": [
     { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0, "duration": 1.0 },
-    { "type": "dialogue", "owner": "Sol", "eventName": "Salt_First_Meet" }
+    { "type": "dialogue", "owner": "Salt", "eventName": "Salt_First_Meet" }
   ],
 
   "dialogueReactions": [

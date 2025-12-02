@@ -28,6 +28,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 16da8cc58febbd444aa1b1934393c962
+    m_Address: Boss_Second_Calling_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2d05518455e2eb642876804932625bfc
     m_Address: Boss_First_Calling_Dialogue_ja
     m_ReadOnly: 1
@@ -52,6 +58,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4d3cc1a6b1767cc4aa1495d604396cd1
+    m_Address: Boss_Seconday_Busstop_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 50106cf8c2891d847860ca7eeb0f29a0
+    m_Address: Boss_Sol_FinalGame_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6dda378ab27dc3e498466e3c2cd7591b
     m_Address: UI_Table_ja
     m_ReadOnly: 1
@@ -60,6 +78,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 70ffdec26e2fa564da5be16230b2efd1
     m_Address: Chatting_Detail_Sero_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 738dab03ea1dd4242b6859cd49e9a258
+    m_Address: Boss_SaltKey_Lost_Speaker_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
@@ -88,8 +112,26 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c83b1163482677044b8623ac79620069
+    m_Address: Boss_SaltKey_Lost_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d0e1bf8308c2b074185b4429304cfc47
     m_Address: Salt's_Talk_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9446dacf27181e4a918f53c504179b8
+    m_Address: Boss_Seconday_Busstop_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8744a3aaa8c20d46bd8fab3fea83d54
+    m_Address: Boss_Sol_FinalGame_Speaker_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja

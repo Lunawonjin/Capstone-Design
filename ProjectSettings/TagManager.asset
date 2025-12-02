@@ -17,6 +17,7 @@ TagManager:
   - House
   - Object
   - Enemy
+  - Boss
   layers:
   - Default
   - TransparentFX

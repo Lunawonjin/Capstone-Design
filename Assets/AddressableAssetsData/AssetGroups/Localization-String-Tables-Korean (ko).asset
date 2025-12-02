@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Korean (ko)
   m_GUID: 69fafdd9737c1a540899a392702ae672
   m_SerializeEntries:
+  - m_GUID: 019f098440161f0408310c0a42d8b6d1
+    m_Address: Boss_Second_Calling_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0c469a967bf09294185476d77388db4f
     m_Address: Prolog_Table_ko
     m_ReadOnly: 1
@@ -23,6 +29,18 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1770f5e428214894482f498caa6d7255
     m_Address: Starest_First_Visit_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 248606c5fe4a7d041b8466e191080394
+    m_Address: Boss_Sol_FinalGame_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c319d198b94ae9488b3730a8f74c5f1
+    m_Address: Boss_SaltKey_Lost_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
@@ -48,6 +66,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 89a13a36059b73c46825d2cb1da1a40c
     m_Address: Starest_First_Visit_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b09e70ba6ef0d94babb0418e34a21c5
+    m_Address: Boss_Sol_FinalGame_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
@@ -82,8 +106,26 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d8a0cbba3f847da41bf51b3b446bc66a
+    m_Address: Boss_SaltKey_Lost_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df30fce01083ac54bbc303fcec80d2d0
+    m_Address: Boss_Seconday_Busstop_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e82657ec670e60e41a1dd06af9edbe7e
     m_Address: Sol_Puzzle_Clear_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e881f7dfecd145c468167b42b4149adb
+    m_Address: Boss_Seconday_Busstop_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko

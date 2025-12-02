@@ -2,192 +2,334 @@ using System.Collections;
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(Animator))]
 public class SolsFinalGameEnemy : MonoBehaviour
 {
+    public static int enemyCount = 0;
+
+    [Header("Active Settings")]
+    [SerializeField] private bool activateOnStart = true;
+
+    [Header("Enemy Type")]
+    [SerializeField] private bool isBoss = false;
+
+    [Header("Boss Settings")]
+    [SerializeField] private float bossFallSpeed = 5.0f;
+    [SerializeField] private float bossTargetY = 1.2f;
+
+    [Header("Boss: Phase 2")]
+    [SerializeField] private int phase2HpThreshold = 20;
+    [SerializeField] private GameObject minionPrefab;
+    [SerializeField] private float summonInterval = 5.0f;
+    [SerializeField] private int summonCount = 2;
+
+    [Header("Boss: Landing Effect")]
+    [SerializeField] private float landShakeMagnitude = 0.5f;
+    [SerializeField] private float landShakeDuration = 0.2f;
+    [SerializeField] private AudioClip landSound;
+
     [Header("Move Settings")]
-    [Tooltip("X decreases slowly (move left).")]
+    [SerializeField] private bool canMove = true;
     [SerializeField] private float xSpeed = 1.0f;
-
-    [Tooltip("Y moves up/down between bounds.")]
     [SerializeField] private float ySpeed = 1.0f;
-
-    [Header("Y Bounds")]
-    [Tooltip("Upper Y limit.")]
     [SerializeField] private float yMax = 1.0f;
-
-    [Tooltip("Lower Y limit.")]
     [SerializeField] private float yMin = -1.8f;
 
-    [Header("피격/생명")]
-    [Tooltip("몇 대 맞으면 사라질지(기본 2)")]
-    [SerializeField] private int hitsToDie = 2;
-
-    [Header("피격 색 연출")]
-    [Tooltip("피격 시 잠깐 바꿀 색")]
+    [Header("Health & Hit")]
+    [SerializeField] private int hitsToDie = 30;
     [SerializeField] private Color hitColor = Color.red;
-    [Tooltip("피격 색 유지 시간(초)")]
     [SerializeField] private float hitColorDuration = 0.1f;
 
+    // 보스 전용 변수
+    [Header("Boss Jump Settings")]
+    [SerializeField] private float bossRiseSpeed = 15.0f;
+    [SerializeField] private float bossStompWaitTime = 3.0f;
+
+    private enum BossState { Falling, Landed, Rising }
+    private BossState bossState = BossState.Falling;
+    private float stompTimer = 0f;
+    private float initialSpawnY;
+    private bool isPhase2Active = false;
+
     private Rigidbody2D rb;
-    private int yDir; // +1 up, -1 down
+    private Animator anim;
+    private int yDir;
     private bool isActive = false;
     private int currentHits = 0;
+    private bool isQuitting = false;
+    private bool hasLanded = false;
 
     private SpriteRenderer[] spriteRenderers;
     private Color[] originalColors;
     private Coroutine hitColorRoutine;
+    private AudioSource audioSource;
+    private Transform playerTransform;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-
-        // 랜덤 초기 방향
+        anim = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
         yDir = (Random.value < 0.5f) ? 1 : -1;
 
-        // 자식 포함 모든 SpriteRenderer 저장
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         if (spriteRenderers != null && spriteRenderers.Length > 0)
         {
             originalColors = new Color[spriteRenderers.Length];
             for (int i = 0; i < spriteRenderers.Length; i++)
-            {
                 originalColors[i] = spriteRenderers[i].color;
-            }
         }
     }
 
     void OnEnable()
     {
+        isActive = activateOnStart;
+        currentHits = 0;
+        isPhase2Active = false;
+        bossState = BossState.Falling;
+        hasLanded = false;
+        stompTimer = 0f;
+        initialSpawnY = transform.position.y;
+
+        if (isBoss)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null) playerTransform = playerObj.transform;
+        }
+
+        if (CompareTag("Enemy")) enemyCount++;
+
+        if (originalColors != null && spriteRenderers != null)
+        {
+            for (int i = 0; i < spriteRenderers.Length; i++)
+                spriteRenderers[i].color = originalColors[i];
+        }
+
         if (rb != null)
         {
-            rb.gravityScale = 0f;
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
+            rb.gravityScale = 0f;
+        }
+    }
+
+    void OnApplicationQuit() => isQuitting = true;
+
+    void OnDisable()
+    {
+        if (isQuitting || !gameObject.scene.isLoaded) return;
+        if (CompareTag("Enemy"))
+        {
+            enemyCount--;
+            CheckAllEnemiesDead();
+        }
+    }
+
+    private void CheckAllEnemiesDead()
+    {
+        if (enemyCount <= 0)
+        {
+            if (BossSpawnManager.Instance != null) BossSpawnManager.Instance.TriggerBossSpawn();
+
+            PlayerMover playerMover = FindFirstObjectByType<PlayerMover>();
+            if (playerMover != null)
+            {
+                playerMover.enabled = true;
+                playerMover.SetControlEnabled(true);
+            }
         }
     }
 
     void Update()
     {
-        if (!isActive)
-            return;
-
-        if (rb == null)
-        {
-            MoveTransform(Time.deltaTime);
-        }
+        if (!isActive) return;
+        MoveTransform(Time.deltaTime);
     }
 
     void FixedUpdate()
     {
-        if (!isActive)
-            return;
-
-        if (rb != null)
-        {
-            MoveRigidbody(Time.fixedDeltaTime);
-        }
+        if (!isActive) return;
+        if (!isBoss && rb != null) MoveRigidbody(Time.fixedDeltaTime);
     }
 
     private void MoveTransform(float dt)
     {
-        Vector3 p = transform.position;
-
-        p.x -= xSpeed * dt;
-        p.y += ySpeed * yDir * dt;
-
-        if (yDir > 0 && p.y >= yMax)
+        if (isBoss)
         {
-            p.y = yMax;
-            yDir = -1;
-        }
-        else if (yDir < 0 && p.y <= yMin)
-        {
-            p.y = yMin;
-            yDir = 1;
+            Vector3 p = transform.position;
+            switch (bossState)
+            {
+                case BossState.Falling:
+                    if (p.y > bossTargetY)
+                    {
+                        p.y -= bossFallSpeed * dt;
+                        if (p.y <= bossTargetY)
+                        {
+                            p.y = bossTargetY;
+                            bossState = BossState.Landed;
+                            stompTimer = 0f;
+                            PlayLandingEffect();
+                        }
+                    }
+                    break;
+                case BossState.Landed:
+                    stompTimer += dt;
+                    if (stompTimer >= bossStompWaitTime)
+                    {
+                        bossState = BossState.Rising;
+                        hasLanded = false;
+                        if (playerTransform == null)
+                        {
+                            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                            if (playerObj != null) playerTransform = playerObj.transform;
+                        }
+                    }
+                    break;
+                case BossState.Rising:
+                    if (p.y < initialSpawnY)
+                    {
+                        p.y += bossRiseSpeed * dt;
+                        if (p.y >= initialSpawnY)
+                        {
+                            p.y = initialSpawnY;
+                            if (playerTransform != null)
+                            {
+                                float targetX = playerTransform.position.x;
+                                p.x = Mathf.Clamp(targetX, -8f, 8f);
+                            }
+                            bossState = BossState.Falling;
+                        }
+                    }
+                    break;
+            }
+            transform.position = p;
+            return;
         }
 
-        transform.position = p;
+        if (!canMove || rb != null) return;
+        Vector3 pos = transform.position;
+        pos.x -= xSpeed * dt;
+        pos.y += ySpeed * yDir * dt;
+        if (yDir > 0 && pos.y >= yMax) { pos.y = yMax; yDir = -1; }
+        else if (yDir < 0 && pos.y <= yMin) { pos.y = yMin; yDir = 1; }
+        transform.position = pos;
     }
 
     private void MoveRigidbody(float dt)
     {
+        if (isBoss || !canMove) { rb.linearVelocity = Vector2.zero; return; }
         Vector2 p = rb.position;
-
         p.x -= xSpeed * dt;
         p.y += ySpeed * yDir * dt;
-
-        if (yDir > 0 && p.y >= yMax)
-        {
-            p.y = yMax;
-            yDir = -1;
-        }
-        else if (yDir < 0 && p.y <= yMin)
-        {
-            p.y = yMin;
-            yDir = 1;
-        }
-
+        if (yDir > 0 && p.y >= yMax) { p.y = yMax; yDir = -1; }
+        else if (yDir < 0 && p.y <= yMin) { p.y = yMin; yDir = 1; }
         rb.MovePosition(p);
     }
 
-    // SolsFinalGame에서 호출하는 활성화 함수
-    public void Activate()
+    private void PlayLandingEffect()
     {
-        isActive = true;
+        Debug.Log("보스 착지! 쿠궁!");
+        if (audioSource != null && landSound != null) audioSource.PlayOneShot(landSound);
+        if (Camera.main != null) StartCoroutine(CameraShakeRoutine(Camera.main.transform, landShakeDuration, landShakeMagnitude));
     }
 
-    public void Deactivate()
+    private IEnumerator CameraShakeRoutine(Transform camTransform, float duration, float magnitude)
     {
-        isActive = false;
-        if (rb != null)
+        Vector3 originalPos = camTransform.position;
+        float elapsed = 0.0f;
+        while (elapsed < duration)
         {
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
+            float x = Random.Range(-1f, 1f) * magnitude;
+            float y = Random.Range(-1f, 1f) * magnitude;
+            camTransform.position = new Vector3(originalPos.x + x, originalPos.y + y, originalPos.z);
+            elapsed += Time.deltaTime;
+            yield return null;
         }
+        camTransform.position = originalPos;
     }
 
-    // 주사기에게 맞았을 때 호출
+    public void Activate() { isActive = true; }
+    public void Deactivate() { isActive = false; if (rb != null) rb.linearVelocity = Vector2.zero; }
+
     public void TakeHit(Vector2 hitPosition)
     {
         currentHits++;
+        int currentHp = hitsToDie - currentHits;
 
-        // 피격 색 연출
-        if (hitColorRoutine != null)
-            StopCoroutine(hitColorRoutine);
+        // [추가됨] 보스 체력 로그 출력
+        Debug.Log($"<color=yellow>보스 피격! 남은 체력: {currentHp} / {hitsToDie}</color>");
+
+        if (anim != null) anim.SetTrigger("Hit");
+
+        if (hitColorRoutine != null) StopCoroutine(hitColorRoutine);
         hitColorRoutine = StartCoroutine(HitColorFlashRoutine());
 
-        if (currentHits >= hitsToDie)
+        if (isBoss && currentHp <= phase2HpThreshold && !isPhase2Active)
         {
-            Die();
+            StartCoroutine(Phase2SummonRoutine());
+        }
+
+        if (currentHits >= hitsToDie)
+            StartCoroutine(DieWithDelay());
+    }
+
+    private IEnumerator Phase2SummonRoutine()
+    {
+        isPhase2Active = true;
+        Debug.Log("⚠️ 보스 페이즈 2 시작! 소환 패턴 발동!");
+        while (isActive && currentHits < hitsToDie)
+        {
+            if (minionPrefab != null)
+            {
+                for (int i = 0; i < summonCount; i++)
+                {
+                    float randomX = Random.Range(-8f, 8f);
+                    float spawnY = 5.5f;
+                    Vector3 spawnPos = new Vector3(randomX, spawnY, 0);
+                    Instantiate(minionPrefab, spawnPos, Quaternion.identity);
+                }
+                Debug.Log($"쫄병 {summonCount}마리 소환됨!");
+            }
+            yield return new WaitForSeconds(summonInterval);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            SyringePoolShooter player = collision.gameObject.GetComponent<SyringePoolShooter>();
+            if (player != null) player.OnDamage(1, gameObject.tag);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            SyringePoolShooter player = collision.GetComponent<SyringePoolShooter>();
+            if (player != null) player.OnDamage(1, gameObject.tag);
+            if (!isBoss) gameObject.SetActive(false);
         }
     }
 
     private IEnumerator HitColorFlashRoutine()
     {
-        if (spriteRenderers == null || spriteRenderers.Length == 0)
-            yield break;
-
-        // 빨간색으로 변경
-        for (int i = 0; i < spriteRenderers.Length; i++)
-        {
-            spriteRenderers[i].color = hitColor;
-        }
-
+        if (spriteRenderers == null) yield break;
+        foreach (var sr in spriteRenderers) sr.color = hitColor;
         yield return new WaitForSeconds(hitColorDuration);
-
-        // 아직 살아 있으면 원래 색으로 복원
-        if (currentHits < hitsToDie && originalColors != null && originalColors.Length == spriteRenderers.Length)
+        if (isActive && originalColors != null)
         {
             for (int i = 0; i < spriteRenderers.Length; i++)
-            {
                 spriteRenderers[i].color = originalColors[i];
-            }
         }
     }
 
-    private void Die()
+    private IEnumerator DieWithDelay()
     {
-        // 죽을 때는 그냥 비활성화
+        isActive = false;
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+        yield return new WaitForSeconds(0.5f);
         gameObject.SetActive(false);
     }
 }

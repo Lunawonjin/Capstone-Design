@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Boss_Second_Calling_Dialogue_ko
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ko
+  m_SharedData: {fileID: 11400000, guid: cf0b11c58c3b8d64297cda93faec0c9a, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1141434159104
+    m_Localized: "\uC138\uB85C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5172039680
+    m_Localized: "\uC548\uB155~ \uC624\uB298\uB3C4 \uC740\uD558\uB9C8\uC744\uC5D0
+      \uC798 \uB2E4\uB140\uC654\uC5B4?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: "\uB0B4\uAC00 \uC624\uB298 \uD2B9.\uBCC4.\uD788!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1141484490752
+    m_Localized: "\uB108\uC5D0\uAC8C \uC5C4\uCCAD\uB09C \uAC78 \uBCF4\uC5EC\uC8FC\uB824
+      \uD574."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1141484490753
+    m_Localized: "\uB098\uB294 \uC9C0\uAE08 \uC740\uD558\uB9C8\uC744\uC758 \uBC84\uC2A4
+      \uC815\uB958\uC7A5\uC5D0 \uC788\uC5B4. "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1141484490754
+    m_Localized: "\uBC14\uB85C \uC774\uCABD\uC73C\uB85C \uC640\uC918! \uBE68\uB9AC
+      \uC640\uC57C\uD574~"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

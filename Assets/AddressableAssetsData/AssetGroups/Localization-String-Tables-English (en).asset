@@ -27,8 +27,20 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 39a64c25d404ea248bd32a7c0f5dc9d8
+    m_Address: Boss_Seconday_Busstop_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 467ced898d0e01e489f431c31bf81efc
     m_Address: Sol_First_Meet_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4e96f193992833547b4c0ba6f4e8413c
+    m_Address: Boss_Second_Calling_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
@@ -41,6 +53,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 669623bd4a51a3f41a06325620d2393d
     m_Address: Sol_Second_Meet_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7df4c60e604c0ac4bb933229f2d83d1c
+    m_Address: Boss_Sol_FinalGame_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
@@ -64,6 +82,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a252988d6bd9f7e49baf7d66a3716e80
+    m_Address: Boss_SaltKey_Lost_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: af1e5a71e3c3a0346ba2be40d5dd8721
     m_Address: Salt's_Talk_Dialogue_en
     m_ReadOnly: 1
@@ -72,6 +96,24 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b2d1d11b134c94243a3fdbc082a17187
     m_Address: Starest_First_Visit_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3fef5af0d1b2b945ab629f94c6a28ef
+    m_Address: Boss_Seconday_Busstop_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd062e81ea1d12e49835f42052b6ba89
+    m_Address: Boss_SaltKey_Lost_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd623bfc99f5f504886a5bf15d5bca20
+    m_Address: Boss_Sol_FinalGame_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

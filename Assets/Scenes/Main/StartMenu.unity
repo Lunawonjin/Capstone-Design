@@ -4995,7 +4995,7 @@ MonoBehaviour:
   dontDestroyOnLoadHUD: 0
   autoRebindOnSceneLoaded: 1
   refreshHUDOnStart: 1
-  hudRootTag: HUD
+  hudRootTag: 
   coinObjectName: Text_Coin
   levelObjectName: Text_Level
   dayObjectName: Text_Day

@@ -1,11 +1,8 @@
 // DataManager.cs (Unity 6 LTS)
 // 주석은 모두 한국어. 전체 코드 누락 없음.
 // 변경점 요약:
-// 1) 기존 호출과의 호환성을 위해 래퍼 메서드 추가
-//    - CommitDataToTempFile()  → 내부적으로 SubSaveCommit() 호출
-//    - SubSaveCommitActivesForCurrentScene() → 내부적으로 SubSaveCommitSceneSnapshotAllObjects() 호출
-// 2) 비활성 포함 전체 오브젝트 스냅샷 저장/복원 유지
-// 3) 저장하지 않고 종료 시 sub_save 및 잘못 남은 씬 스냅샷 정리
+// 1) AutoRebindHUDIfNeeded 메서드 개선 (FindObjectsByType 사용)
+// 2) 기존 기능(저장/로드, 스냅샷 등) 유지
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -956,8 +953,10 @@ public class DataManager : MonoBehaviour
         }
     }
 
+    // [디버깅용] 수정된 AutoRebindHUDIfNeeded
     private void AutoRebindHUDIfNeeded()
     {
+        // 1. 필요한지 체크
         bool needCoin = coinText == null;
         bool needLevel = levelText == null;
         bool needDay = dayText == null && !string.IsNullOrEmpty(dayObjectName);
@@ -968,37 +967,69 @@ public class DataManager : MonoBehaviour
         bool needWhite = whiteFriendshipText == null && !string.IsNullOrEmpty(whiteFriendshipObjectName);
 
         if (!(needCoin || needLevel || needDay || needName || needSol || needSalt || needRyu || needWhite))
+        {
+            // Debug.Log("[DataManager] 모든 UI가 이미 연결되어 있어 검색을 건너뜁니다.");
             return;
+        }
 
+        Debug.Log($"[DataManager] UI 자동 연결 시작... (Coin필요: {needCoin}, Day필요: {needDay})");
+
+        // 2. 검색 루트(부모) 설정
         Transform root = null;
         if (!string.IsNullOrEmpty(hudRootTag))
         {
             var hudRootGO = GameObject.FindWithTag(hudRootTag);
-            if (hudRootGO) root = hudRootGO.transform;
-        }
-
-        TMP_Text FindTMP(string n)
-        {
-            if (string.IsNullOrEmpty(n)) return null;
-            if (root)
+            if (hudRootGO)
             {
-                foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
-                    if (t && t.name == n) return t;
-                return null;
+                root = hudRootGO.transform;
+                Debug.Log($"[DataManager] 태그('{hudRootTag}')를 가진 부모 객체 '{hudRootGO.name}' 하위에서 검색합니다.");
             }
             else
             {
-                foreach (var t in Resources.FindObjectsOfTypeAll<TMP_Text>())
-                {
-                    if (!t) continue;
-                    if (t.hideFlags != HideFlags.None) continue;
-                    if (!t.gameObject.scene.IsValid() || !t.gameObject.scene.isLoaded) continue;
-                    if (t.name == n) return t;
-                }
-                return null;
+                Debug.LogWarning($"[DataManager] 경고: HudRootTag가 '{hudRootTag}'로 설정되어 있으나, 해당 태그를 가진 오브젝트를 씬에서 찾을 수 없습니다. (전체 검색으로 전환합니다)");
             }
         }
+        else
+        {
+            Debug.Log("[DataManager] HudRootTag가 비어있어 씬 전체(비활성 포함)에서 검색합니다.");
+        }
 
+        // 3. 검색 함수
+        TMP_Text FindTMP(string n)
+        {
+            if (string.IsNullOrEmpty(n)) return null;
+
+            if (root)
+            {
+                // 루트 하위 검색
+                foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (t.name == n)
+                    {
+                        Debug.Log($"[DataManager] 성공: '{n}' 오브젝트를 찾았습니다.");
+                        return t;
+                    }
+                }
+            }
+            else
+            {
+                // 전체 검색 (Unity 6 / 2023+ FindObjectsByType)
+                var allSceneTexts = FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                foreach (var t in allSceneTexts)
+                {
+                    if (t.name == n)
+                    {
+                        Debug.Log($"[DataManager] 성공: '{n}' 오브젝트를 찾았습니다.");
+                        return t;
+                    }
+                }
+            }
+
+            Debug.LogError($"[DataManager] 실패: 이름이 '{n}'인 TMP_Text 오브젝트를 찾지 못했습니다! 이름을 확인해주세요.");
+            return null;
+        }
+
+        // 4. 연결 시도
         var fc = needCoin ? FindTMP(coinObjectName) : coinText;
         var fl = needLevel ? FindTMP(levelObjectName) : levelText;
         var fd = needDay ? FindTMP(dayObjectName) : dayText;
