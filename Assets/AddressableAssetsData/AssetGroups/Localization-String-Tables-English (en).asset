@@ -57,6 +57,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7cdca8d9fd3a56b48a2a846836fd70b9
+    m_Address: Sol_FinalGame_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7df4c60e604c0ac4bb933229f2d83d1c
     m_Address: Boss_Sol_FinalGame_Dialogue_en
     m_ReadOnly: 1
@@ -126,6 +132,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c5254847e8f01b64da2f6f5a43a41d9f
     m_Address: Starest_First_Visit_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca77824813c8c19418da18036ffaa92c
+    m_Address: Sol_FinalGame_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

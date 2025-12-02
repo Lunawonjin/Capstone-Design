@@ -51,6 +51,18 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 550a580881f0fde40b78bfd69dc34d7d
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_FinalGame_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57368a9d3741365468ac641b5e624f54
+    m_Address: Assets/Localization/Dialogue/Sol/Speaker/Sol_FinalGame_Speaker Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6b756e10fafc51c42a1784b8768b4145
     m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Second_Meet_Dialogue
       Shared Data.asset

@@ -58,6 +58,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3749438cd42e1454bb097c39a8bc7b4f
+    m_Address: Sol_FinalGame_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4d3cc1a6b1767cc4aa1495d604396cd1
     m_Address: Boss_Seconday_Busstop_Dialogue_ja
     m_ReadOnly: 1
@@ -108,6 +114,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 85ebcc07d7081234da9264a44357d875
     m_Address: Sol_Puzzle_Clear_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a95acfbcf0eb6704dae3e21fb5727a58
+    m_Address: Sol_FinalGame_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
