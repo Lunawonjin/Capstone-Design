@@ -1,14 +1,19 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// - 플레이어와 NPC가 2D 충돌 중일 때 F 키를 누르면
-///   · Sol_Talk_01 ~ Sol_Talk_XX 중에서 랜덤으로 "한 줄"만 플레이
+///   · {npcId}_Talk_01 ~ {npcId}_Talk_XX 중에서 랜덤으로 "한 줄"만 플레이
 ///   · 대화가 끝나면 자동으로 다음 대사를 실행하지 않고 종료
 /// - 하루에 이 NPC가 줄 수 있는 대사는 최대 randomEventCountPerDay번
 ///   · 그 이상이면 {NPC}_Today_Talk 를 true로 바꾸고 더 이상 대화 시작하지 않음
 /// - Today_Talk 플래그는 PlayerData의 "{npcId}_Today_Talk" bool 필드를 사용
+/// - nowPlayer.Day 값이 바뀌었다고 감지되면
+///   · ResetAllTodayTalkForNewDay(PlayerData)를 자동 호출해서
+///     오늘 대화 카운트/사용 키/플래그 전부 초기화
 /// </summary>
 [DisallowMultipleComponent]
 public class NPCTalkManager : MonoBehaviour
@@ -49,10 +54,12 @@ public class NPCTalkManager : MonoBehaviour
 
     // 런타임 동안 오늘 몇 번 말했는지 저장 (npcId 기준)
     private static readonly Dictionary<string, int> s_todayTalkCount = new Dictionary<string, int>();
+
     // 이미 사용한 키 기록 (중복 방지용)
     private static readonly Dictionary<string, HashSet<string>> s_usedKeysToday = new Dictionary<string, HashSet<string>>();
-    // 마지막으로 본 Today_Talk 플래그 (날짜 변경 감지용)
-    private static readonly Dictionary<string, bool> s_lastTodayFlag = new Dictionary<string, bool>();
+
+    // 마지막으로 본 Day 값(날짜 변경 감지용, 전 NPC 공통)
+    private static int s_lastKnownDay = -1;
 
     private void Awake()
     {
@@ -120,19 +127,25 @@ public class NPCTalkManager : MonoBehaviour
             return;
         }
 
-        bool todayFlag = GetTodayTalkFlag(dm.nowPlayer, npcId);
-        bool lastFlag = false;
-        s_lastTodayFlag.TryGetValue(npcId, out lastFlag);
+        // 1) 날짜 변경 여부 먼저 확인
+        int currentDay = Mathf.Max(1, dm.nowPlayer.Day);
 
-        // 어제까지 true였다가 오늘 false로 바뀌면 "날짜가 바뀐 것"으로 보고 카운트 리셋
-        if (lastFlag && !todayFlag)
+        if (s_lastKnownDay < 0)
         {
-            Log("Today_Talk 플래그가 true → false 로 변경됨, 새 날짜로 판단하고 카운트 리셋");
-            s_todayTalkCount.Remove(npcId);
-            s_usedKeysToday.Remove(npcId);
+            // 첫 진입 시 기준값만 설정
+            s_lastKnownDay = currentDay;
+            Log($"초기 Day 기준 설정: {currentDay}");
+        }
+        else if (currentDay != s_lastKnownDay)
+        {
+            // Day 값이 바뀌었다면 → 새 날이 된 것으로 판단하고 전체 리셋
+            Log($"Day 변경 감지: {s_lastKnownDay} → {currentDay}, 새 날로 간주하고 TodayTalk 전부 리셋");
+            ResetAllTodayTalkForNewDay(dm.nowPlayer);
+            s_lastKnownDay = currentDay;
         }
 
-        s_lastTodayFlag[npcId] = todayFlag;
+        // 2) Today_Talk 플래그 확인
+        bool todayFlag = GetTodayTalkFlag(dm.nowPlayer, npcId);
 
         if (ignoreIfAlreadyTalkedToday && todayFlag)
         {
@@ -140,6 +153,7 @@ public class NPCTalkManager : MonoBehaviour
             return;
         }
 
+        // 3) 로컬 카운트 기준 체크
         int currentCount = GetTodayTalkCount(npcId);
         Log($"현재 TodayTalkCount = {currentCount}");
 
@@ -151,7 +165,7 @@ public class NPCTalkManager : MonoBehaviour
             return;
         }
 
-        // 오늘 쓸 수 있는 키 후보 생성
+        // 4) 오늘 쓸 수 있는 키 후보 생성
         List<string> candidates = BuildCandidateEventList();
         if (candidates.Count == 0)
         {
@@ -334,5 +348,30 @@ public class NPCTalkManager : MonoBehaviour
     {
         if (!enableDebugLog) return;
         Debug.Log("[NPCTalkManager][" + npcId + "] " + msg);
+    }
+
+    // ============================
+    // 날짜가 바뀔 때 호출할 리셋 함수
+    //  - PlayerData의 *_Today_Talk 전부 false
+    //  - 정적 캐시(카운트, 사용 키) 전부 Clear
+    // ============================
+    public static void ResetAllTodayTalkForNewDay(PlayerData data)
+    {
+        if (data == null) return;
+
+        // PlayerData 안의 모든 bool 필드 중에서 이름이 "_Today_Talk"로 끝나는 것들을 false로 만든다
+        FieldInfo[] fields = typeof(PlayerData).GetFields(BindingFlags.Public | BindingFlags.Instance);
+        for (int i = 0; i < fields.Length; i++)
+        {
+            FieldInfo f = fields[i];
+            if (f.FieldType != typeof(bool)) continue;
+            if (!f.Name.EndsWith("_Today_Talk", StringComparison.Ordinal)) continue;
+
+            f.SetValue(data, false);
+        }
+
+        // 오늘 대화 카운트, 사용한 키 기록 전부 초기화
+        s_todayTalkCount.Clear();
+        s_usedKeysToday.Clear();
     }
 }

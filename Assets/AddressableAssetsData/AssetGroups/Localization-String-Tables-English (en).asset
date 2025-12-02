@@ -33,6 +33,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c26a2b3500f564439635f679ec563c2
+    m_Address: Boss_Starest_SeondMeet_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 467ced898d0e01e489f431c31bf81efc
     m_Address: Sol_First_Meet_Speaker_en
     m_ReadOnly: 1
@@ -53,6 +59,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 669623bd4a51a3f41a06325620d2393d
     m_Address: Sol_Second_Meet_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7cdca8d9fd3a56b48a2a846836fd70b9
+    m_Address: Sol_FinalGame_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
@@ -124,8 +136,20 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4d8c79f487655c41a1dd309138d225f
+    m_Address: Boss_Starest_SeondMeet_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c5254847e8f01b64da2f6f5a43a41d9f
     m_Address: Starest_First_Visit_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ca77824813c8c19418da18036ffaa92c
+    m_Address: Sol_FinalGame_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

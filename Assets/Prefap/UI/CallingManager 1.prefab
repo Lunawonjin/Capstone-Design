@@ -1,0 +1,176 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6226333765743141988
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2179926340216716085}
+  - component: {fileID: 8597730460884804843}
+  m_Layer: 0
+  m_Name: CallingManager 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2179926340216716085
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6226333765743141988}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8597730460884804843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6226333765743141988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48128bea5ccdfb9418e2fb082218c364, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CallingSystem
+  logLevel: 3
+  calls:
+  - callingName: Boss_First_Calling
+    callerName: Boss
+    callerProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+    conditions:
+    - varType: 0
+      key: StartGame
+      boolValue: 0
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    ringing: 0
+    answered: 0
+    firedOnce: 0
+  - callingName: Boss_Second_Calling
+    callerName: Boss
+    callerProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+    conditions:
+    - varType: 3
+      key: Player's Room
+      boolValue: 0
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    - varType: 0
+      key: Sol_Today_Talk
+      boolValue: 1
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    - varType: 1
+      key: Day
+      boolValue: 0
+      intOp: 0
+      intValue: 2
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    ringing: 0
+    answered: 0
+    firedOnce: 0
+  phoneIconButton: {fileID: 0}
+  phoneIconButtonName: Phone_icon_BT
+  shakeByRotation: 1
+  shakeFrequency: 4
+  shakeAmplitude: 10
+  shakeEnvelope:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  shakeOffscreenJitterMin: 0.15
+  shakeOffscreenJitterMax: 0.35
+  dialoguePanel: {fileID: 0}
+  dialoguePanelName: Dialogue
+  dialogueRunner: {fileID: 0}
+  dialogueManagerObjectName: DialogueManager
+  usePhoneFontOverride: 1
+  phoneBodyFontSize: 65
+  phoneSpeakerFontSize: 40
+  phonePanel: {fileID: 0}
+  phone: {fileID: 0}
+  slideFromY: -1200
+  slideToY: 0
+  slideDuration: 0.35
+  slideCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  callerProfileImage: {fileID: 0}
+  callerNameText: {fileID: 0}
+  hangUpButton: {fileID: 0}
+  answerButton: {fileID: 0}
+  selectObject: {fileID: 0}
+  callingObject: {fileID: 0}
+  callingTimeText: {fileID: 0}
+  callingEndObject: {fileID: 0}
+  disableWhilePhoneActive: []
+  autoFindInactive: 1
+  playerMove: {fileID: 0}
+  autoFindPlayerMove: 1
+  includeInactiveOnFind: 1
+  hardLockWhilePhoneOpen: 1
+  alsoDisableAnimatorWhilePhoneOpen: 1

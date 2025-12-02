@@ -2,7 +2,9 @@
 // 주석은 모두 한국어. 전체 코드 누락 없음.
 // 변경점 요약:
 // 1) AutoRebindHUDIfNeeded 메서드 개선 (FindObjectsByType 사용)
-// 2) 기존 기능(저장/로드, 스냅샷 등) 유지
+// 2) AddDay에서 하루가 바뀔 때 NPC Today_Talk 플래그 리셋
+// 3) 기존 기능(저장/로드, 스냅샷 등) 유지
+// 4) Sol_Second_Meet 이벤트 플래그 추가(PlayerData)
 
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -72,6 +74,9 @@ public class PlayerData
     public bool Ryu_First_Meet;
     public bool White_First_Meet;
 
+    // 두 번째 만남 플래그 예시 (Sol_Second_Meet 이벤트용)
+    public bool Sol_Second_Meet;
+
     public int Sol_FriendShip;
     public int Salt_FriendShip;
     public int Ryu_FriendShip;
@@ -117,6 +122,9 @@ public class PlayerData
         Salt_First_Meet = false;
         Ryu_First_Meet = false;
         White_First_Meet = false;
+
+        // 두 번째 만남 플래그 초기값
+        Sol_Second_Meet = false;
 
         Sol_FriendShip = 0;
         Salt_FriendShip = 0;
@@ -597,14 +605,29 @@ public class DataManager : MonoBehaviour
         nowPlayer.Day = Mathf.Max(1, nowPlayer.Day + delta);
         if (delta != 0)
         {
+            // 요일 갱신
             int wd = GetWeekday();
             wd = WrapWeekday(wd + delta);
             SetWeekday(wd, notify: false);
+
+            // 하루가 바뀌었으므로 NPC Today_Talk 플래그 리셋
+            ResetNpcTodayTalkFlags();
         }
         NotifyChanged(); SnapshotValues();
     }
 
     public void SetPlayerName(string newName) { nowPlayer.Name = newName ?? ""; NotifyChanged(); SnapshotValues(); }
+
+    // 하루가 바뀔 때 NPC Today_Talk 플래그를 초기화하는 메서드
+    private void ResetNpcTodayTalkFlags()
+    {
+        if (nowPlayer == null) return;
+
+        nowPlayer.Sol_Today_Talk = false;
+        nowPlayer.Salt_Today_Talk = false;
+        nowPlayer.Ryu_Today_Talk = false;
+        nowPlayer.White_Today_Talk = false;
+    }
 
     // ───────── 언어/요일 유틸 ─────────
     public string GetLanguageCode()

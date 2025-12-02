@@ -58,7 +58,7 @@ public class BedSleepTrigger : MonoBehaviour
 
     [Header("씬 설정")]
     [SerializeField] private string prologSceneName = "Prolog";
-    [SerializeField] private string playerRoomSceneName = "Player's Room"; // [복구] 이동할 씬 이름
+    [SerializeField] private string playerRoomSceneName = "Player's Room"; // 이동할 씬 이름
 
     [Header("디버그")]
     public bool verboseLog = false;
@@ -81,7 +81,7 @@ public class BedSleepTrigger : MonoBehaviour
     {
         if (fadeCanvasGroup == null) CreateAutoFadeOverlay();
 
-        // [수정] startWithFadeIn 옵션이 켜져있으면 처음부터 검은 화면(Alpha 1)으로 시작
+        // startWithFadeIn 옵션이 켜져있으면 처음부터 검은 화면(Alpha 1)으로 시작
         if (fadeCanvasGroup != null)
         {
             fadeCanvasGroup.alpha = startWithFadeIn ? 1f : 0f;
@@ -127,10 +127,15 @@ public class BedSleepTrigger : MonoBehaviour
         if (lockIfPlayerInsideOnStart)
             StartCoroutine(CoLockIfPlayerAlreadyInsideOnStart());
 
-        // [추가] 시작 시 페이드 인 효과 (검은 화면 -> 투명)
+        // 시작 시 페이드 인 효과 (검은 화면 -> 투명)
         if (startWithFadeIn && fadeCanvasGroup != null)
         {
             StartCoroutine(FadeTo(0f, fadeDuration));
+        }
+        else if (fadeCanvasGroup != null && fadeCanvasGroup.alpha > 0.01f)
+        {
+            // 혹시 이전 씬에서 검은 상태로 넘어온 경우 방어적으로 한 번 초기화
+            StartCoroutine(FadeTo(0f, 0.1f));
         }
     }
 
@@ -201,7 +206,7 @@ public class BedSleepTrigger : MonoBehaviour
     {
         _cantSleepActive = false;
         if (cantGoodNightText) cantGoodNightText.gameObject.SetActive(false);
-        if (goodNightPanel) goodNightPanel.SetActive(false);
+        if (goodNightPanel) goodNightPanel.gameObject.SetActive(false);
         _requireExitToReopen = true;
     }
 
@@ -215,7 +220,7 @@ public class BedSleepTrigger : MonoBehaviour
     {
         if (_sleepingRoutine || _sceneLoading) return;
 
-        // [중요] Prolog 씬일 경우 별도 처리 (씬 이동)
+        // Prolog 씬일 경우 별도 처리 (씬 이동)
         if (IsPrologScene())
         {
             _sleepingRoutine = true;
@@ -248,14 +253,13 @@ public class BedSleepTrigger : MonoBehaviour
         _sleepingRoutine = false;
     }
 
-    // [추가] Prolog 전용 시퀀스: 페이드 아웃 -> 씬 이동
+    // Prolog 전용 시퀀스: 페이드 아웃 -> 씬 이동
     private IEnumerator CoPrologSequence()
     {
         // 1. 페이드 아웃 (검게)
         yield return StartCoroutine(FadeTo(1f, fadeDuration));
 
-        // 2. 필요하다면 여기서 데이터 저장 (DataManager.instance.SaveData() 등)
-        // Prolog는 보통 저장 안 하거나, 씬 넘어가면서 저장함.
+        // 2. 필요하다면 여기서 데이터 저장
 
         // 3. 씬 이동
         SceneManager.LoadScene(playerRoomSceneName);
@@ -367,14 +371,20 @@ public class BedSleepTrigger : MonoBehaviour
         var dm = DataManager.instance;
         if (dm == null) return;
 
+        // 1) 날짜 증가
         dm.AddDay(1);
 
+        // 2) 새 날이 되었으니 모든 NPC Today_Talk 관련 상태를 리셋
+        NPCTalkManager.ResetAllTodayTalkForNewDay(dm.nowPlayer);
+
+        // 3) 플레이어 위치 저장
         Vector3 pos = playerMove
             ? playerMove.transform.position
             : (GameObject.FindGameObjectWithTag("Player")?.transform.position ?? Vector3.zero);
 
         dm.SetPlayerPosition(pos);
 
+        // 4) 세이브
         if (dm.nowSlot >= 0) dm.SaveData();
     }
 
@@ -403,7 +413,13 @@ public class BedSleepTrigger : MonoBehaviour
         }
 
         fadeCanvasGroup.alpha = targetAlpha;
-        if (targetAlpha <= 0.01f) fadeCanvasGroup.blocksRaycasts = false;
+
+        if (targetAlpha <= 0.01f)
+        {
+            fadeCanvasGroup.blocksRaycasts = false;
+            // 완전히 투명해지면 아예 비활성화해서 다른 씬에서 방해 안 되도록 처리
+            fadeCanvasGroup.gameObject.SetActive(false);
+        }
     }
 
     private IEnumerator SlideRectX(RectTransform rect, float startX, float targetX, float duration)
@@ -462,26 +478,41 @@ public class BedSleepTrigger : MonoBehaviour
         if (canvasToUse == null)
         {
             Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var c in allCanvases) { if (c.renderMode == RenderMode.ScreenSpaceOverlay) { canvasToUse = c; break; } }
-            if (canvasToUse == null && allCanvases.Length > 0) canvasToUse = allCanvases[0];
+            foreach (var c in allCanvases)
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    canvasToUse = c;
+                    break;
+                }
+            }
+            if (canvasToUse == null && allCanvases.Length > 0)
+                canvasToUse = allCanvases[0];
         }
 
         if (canvasToUse == null) return;
 
         GameObject fadeObj = new GameObject("AutoFadeOverlay");
         fadeObj.layer = canvasToUse.gameObject.layer;
+        // 태그는 사용하지 않는다. (HUD로 두면 다른 시스템이 잘못 잡을 수 있음)
+        // fadeObj.tag = "Untagged";
+
         fadeObj.transform.SetParent(canvasToUse.transform, false);
 
         RectTransform rt = fadeObj.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-        rt.pivot = new Vector2(0.5f, 0.5f); rt.anchoredPosition = Vector2.zero;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = Vector2.zero;
         rt.sizeDelta = Vector2.zero;
 
         Image img = fadeObj.AddComponent<Image>();
-        img.color = Color.black; img.raycastTarget = true;
+        img.color = Color.black;
+        img.raycastTarget = true;
 
         fadeCanvasGroup = fadeObj.AddComponent<CanvasGroup>();
-        fadeCanvasGroup.alpha = 0f; fadeCanvasGroup.blocksRaycasts = false;
+        fadeCanvasGroup.alpha = 0f;
+        fadeCanvasGroup.blocksRaycasts = false;
 
         fadeObj.transform.SetAsLastSibling();
     }

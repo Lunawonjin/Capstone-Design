@@ -412,6 +412,15 @@ public class NpcEventDebugLoader : MonoBehaviour
             string eventForIO = evRaw?.Trim();
             if (string.IsNullOrEmpty(eventForIO)) continue;
 
+            // 1) 날짜/게임 상태 조건 먼저 확인 (예: Sol_Second_Meet는 2일차에만 허용)
+            if (!IsEventAllowedByGameState(ownerForIO, eventForIO, pd))
+            {
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] 조건 불충족으로 스킵: {ownerForIO}/{eventForIO}");
+                continue;
+            }
+
+            // 2) 이미 실행된 적 있는지(PlayerData bool 플래그) 확인
             if (!TryBindBool(pd, eventForIO, out Func<bool> getter, out Action<bool> setter))
             {
                 if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 '{eventForIO}'(bool)을 찾지 못했습니다.");
@@ -423,6 +432,7 @@ public class NpcEventDebugLoader : MonoBehaviour
                 continue;
             }
 
+            // 3) JSON 로드 후 이벤트 실행
             if (TryLoadSingle(ownerForIO, eventForIO, out var le))
             {
                 Cache(le);
@@ -920,6 +930,37 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 특정 이벤트가 현재 게임 상태(예: Day)에 따라 실행 가능한지 검사하는 훅.
+    /// 여기서 Sol_Second_Meet를 2일차에만 허용하도록 처리.
+    /// </summary>
+    private bool IsEventAllowedByGameState(string ownerName, string eventName, PlayerData pd)
+    {
+        if (pd == null) return false;
+
+        // Sol_Second_Meet: Day가 정확히 2일 때만 실행 허용
+        if (string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(eventName, "Sol_Second_Meet", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!TryBindInt(pd, "Day", out var getDay, out var _))
+            {
+                if (verboseLog)
+                    Debug.LogWarning("[NpcEventDebugLoader] PlayerData에 int 'Day'를 찾지 못해 Sol_Second_Meet 조건 체크 실패");
+                return false;
+            }
+
+            int day = getDay();
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] Sol_Second_Meet 조건 체크: Day={day}");
+
+            // 필요하면 >= 2 등으로 변경 가능. 현재는 정확히 2일차에만 허용.
+            return day == 2;
+        }
+
+        // 그 외 이벤트는 별도 조건 없이 허용
+        return true;
     }
 
     private string ResolveAffinityDataName(string providedOrEmpty)

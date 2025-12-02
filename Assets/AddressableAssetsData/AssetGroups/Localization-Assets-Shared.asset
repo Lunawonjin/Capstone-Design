@@ -51,6 +51,18 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 550a580881f0fde40b78bfd69dc34d7d
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_FinalGame_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57368a9d3741365468ac641b5e624f54
+    m_Address: Assets/Localization/Dialogue/Sol/Speaker/Sol_FinalGame_Speaker Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6b756e10fafc51c42a1784b8768b4145
     m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Second_Meet_Dialogue
       Shared Data.asset
@@ -64,6 +76,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 86175764f01b2b24db84bb8492d3c9d1
     m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Sol_FinalGame_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b23ebaf2ba70d8408f92e42202fde43
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Starest_SeondMeet_Speaker
       Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
@@ -87,6 +105,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c868df77452a8594a9914e1419457157
     m_Address: Assets/Localization/Dialogue/Salt/Salt's_Talk_Dialogue Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb021a37b70eeed4fb43fb5775e39b6a
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Starest_SeondMeet_Dialogue
+      Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
