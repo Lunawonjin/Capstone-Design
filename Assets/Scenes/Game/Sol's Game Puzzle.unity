@@ -559,6 +559,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 150086919}
   m_CullTransparentMesh: 1
+--- !u!1 &152356467 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4616045820766984285, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+  m_PrefabInstance: {fileID: 1455425875}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &152356468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 152356467}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e51a81aafa8c1e4e8d4d0284d9e35bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartMenuBGMPlayer
+  bgmKey: Puzzle
+  fadeInSeconds: 0.75
+  fadeOutSeconds: 0.5
+  startTime: 0
+  stopOnDestroy: 1
 --- !u!1 &223480015
 GameObject:
   m_ObjectHideFlags: 0
@@ -3000,6 +3022,90 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1448650006}
   m_CullTransparentMesh: 1
+--- !u!1001 &1455425875
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[1].key
+      value: Puzzle
+      objectReference: {fileID: 0}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[1].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.data[0].bgmKey
+      value: Puzzle
+      objectReference: {fileID: 0}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.data[0].sceneName
+      value: Sol's Game Puzzle
+      objectReference: {fileID: 0}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.data[0].startTime
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4616045820766984285, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_Name
+      value: SoundManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.10049
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.06778
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8387950941794838254, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4616045820766984285, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 152356468}
+  m_SourcePrefab: {fileID: 100100000, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
 --- !u!1 &1463832057
 GameObject:
   m_ObjectHideFlags: 0
@@ -4812,3 +4918,4 @@ SceneRoots:
   - {fileID: 1433759355}
   - {fileID: 382129823}
   - {fileID: 1241443563}
+  - {fileID: 1455425875}
