@@ -21,6 +21,8 @@ public class SyringePoolShooter : MonoBehaviour
 
     [Header("발사 설정")]
     [SerializeField] private float fireCooldown = 1.0f;
+    [Tooltip("애니메이션 시작 후 발사체가 나갈 때까지의 지연 시간")]
+    [SerializeField] private float projectileLaunchDelay = 0.5f; // ★ 추가된 지연 시간 변수
     [SerializeField] private KeyCode fireKey = KeyCode.Mouse0;
     [SerializeField] private Transform firePoint;
 
@@ -31,7 +33,7 @@ public class SyringePoolShooter : MonoBehaviour
     [Header("공격 애니메이션")]
     [SerializeField] private Animator attackAnimator;
     [SerializeField] private string attackStateName = "Attack";
-    [SerializeField] private float attackDuration = 0.3f;
+    [SerializeField] private float attackDuration = 0.3f; // 애니메이션 전체 길이 (PlayerMover 제어용)
 
     private readonly List<SyringeProjectile> pool = new List<SyringeProjectile>();
     private float fireTimer = 0f;
@@ -74,9 +76,12 @@ public class SyringePoolShooter : MonoBehaviour
 
         fireTimer += Time.deltaTime;
 
+        // 애니메이션 재생 중 PlayerMover 제어 관리
         if (attackPlaying)
         {
             attackTimer += Time.deltaTime;
+            // attackDuration은 플레이어 움직임을 멈추는 용도로 사용됨
+            // 실제 발사와는 별개로 동작
             if (attackTimer >= attackDuration)
             {
                 attackPlaying = false;
@@ -93,10 +98,51 @@ public class SyringePoolShooter : MonoBehaviour
 
         if (!shootingEnabled) return;
 
+        // 쿨타임 체크 후 발사 시퀀스 시작
         if (Input.GetKeyDown(fireKey) && fireTimer >= fireCooldown)
         {
-            Fire();
+            StartCoroutine(CoFireSequence());
         }
+    }
+
+    // ★ 발사 시퀀스 코루틴: 애니메이션 -> 대기 -> 발사체 생성
+    private IEnumerator CoFireSequence()
+    {
+        // 1. 쿨타임 초기화
+        fireTimer = 0f;
+
+        // 2. 마우스 방향 계산 (클릭 시점 기준)
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 dir = (mousePos - transform.position).normalized;
+
+        // 3. 플레이어 방향 전환
+        if (playerMover != null)
+        {
+            playerMover.SetFaceDirection(dir);
+        }
+
+        // 4. 애니메이션 재생 (즉시)
+        PlayAttackAnimation();
+
+        // 5. 설정된 시간(0.5초) 만큼 대기
+        yield return new WaitForSeconds(projectileLaunchDelay);
+
+        // 대기 중에 죽었으면 발사하지 않음
+        if (currentHp <= 0) yield break;
+
+        // 6. 실제 발사체 생성 및 날리기
+        LaunchProjectile(dir);
+    }
+
+    // 실제 발사체를 날리는 로직 분리
+    private void LaunchProjectile(Vector2 dir)
+    {
+        SyringeProjectile proj = GetFromPool();
+        if (proj == null) return;
+
+        proj.transform.position = firePoint.position;
+        proj.gameObject.SetActive(true);
+        proj.Launch(dir);
     }
 
     public void OnDamage(int damageAmount, string attackerTag = "Unknown")
@@ -126,40 +172,19 @@ public class SyringePoolShooter : MonoBehaviour
         if (gameOverManager != null) gameOverManager.ShowDeadUI(killerTag);
     }
 
-    private void Fire()
-    {
-        SyringeProjectile proj = GetFromPool();
-        if (proj == null) return;
-
-        fireTimer = 0f;
-        proj.transform.position = firePoint.position;
-        proj.gameObject.SetActive(true);
-
-        // [핵심 수정] 마우스 위치를 기반으로 방향 계산
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 dir = (mousePos - transform.position).normalized;
-
-        // PlayerMover에게 "이쪽을 바라보라(FlipX)"고 명령
-        if (playerMover != null)
-        {
-            playerMover.SetFaceDirection(dir);
-        }
-
-        proj.Launch(dir);
-        PlayAttackAnimation();
-    }
-
     private void PlayAttackAnimation()
     {
         if (attackAnimator == null) return;
 
+        // PlayerMover에게 애니메이션 제어권 가져옴
         if (playerMover != null) playerMover.SetAnimationOverride(true);
 
         if (!attackAnimator.enabled) attackAnimator.enabled = true;
 
+        // 애니메이션 강제 처음부터 재생 (한 번만 나가게 함)
         if (!string.IsNullOrEmpty(attackStateName))
         {
-            attackAnimator.Play(attackStateName, 0, 0f);
+            attackAnimator.Play(attackStateName, -1, 0f);
             attackAnimator.speed = 1f;
         }
 

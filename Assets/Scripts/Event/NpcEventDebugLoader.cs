@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 [DisallowMultipleComponent]
 public class NpcEventDebugLoader : MonoBehaviour
@@ -26,10 +27,19 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         public string type = "";
         public string npcName = "";
+
+        // 이동 관련 (상대 이동)
         public float dx = 0f, dy = 0f;
 
-        // duration 미지정(-1)일 때 자동 speed 기반으로 계산되도록 변경
+        // 절대 위치 스냅용 (snapPlayer)
+        public float x = 0f, y = 0f, z = 0f;
+
+        // duration 미지정(-1)일 때 자동 speed 기반으로 계산
         public float duration = -1f;
+
+        // textPunch 연출용
+        public float scale = 1.1f;
+        public bool vibrate = false;
 
         public string message = "";
         public string owner = "";
@@ -41,6 +51,11 @@ public class NpcEventDebugLoader : MonoBehaviour
         public bool clamp = true;
         public int min = 0;
         public int max = 100;
+
+        // 씬 이동 및 카메라 쉐이크용 필드
+        public string sceneName = "";       // changeScene용
+        public bool useSubSave = false;     // changeScene용 (필요 시 구현)
+        public float shakeIntensity = 0.5f; // cameraShake용 강도
     }
 
     [Serializable] public class DialogueReaction { public string onKey = ""; public EventPostAction[] actions = Array.Empty<EventPostAction>(); }
@@ -54,6 +69,10 @@ public class NpcEventDebugLoader : MonoBehaviour
         public bool useRigidbodyMove = true;
         public NpcSpawnCmd[] npcSpawns = Array.Empty<NpcSpawnCmd>();
         public PlayerSection player = null;
+
+        // 새로 추가: 스텝 전에 실행할 액션들
+        public EventPostAction[] preActions = Array.Empty<EventPostAction>();
+
         public EventPostAction[] afterPlayerActions = Array.Empty<EventPostAction>();
         public DialogueReaction[] dialogueReactions = Array.Empty<DialogueReaction>();
     }
@@ -85,6 +104,13 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private bool freezePhysicsDuringEvent = true;
     [SerializeField] private bool preferRigidbodyMove = true;
 
+    [Header("말풍선 두둥 효과")]
+    [SerializeField] private bool useBodyPunchEffect = true;
+    [SerializeField] private float bodyPunchScale = 1.08f;
+    [SerializeField] private float bodyPunchDuration = 0.18f;
+
+    private Coroutine _bodyPunchCo;
+
     [Header("페이드(어둡게했다가 복귀)")]
     [SerializeField] private Image fadeImage;
     [SerializeField] private float fadeOutDuration = 0.25f;
@@ -101,6 +127,9 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private GameObject dialoguePanel;
     [SerializeField] private DialogueRunnerStringTables dialogueManager;
     [SerializeField] private bool autoFindDialogueManager = true;
+
+    [Header("카메라 연동 (선택)")]
+    [SerializeField] private Camera mainCamera; // 카메라 쉐이크용
 
     [Header("로그")]
     [SerializeField] private bool logWhenRun = true;
@@ -218,6 +247,9 @@ public class NpcEventDebugLoader : MonoBehaviour
         _anim = playerTransform.GetComponent<Animator>();
         _sr = playerTransform.GetComponent<SpriteRenderer>();
         if (playerMove == null) playerMove = playerTransform.GetComponent<PlayerMove>();
+
+        if (!mainCamera) mainCamera = Camera.main; // 카메라 자동 할당
+
         IndexNpcCatalog();
     }
 
@@ -412,7 +444,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             string eventForIO = evRaw?.Trim();
             if (string.IsNullOrEmpty(eventForIO)) continue;
 
-            // 1) 날짜/게임 상태 조건 먼저 확인 (예: Sol_Second_Meet는 2일차에만 허용)
             if (!IsEventAllowedByGameState(ownerForIO, eventForIO, pd))
             {
                 if (verboseLog)
@@ -420,7 +451,6 @@ public class NpcEventDebugLoader : MonoBehaviour
                 continue;
             }
 
-            // 2) 이미 실행된 적 있는지(PlayerData bool 플래그) 확인
             if (!TryBindBool(pd, eventForIO, out Func<bool> getter, out Action<bool> setter))
             {
                 if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 '{eventForIO}'(bool)을 찾지 못했습니다.");
@@ -432,7 +462,6 @@ public class NpcEventDebugLoader : MonoBehaviour
                 continue;
             }
 
-            // 3) JSON 로드 후 이벤트 실행
             if (TryLoadSingle(ownerForIO, eventForIO, out var le))
             {
                 Cache(le);
@@ -451,6 +480,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
     }
 
+    // 핵심: changeScene, cameraShake, preActions, textPunch 처리 포함 이벤트 실행 코루틴
     private IEnumerator RunEventCoroutine(string ownerForIO, string eventForIO, string rawJson, Action onComplete)
     {
         if (_eventRunning) yield break;
@@ -481,8 +511,17 @@ public class NpcEventDebugLoader : MonoBehaviour
         _currentDialogueReactions = script.dialogueReactions ?? Array.Empty<DialogueReaction>();
         _reactionsFired.Clear();
 
+        // 1) preActions 먼저 처리 (snapPlayer 등)
+        if (script.preActions != null && script.preActions.Length > 0)
+        {
+            if (verboseLog) Debug.Log("[NpcEventDebugLoader] preActions 실행 시작");
+            yield return StartCoroutine(ExecutePostActions(script.preActions));
+        }
+
+        // 2) NPC 스폰 처리
         HandleNpcSpawnCommands(script);
 
+        // 3) 플레이어 이동 스텝
         for (int i = 0; i < (script.steps?.Length ?? 0); i++)
         {
             var step = script.steps[i];
@@ -529,6 +568,9 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
 
+        // 4) Post Actions 처리
+        bool sceneChanged = false;
+
         if (script.afterPlayerActions != null && script.afterPlayerActions.Length > 0)
         {
             foreach (var act in script.afterPlayerActions)
@@ -537,16 +579,47 @@ public class NpcEventDebugLoader : MonoBehaviour
 
                 var actionType = (act.type ?? "").Trim().ToLowerInvariant();
 
-                if (actionType == "npcmove")
+                if (actionType == "changescene")
+                {
+                    string targetScene = act.sceneName;
+                    if (!string.IsNullOrEmpty(targetScene))
+                    {
+                        Debug.Log($"[NpcEventDebugLoader] 씬 이동 요청: {targetScene}");
+
+                        yield return FadeTo(1f, 0.5f);
+
+                        onComplete?.Invoke();
+
+                        SceneManager.LoadScene(targetScene);
+
+                        sceneChanged = true;
+                        break;
+                    }
+                }
+                else if (actionType == "camerashake")
+                {
+                    float dur = act.duration > 0 ? act.duration : 0.5f;
+                    float intensity = act.shakeIntensity > 0 ? act.shakeIntensity : (act.delta > 0 ? act.delta : 0.5f);
+
+                    Debug.Log($"[NpcEventDebugLoader] cameraShake 실행 (afterPlayerActions) — duration={dur}, intensity={intensity}");
+
+                    yield return StartCoroutine(CameraShakeCo(dur, intensity));
+                }
+                else if (actionType == "snapplayer")
+                {
+                    // preActions뿐 아니라 afterPlayerActions에서도 사용 가능
+                    Vector3 to = new Vector3(act.x, act.y, act.z);
+                    SnapPlayerWorld(to, useRbIntent: false);
+                    if (verboseLog) Debug.Log($"[NpcEventDebugLoader] snapPlayer 실행 (afterPlayerActions) — pos={to}");
+                }
+                else if (actionType == "npcmove")
                 {
                     GameObject targetNpc = ResolveNpc(act.npcName);
                     if (!targetNpc) { Debug.LogWarning($"[NpcEventDebugLoader] npcMove 대상 '{act.npcName}'을(를) 찾을 수 없습니다."); }
                     else
                     {
                         _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
-
                         float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
-
                         yield return StartCoroutine(NpcMoveByWorld(targetNpc, new Vector2(act.dx, act.dy), dur, specForNpc));
                     }
                 }
@@ -560,14 +633,10 @@ public class NpcEventDebugLoader : MonoBehaviour
                     string dlgOwner = string.IsNullOrWhiteSpace(act.owner) ? ownerForIO : act.owner.Trim();
                     string dlgEvent = string.IsNullOrWhiteSpace(act.eventName) ? eventForIO : act.eventName.Trim();
                     yield return StartCoroutine(RunDialogueSequence(dlgOwner, dlgEvent));
-                    break;
                 }
                 else if (actionType == "dialoguepanelactive") { HandleDialoguePanelActive(act.active); }
                 else if (actionType == "dialoguepanelrestorenow") { ForceActivateDialoguePanelNow(); }
-                else if (actionType == "npcsetactive")
-                {
-                    HandleNpcSetActive(act.npcName, act.active);
-                }
+                else if (actionType == "npcsetactive") { HandleNpcSetActive(act.npcName, act.active); }
                 else if (actionType == "affinityup")
                 {
                     string dn = ResolveAffinityDataName(act.dataName);
@@ -586,6 +655,12 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
 
+        if (sceneChanged)
+        {
+            _eventRunning = false;
+            yield break;
+        }
+
         yield return StartCoroutine(FadeOutInAndReturn());
 
         ExitEventGuard();
@@ -594,6 +669,177 @@ public class NpcEventDebugLoader : MonoBehaviour
         _eventRunning = false;
         _ctxOwner = "";
         _ctxEvent = "";
+    }
+
+    // DialogueReaction용 PostAction 실행
+    private IEnumerator ExecutePostActions(EventPostAction[] actions)
+    {
+        if (actions == null || actions.Length == 0) yield break;
+
+        foreach (var act in actions)
+        {
+            if (act == null) continue;
+
+            var actionType = (act.type ?? "").Trim().ToLowerInvariant();
+
+            if (actionType == "snapplayer")
+            {
+                Vector3 to = new Vector3(act.x, act.y, act.z);
+                SnapPlayerWorld(to, useRbIntent: false);
+                if (verboseLog) Debug.Log($"[NpcEventDebugLoader] snapPlayer 실행 — pos={to}");
+            }
+            else if (actionType == "changescene")
+            {
+                string targetScene = act.sceneName;
+                if (!string.IsNullOrEmpty(targetScene))
+                {
+                    Debug.Log($"[NpcEventDebugLoader] (Reaction) 씬 이동 요청: {targetScene}");
+                    yield return FadeTo(1f, 0.5f);
+                    SceneManager.LoadScene(targetScene);
+                    yield break;
+                }
+            }
+            else if (actionType == "camerashake")
+            {
+                float dur = act.duration > 0 ? act.duration : 0.5f;
+                float intensity = act.shakeIntensity > 0 ? act.shakeIntensity : (act.delta > 0 ? act.delta : 0.5f);
+
+                Debug.Log($"[NpcEventDebugLoader] cameraShake 실행 (reaction) — duration={dur}, intensity={intensity}");
+
+                yield return StartCoroutine(CameraShakeCo(dur, intensity));
+            }
+            else if (actionType == "textpunch")
+            {
+                // 말풍선 본문 두둥 효과
+                float scale = act.scale > 0f ? act.scale : bodyPunchScale;
+                float dur = act.duration > 0f ? act.duration : bodyPunchDuration;
+                bool vibrate = act.vibrate;
+
+                if (_bodyPunchCo != null) StopCoroutine(_bodyPunchCo);
+                _bodyPunchCo = StartCoroutine(BodyPunchEffectCo(scale, dur, vibrate));
+            }
+            else if (actionType == "dialoguepanelactive") { HandleDialoguePanelActive(act.active); }
+            else if (actionType == "dialoguepanelrestorenow") { ForceActivateDialoguePanelNow(); }
+            else if (actionType == "delay" || actionType == "wait")
+            {
+                if (act.duration > 0) yield return new WaitForSeconds(act.duration);
+            }
+            else if (actionType == "npcmove")
+            {
+                var go = ResolveNpc(act.npcName);
+                if (go)
+                {
+                    _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
+                    float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
+                    yield return StartCoroutine(NpcMoveByWorld(go, new Vector2(act.dx, act.dy), dur, specForNpc));
+                }
+                else Debug.LogWarning($"[NpcEventDebugLoader] dialogueReaction npcMove 대상 '{act.npcName}' 없음");
+            }
+            else if (actionType == "npcsetactive") { HandleNpcSetActive(act.npcName, act.active); }
+            else if (actionType == "log") { Debug.Log(string.IsNullOrEmpty(act.message) ? "[NpcEventDebugLoader] (reaction) log" : act.message); }
+            else if (actionType == "affinityup")
+            {
+                string dn = ResolveAffinityDataName(act.dataName);
+                if (!AffinityUp(dn, (int)act.delta, act.clamp, act.min, act.max)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityUp 실패 — dataName='{act.dataName}' (resolved='{dn}')");
+            }
+            else if (actionType == "affinitydown")
+            {
+                string dn = ResolveAffinityDataName(act.dataName);
+                if (!AffinityDown(dn, (int)act.delta, act.clamp, act.min, int.MaxValue)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
+            }
+            else if (actionType == "datadelta")
+            {
+                if (!ApplyDataDeltaInt(act.dataName, (int)act.delta)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) dataDelta 실패 — dataName='{act.dataName}'");
+            }
+            else if (actionType == "eventend") { break; }
+        }
+
+        if (_dialoguePanelAutoReEnableArmed || _dialoguePanelTemporarilyHidden)
+            RestoreDialoguePanelAfterTempHide();
+    }
+
+    // 카메라 쉐이크 코루틴
+    private IEnumerator CameraShakeCo(float duration, float magnitude)
+    {
+        // Camera.main 우선 사용
+        Camera cam = Camera.main;
+
+        // 인스펙터 연결된 mainCamera 보조로 사용
+        if (!cam && mainCamera) cam = mainCamera;
+
+        if (!cam)
+        {
+            Debug.LogWarning("[NpcEventDebugLoader] CameraShakeCo: 사용할 카메라를 찾지 못했습니다. 메인 카메라에 'MainCamera' 태그가 있는지, 또는 mainCamera 필드에 카메라가 할당되어 있는지 확인하세요.");
+            yield break;
+        }
+
+        Transform camTr = cam.transform;
+
+        Vector3 originalPos = camTr.localPosition;
+        float elapsed = 0.0f;
+
+        float mag = Mathf.Max(0.05f, magnitude);
+        float dur = Mathf.Max(0.01f, duration);
+
+        Debug.Log($"[NpcEventDebugLoader] CameraShakeCo 시작 — duration={dur}, magnitude={mag}, cam={cam.name}");
+
+        while (elapsed < dur)
+        {
+            float x = UnityEngine.Random.Range(-1f, 1f) * mag;
+            float y = UnityEngine.Random.Range(-1f, 1f) * mag;
+
+            camTr.localPosition = new Vector3(originalPos.x + x, originalPos.y + y, originalPos.z);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        camTr.localPosition = originalPos;
+    }
+
+    // bodyText를 살짝 키웠다가 원래 크기로 돌려주는 두둥 효과 + 옵션 진동
+    private IEnumerator BodyPunchEffectCo(float targetScale, float duration, bool vibrate)
+    {
+        if (!useBodyPunchEffect) yield break;
+        if (dialogueManager == null || dialogueManager.bodyText == null) yield break;
+
+        var rt = dialogueManager.bodyText.rectTransform;
+        if (rt == null) yield break;
+
+        Vector3 baseScale = rt.localScale;
+        Vector2 basePos = rt.anchoredPosition;
+
+        float scale = (targetScale > 0f) ? targetScale : bodyPunchScale;
+        float dur = Mathf.Max(0.01f, (duration > 0f ? duration : bodyPunchDuration));
+        float vibMag = vibrate ? 4f : 0f;
+
+        float t = 0f;
+
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+
+            // 전반부: 1 -> scale, 후반부: scale -> 1
+            float s;
+            if (u < 0.5f)
+                s = Mathf.Lerp(1f, scale, u / 0.5f);
+            else
+                s = Mathf.Lerp(scale, 1f, (u - 0.5f) / 0.5f);
+
+            rt.localScale = baseScale * s;
+
+            if (vibMag > 0f)
+            {
+                Vector2 shake = UnityEngine.Random.insideUnitCircle * vibMag;
+                rt.anchoredPosition = basePos + shake;
+            }
+
+            yield return null;
+        }
+
+        rt.localScale = baseScale;
+        rt.anchoredPosition = basePos;
     }
 
     private IEnumerator RunDialogueSequence(string ownerForIO, string eventForIO)
@@ -652,59 +898,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
 
         if (dialoguePanel) dialoguePanel.SetActive(false);
-    }
-
-    private IEnumerator ExecutePostActions(EventPostAction[] actions)
-    {
-        if (actions == null || actions.Length == 0) yield break;
-
-        foreach (var act in actions)
-        {
-            if (act == null) continue;
-
-            var actionType = (act.type ?? "").Trim().ToLowerInvariant();
-
-            if (actionType == "dialoguepanelactive") { HandleDialoguePanelActive(act.active); }
-            else if (actionType == "dialoguepanelrestorenow") { ForceActivateDialoguePanelNow(); }
-            else if (actionType == "delay" || actionType == "wait")
-            {
-                if (act.duration > 0) yield return new WaitForSeconds(act.duration);
-            }
-            else if (actionType == "npcmove")
-            {
-                var go = ResolveNpc(act.npcName);
-                if (go)
-                {
-                    _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
-                    float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
-                    yield return StartCoroutine(NpcMoveByWorld(go, new Vector2(act.dx, act.dy), dur, specForNpc));
-                }
-                else Debug.LogWarning($"[NpcEventDebugLoader] dialogueReaction npcMove 대상 '{act.npcName}' 없음");
-            }
-            else if (actionType == "npcsetactive")
-            {
-                HandleNpcSetActive(act.npcName, act.active);
-            }
-            else if (actionType == "log") { Debug.Log(string.IsNullOrEmpty(act.message) ? "[NpcEventDebugLoader] (reaction) log" : act.message); }
-            else if (actionType == "affinityup")
-            {
-                string dn = ResolveAffinityDataName(act.dataName);
-                if (!AffinityUp(dn, (int)act.delta, act.clamp, act.min, act.max)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityUp 실패 — dataName='{act.dataName}' (resolved='{dn}')");
-            }
-            else if (actionType == "affinitydown")
-            {
-                string dn = ResolveAffinityDataName(act.dataName);
-                if (!AffinityDown(dn, (int)act.delta, act.clamp, act.min, int.MaxValue)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
-            }
-            else if (actionType == "datadelta")
-            {
-                if (!ApplyDataDeltaInt(act.dataName, (int)act.delta)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) dataDelta 실패 — dataName='{act.dataName}'");
-            }
-            else if (actionType == "eventend") { break; }
-        }
-
-        if (_dialoguePanelAutoReEnableArmed || _dialoguePanelTemporarilyHidden)
-            RestoreDialoguePanelAfterTempHide();
     }
 
     private float DeriveNpcDurationBySpeed(Vector2 delta, float requestedDuration)
@@ -770,7 +963,7 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         if (DataManager.instance == null)
         {
-            Debug.LogError("[NpcEventDebugLoader] DataManager.instance를 찾을 수 없습니다! 씬에 DataManager가 있는지 확인하세요.");
+            Debug.LogError("[NpcEventDebugLoader] DataManager.instance를 찾을 수 없습니다. 씬에 DataManager가 있는지 확인하세요.");
             return null;
         }
         return DataManager.instance.nowPlayer;
@@ -850,6 +1043,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             if (script.steps == null) script.steps = Array.Empty<EventStep>();
             if (script.defaultStepDuration < 0f) script.defaultStepDuration = 0.5f;
             if (script.npcSpawns == null) script.npcSpawns = Array.Empty<NpcSpawnCmd>();
+            if (script.preActions == null) script.preActions = Array.Empty<EventPostAction>();
             if (script.afterPlayerActions == null) script.afterPlayerActions = Array.Empty<EventPostAction>();
             if (script.dialogueReactions == null) script.dialogueReactions = Array.Empty<DialogueReaction>();
 
@@ -885,7 +1079,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private bool TryBindBool(object obj, string boolName, out Func<bool> getter, out Action<bool> setter)
     {
         getter = null; setter = null;
-
         var t = obj.GetType();
 
         var field = t.GetFields(_bf).FirstOrDefault(fi => fi.FieldType == typeof(bool) && string.Equals(fi.Name, boolName, StringComparison.OrdinalIgnoreCase));
@@ -912,7 +1105,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (obj == null || string.IsNullOrWhiteSpace(name)) return false;
 
         var t = obj.GetType();
-
         var f = t.GetFields(_bf).FirstOrDefault(fi => fi.FieldType == typeof(int) && string.Equals(fi.Name, name, StringComparison.OrdinalIgnoreCase));
         if (f != null)
         {
@@ -928,38 +1120,24 @@ public class NpcEventDebugLoader : MonoBehaviour
             setter = v => p.SetValue(obj, v, null);
             return true;
         }
-
         return false;
     }
 
-    /// <summary>
-    /// 특정 이벤트가 현재 게임 상태(예: Day)에 따라 실행 가능한지 검사하는 훅.
-    /// 여기서 Sol_Second_Meet를 2일차에만 허용하도록 처리.
-    /// </summary>
     private bool IsEventAllowedByGameState(string ownerName, string eventName, PlayerData pd)
     {
         if (pd == null) return false;
-
-        // Sol_Second_Meet: Day가 정확히 2일 때만 실행 허용
         if (string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase) &&
             string.Equals(eventName, "Sol_Second_Meet", StringComparison.OrdinalIgnoreCase))
         {
             if (!TryBindInt(pd, "Day", out var getDay, out var _))
             {
-                if (verboseLog)
-                    Debug.LogWarning("[NpcEventDebugLoader] PlayerData에 int 'Day'를 찾지 못해 Sol_Second_Meet 조건 체크 실패");
+                if (verboseLog) Debug.LogWarning("[NpcEventDebugLoader] PlayerData에 int 'Day'를 찾지 못해 Sol_Second_Meet 조건 체크 실패");
                 return false;
             }
-
             int day = getDay();
-            if (verboseLog)
-                Debug.Log($"[NpcEventDebugLoader] Sol_Second_Meet 조건 체크: Day={day}");
-
-            // 필요하면 >= 2 등으로 변경 가능. 현재는 정확히 2일차에만 허용.
+            if (verboseLog) Debug.Log($"[NpcEventDebugLoader] Sol_Second_Meet 조건 체크: Day={day}");
             return day == 2;
         }
-
-        // 그 외 이벤트는 별도 조건 없이 허용
         return true;
     }
 
@@ -977,36 +1155,21 @@ public class NpcEventDebugLoader : MonoBehaviour
             if (TryBindInt(pd, name, out var _, out var _)) return name;
         }
 
-        if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] affinity dataName 자동 탐색 실패 — owner='{_ctxOwner}'. PlayerData에 '{_ctxOwner}_FriendShip' 같은 필드를 준비하거나 JSON에 dataName을 명시하세요.");
+        if (verboseLog) Debug.LogWarning($"[NpcEventDebugLoader] affinity dataName 자동 탐색 실패 — owner='{_ctxOwner}'.");
         return null;
     }
 
     private bool ApplyDataDeltaInt(string dataName, int delta, bool clampAffinity = false, int min = 0, int max = 100)
     {
         var pd = ResolvePlayerData();
-        if (pd == null)
-        {
-            Debug.LogWarning($"[NpcEventDebugLoader] PlayerData 없음: '{dataName}' 업데이트 불가");
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(dataName))
-        {
-            Debug.LogWarning("[NpcEventDebugLoader] dataName이 비어 있어 int 필드 바인딩 불가");
-            return false;
-        }
-        if (!TryBindInt(pd, dataName, out var get, out var set))
-        {
-            Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 int '{dataName}'를 찾지 못했습니다.");
-            return false;
-        }
+        if (pd == null || string.IsNullOrWhiteSpace(dataName)) return false;
+        if (!TryBindInt(pd, dataName, out var get, out var set)) return false;
 
         int oldv = get();
         int newv = oldv + delta;
         if (clampAffinity) newv = Mathf.Clamp(newv, min, max);
-
         set(newv);
         if (verboseLog) Debug.Log($"[NpcEventDebugLoader] {dataName}: {oldv} -> {newv} (delta {delta})");
-
         return true;
     }
 
@@ -1022,18 +1185,15 @@ public class NpcEventDebugLoader : MonoBehaviour
         return ApplyDataDeltaInt(dataName, -Mathf.Abs(clampedDelta), clamp, min, max);
     }
 
-    #region NPC 및 이동 관련
     private void IndexNpcCatalog()
     {
         _npcSpecsByKey.Clear();
         _npcSpecByName.Clear();
-
         if (npcCatalog == null) return;
 
         foreach (var spec in npcCatalog)
         {
             if (spec == null || spec.prefab == null) continue;
-
             var key = Key(spec.ownerName);
             if (!string.IsNullOrEmpty(key))
             {
@@ -1044,18 +1204,15 @@ public class NpcEventDebugLoader : MonoBehaviour
                 }
                 list.Add(spec);
             }
-
             if (!string.IsNullOrWhiteSpace(spec.npcName))
                 _npcSpecByName[spec.npcName.Trim()] = spec;
         }
-
         if (verboseLog) Debug.Log($"[NpcEventDebugLoader] NPC 카탈로그 인덱싱 완료: owners={_npcSpecsByKey.Count}, names={_npcSpecByName.Count}");
     }
 
     private void SpawnNpcsForOwnerOnEnter(string ownerForIO)
     {
         if (deactivateOtherOwnersNpcsOnEnter) DeactivateOrDestroyNpcsExcept(Key(ownerForIO));
-
         if (!_npcSpecsByKey.TryGetValue(Key(ownerForIO), out var list) || list.Count == 0) return;
 
         foreach (var spec in list)
@@ -1068,7 +1225,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private GameObject SpawnOrReuseNpc(string ownerKey, NpcSpec spec)
     {
         if (spec.prefab == null) return null;
-
         if (!_spawnedNpcByKey.TryGetValue(ownerKey, out var byName))
         {
             byName = new Dictionary<string, GameObject>(StringComparer.OrdinalIgnoreCase);
@@ -1083,7 +1239,6 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         Vector3 basePos = playerTransform ? playerTransform.position : Vector3.zero;
         Vector3 spawnPos = basePos + spec.spawnOffset;
-
         var go = Instantiate(spec.prefab, spawnPos, Quaternion.identity, spec.parent ? spec.parent : null);
         go.name = string.IsNullOrEmpty(spec.npcName) ? spec.prefab.name : spec.npcName;
 
@@ -1092,7 +1247,6 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (anim && spec.animatorController) anim.runtimeAnimatorController = spec.animatorController;
 
         byName[spec.npcName] = go;
-
         if (verboseLog) Debug.Log($"[NpcEventDebugLoader] NPC 스폰: ownerKey='{ownerKey}', npc='{spec.npcName}', pos={spawnPos}");
         return go;
     }
@@ -1100,22 +1254,18 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void DeactivateOrDestroyNpcsExcept(string keepOwnerKey)
     {
         _ownersDeactivatedOnEnter.Clear();
-
         foreach (var kv in _spawnedNpcByKey)
         {
             var ownerKey = kv.Key;
             if (ownerKey == keepOwnerKey) continue;
-
             var byName = kv.Value;
             if (byName == null) continue;
 
             var snap = new OwnerDeactivateSnapshot { key = ownerKey, deactivated = new List<GameObject>() };
-
             foreach (var pair in byName)
             {
                 var go = pair.Value;
                 if (!go) continue;
-
                 var spec = FindNpcSpecByKey(ownerKey, pair.Key);
                 if (spec != null && spec.destroyOnExitHouse)
                 {
@@ -1151,17 +1301,13 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void HandleNpcSpawnCommands(EventScript script)
     {
         if (script.npcSpawns == null || script.npcSpawns.Length == 0) return;
-
         foreach (var cmd in script.npcSpawns)
         {
             if (cmd == null || string.IsNullOrWhiteSpace(cmd.npcName)) continue;
-
             string npc = cmd.npcName.Trim();
             if (cmd.deactivateExisting) DeactivateMapNpcs(FindSceneNpcsByName(npc));
-
             Vector3 p = cmd.relativeToPlayer && playerTransform ? playerTransform.position + new Vector3(cmd.x, cmd.y, cmd.z) : new Vector3(cmd.x, cmd.y, cmd.z);
             var go = SpawnNpcByNameAnyOwner(npc, p);
-
             if (go == null)
             {
                 Debug.LogWarning($"[NpcEventDebugLoader] '{npc}' 스폰 실패(오너 무시). 카탈로그에 npcName이 없거나 prefab이 비었습니다.");
@@ -1177,7 +1323,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private List<GameObject> FindSceneNpcsByName(string npcName)
     {
         var list = new List<GameObject>();
-
         var identities = FindObjectsOfType<NpcIdentity>(includeInactive: true);
         foreach (var id in identities)
             if (id && string.Equals(id.npcName, npcName, StringComparison.OrdinalIgnoreCase))
@@ -1191,7 +1336,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             if (string.Equals(go.name, npcName, StringComparison.OrdinalIgnoreCase) && !list.Contains(go))
                 list.Add(go);
         }
-
         return list;
     }
 
@@ -1211,7 +1355,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private GameObject SpawnNpcByNameAnyOwner(string npcName, Vector3 worldPos)
     {
         if (string.IsNullOrWhiteSpace(npcName)) return null;
-
         if (!_npcSpecByName.TryGetValue(npcName.Trim(), out var spec) || spec == null || spec.prefab == null)
         {
             Debug.LogWarning($"[NpcEventDebugLoader] 전역 카탈로그에서 '{npcName}' 프리팹을 찾지 못했습니다.");
@@ -1243,7 +1386,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         if (!anim) return;
         if (dir.sqrMagnitude < 1e-6f) return;
-
         bool useOverride = (specOrNull != null && specOrNull.overrideWalkStates);
         string sLeft = useOverride ? specOrNull.stateLeft : "Left_Walk";
         string sRight = useOverride ? specOrNull.stateRight : "Right_Walk";
@@ -1260,7 +1402,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             if (dir.y > 0f) anim.Play(sBack);
             else anim.Play(sFront);
         }
-
         anim.speed = Mathf.Max(0.01f, anim.speed);
     }
 
@@ -1275,7 +1416,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private IEnumerator NpcMoveByWorld(GameObject npc, Vector2 delta, float duration, NpcSpec specOrNull)
     {
         if (!npc) yield break;
-
         var tr = npc.transform;
         if (!tr) yield break;
 
@@ -1284,7 +1424,6 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         Vector3 start = tr.position;
         Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
-
         Vector2 dir = delta;
         float dist = dir.magnitude;
 
@@ -1301,10 +1440,16 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (duration <= 0f)
         {
             if (!npc || !tr) yield break;
-
-            if (rb) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; rb.MovePosition(new Vector2(target.x, target.y)); }
-            else { tr.position = target; }
-
+            if (rb)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.MovePosition(new Vector2(target.x, target.y));
+            }
+            else
+            {
+                tr.position = target;
+            }
             if (anim) StopNpcIdle(anim);
             yield break;
         }
@@ -1313,43 +1458,51 @@ public class NpcEventDebugLoader : MonoBehaviour
         while (t < duration)
         {
             if (!npc || !tr) yield break;
-
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / duration);
             Vector3 pos = Vector3.Lerp(start, target, u);
-
-            if (rb) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; rb.MovePosition(new Vector2(pos.x, pos.y)); }
-            else { tr.position = pos; }
-
+            if (rb)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.MovePosition(new Vector2(pos.x, pos.y));
+            }
+            else
+            {
+                tr.position = pos;
+            }
             yield return null;
         }
 
         if (!npc || !tr) yield break;
-
-        if (rb) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; rb.MovePosition(new Vector2(target.x, target.y)); }
-        else { tr.position = target; }
-
+        if (rb)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.MovePosition(new Vector2(target.x, target.y));
+        }
+        else
+        {
+            tr.position = target;
+        }
         if (anim) StopNpcIdle(anim);
     }
 
     private void HandleNpcSetActive(string npcName, bool active)
     {
         if (string.IsNullOrEmpty(npcName)) return;
-
         var go = ResolveNpc(npcName);
         if (!go)
         {
             Debug.LogWarning($"[NpcEventDebugLoader] npcSetActive: '{npcName}' 대상 없음");
             return;
         }
-
         go.SetActive(active);
     }
 
     private GameObject ResolveNpc(string npcName)
     {
         if (string.IsNullOrWhiteSpace(npcName)) return null;
-
         if (!_spawnedNpcByName.TryGetValue(npcName.Trim(), out var go) || !go)
         {
             var found = FindSceneNpcsByName(npcName.Trim());
@@ -1410,7 +1563,11 @@ public class NpcEventDebugLoader : MonoBehaviour
             _playerRb2D.angularVelocity = 0f;
 
             if (freezePhysicsDuringEvent) _playerRb2D.simulated = false;
-            else { _playerRb2D.bodyType = RigidbodyType2D.Kinematic; _playerRb2D.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation; }
+            else
+            {
+                _playerRb2D.bodyType = RigidbodyType2D.Kinematic;
+                _playerRb2D.constraints = RigidbodyConstraints2D.FreezePosition | RigidbodyConstraints2D.FreezeRotation;
+            }
         }
     }
 
@@ -1449,26 +1606,21 @@ public class NpcEventDebugLoader : MonoBehaviour
             if (go) go.SetActive(true);
         }
         _tempDeactivatedMapNpcs.Clear();
-
         DestroyEventSpawnedNpcs();
     }
 
     private IEnumerator FadeOutInAndReturn()
     {
         yield return FadeTo(1f, fadeOutDuration);
-
         ReactivateOwnersDeactivatedOnEnter();
         SnapPlayerWorld(_savedPlayerPosition, useRbIntent: false);
-
         yield return null;
-
         yield return FadeTo(0f, fadeInDuration);
     }
 
     private IEnumerator FadeTo(float targetAlpha, float duration)
     {
         if (!fadeImage) yield break;
-
         if (targetAlpha > 0f && !fadeImage.gameObject.activeSelf)
             fadeImage.gameObject.SetActive(true);
 
@@ -1477,10 +1629,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             Color instantColor = fadeImage.color;
             instantColor.a = targetAlpha;
             fadeImage.color = instantColor;
-
-            if (targetAlpha <= 0f)
-                fadeImage.gameObject.SetActive(false);
-
+            if (targetAlpha <= 0f) fadeImage.gameObject.SetActive(false);
             yield break;
         }
 
@@ -1497,9 +1646,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
 
         fadeImage.color = targetColor;
-
-        if (targetAlpha <= 0f)
-            fadeImage.gameObject.SetActive(false);
+        if (targetAlpha <= 0f) fadeImage.gameObject.SetActive(false);
     }
 
     private (float dx, float dy) NormalizeStep(EventStep s)
@@ -1518,7 +1665,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         Vector3 start = playerTransform.position;
         Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
-
         if (duration <= 0f)
         {
             SnapPlayerWorld(target, useRbIntent);
@@ -1533,7 +1679,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             SnapPlayerWorld(pos, useRbIntent);
             yield return null;
         }
-
         SnapPlayerWorld(target, useRbIntent);
     }
 
@@ -1541,7 +1686,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         Vector3 start = playerTransform.localPosition;
         Vector3 target = start + new Vector3(delta.x, delta.y, 0f);
-
         if (duration <= 0f)
         {
             SnapPlayerLocal(target, useRbIntent);
@@ -1556,7 +1700,6 @@ public class NpcEventDebugLoader : MonoBehaviour
             SnapPlayerLocal(lp, useRbIntent);
             yield return null;
         }
-
         SnapPlayerLocal(target, useRbIntent);
     }
 
@@ -1612,11 +1755,9 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void DestroyEventSpawnedNpcs()
     {
         if (_spawnedDuringEvent.Count == 0) return;
-
         foreach (var go in _spawnedDuringEvent)
         {
             if (!go) continue;
-
             foreach (var kv in _spawnedNpcByKey)
             {
                 var dict = kv.Value;
@@ -1626,12 +1767,10 @@ public class NpcEventDebugLoader : MonoBehaviour
                     if (dict.ContainsKey(k) && dict[k] == go) dict[k] = null;
                 }
             }
-
             foreach (var k in new List<string>(_spawnedNpcByName.Keys))
             {
                 if (_spawnedNpcByName.ContainsKey(k) && _spawnedNpcByName[k] == go) _spawnedNpcByName.Remove(k);
             }
-
             Destroy(go);
         }
         _spawnedDuringEvent.Clear();
@@ -1640,7 +1779,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void ReactivateOwnersDeactivatedOnEnter()
     {
         if (_ownersDeactivatedOnEnter.Count == 0) return;
-
         foreach (var snap in _ownersDeactivatedOnEnter)
         {
             if (snap == null || snap.deactivated == null) continue;
@@ -1655,7 +1793,6 @@ public class NpcEventDebugLoader : MonoBehaviour
     private bool HasValidPlayerName()
     {
         if (DataManager.instance == null || DataManager.instance.nowPlayer == null) return false;
-
         try
         {
             var direct = DataManager.instance.nowPlayer.Name;
@@ -1686,30 +1823,16 @@ public class NpcEventDebugLoader : MonoBehaviour
 
     public bool RunEventByName_External(string ownerName, string eventName, Action onComplete = null)
     {
-        if (string.IsNullOrWhiteSpace(ownerName) || string.IsNullOrWhiteSpace(eventName))
-        {
-            Debug.LogWarning("[NpcEventDebugLoader] RunEventByName_External: ownerName or eventName is empty.");
-            return false;
-        }
-
-        if (_eventRunning)
-        {
-            Debug.LogWarning("[NpcEventDebugLoader] RunEventByName_External: an event is already running.");
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(ownerName) || string.IsNullOrWhiteSpace(eventName)) return false;
+        if (_eventRunning) return false;
 
         string ownerForIO = ownerName.Trim();
         string eventForIO = eventName.Trim();
 
-        if (!TryLoadSingle(ownerForIO, eventForIO, out var le))
-        {
-            Debug.LogWarning($"[NpcEventDebugLoader] RunEventByName_External: failed to load {ownerForIO}/{eventForIO}");
-            return false;
-        }
+        if (!TryLoadSingle(ownerForIO, eventForIO, out var le)) return false;
 
         Cache(le);
-        if (logWhenRun)
-            LogLoaded(le);
+        if (logWhenRun) LogLoaded(le);
 
         StartCoroutine(RunEventCoroutine(ownerForIO, eventForIO, le.json, onComplete));
         return true;
@@ -1720,68 +1843,39 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (initialDelay > 0f) yield return new WaitForSeconds(initialDelay);
         yield return null;
         yield return new WaitForEndOfFrame();
-
         if (dialogueManager == null) yield break;
 
         var dm = dialogueManager.GetType();
         var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase;
-
-        string[] methodCandidates =
-        {
-            "Continue", "ContinueDialogue", "Next", "Advance", "Proceed",
-            "ShowNext", "ShowNextLine", "OnClickNext", "ContinueClicked",
-            "Step", "AdvanceLine"
-        };
+        string[] methodCandidates = { "Continue", "ContinueDialogue", "Next", "Advance", "Proceed", "ShowNext", "ShowNextLine", "OnClickNext", "ContinueClicked", "Step", "AdvanceLine" };
 
         foreach (var name in methodCandidates)
         {
             var m = dm.GetMethod(name, flags, null, Type.EmptyTypes, null);
             if (m != null)
             {
-                try
-                {
-                    m.Invoke(dialogueManager, null);
-                    yield break;
-                }
-                catch { }
+                try { m.Invoke(dialogueManager, null); yield break; } catch { }
             }
         }
-
-        try
-        {
-            var go = (dialogueManager as Component)?.gameObject;
-            if (go) go.SendMessage("OnClickNext", SendMessageOptions.DontRequireReceiver);
-        }
-        catch { }
+        try { var go = (dialogueManager as Component)?.gameObject; if (go) go.SendMessage("OnClickNext", SendMessageOptions.DontRequireReceiver); } catch { }
     }
 
     private IEnumerator HandleSpecial_Dialogue003()
     {
         HandleDialoguePanelActive(false);
-
         if (specialObjectToActivate)
         {
-            bool prev = specialObjectToActivate.activeSelf;
             specialObjectToActivate.SetActive(true);
-
-            if (specialObjectShowDuration > 0f)
-                yield return new WaitForSeconds(specialObjectShowDuration);
+            if (specialObjectShowDuration > 0f) yield return new WaitForSeconds(specialObjectShowDuration);
         }
-        else
-        {
-            yield return null;
-        }
+        else yield return null;
 
         if (HasValidPlayerName())
         {
             ForceActivateDialoguePanelNow();
             yield return StartCoroutine(TryAdvanceDialogueOneStepCo(0.0f));
         }
-        else
-        {
-        }
     }
-    #endregion
 }
 
 public class NpcIdentity : MonoBehaviour

@@ -1,4 +1,4 @@
-// DataManager.cs (Unity 6 LTS)
+// DataManager.cs (Unity 6 LTS) 
 // 주석은 모두 한국어. 전체 코드 누락 없음.
 // 변경점 요약:
 // 1) AutoRebindHUDIfNeeded 메서드 개선 (FindObjectsByType 사용)
@@ -76,6 +76,7 @@ public class PlayerData
 
     // 두 번째 만남 플래그 예시 (Sol_Second_Meet 이벤트용)
     public bool Sol_Second_Meet;
+    public bool Boss_SaltKey_Lost;
 
     public int Sol_FriendShip;
     public int Salt_FriendShip;
@@ -117,7 +118,7 @@ public class PlayerData
         White_Today_Talk = false;
 
         Starest_First_Visit = false;
-
+        Boss_SaltKey_Lost = false;
         Sol_First_Meet = false;
         Salt_First_Meet = false;
         Ryu_First_Meet = false;
@@ -190,7 +191,7 @@ public class DataManager : MonoBehaviour
     [Header("표기 형식(언어별)")]
     [SerializeField] private string dayFormatKo = "{0}일 ({1})";
     [SerializeField] private string dayFormatEn = "Day {0} ({1})";
-    [SerializeField] private string dayFormatJp = "{0}日（{1}）";
+    [SerializeField] private string dayFormatJp = "{0}日（{1）";
 
     [Header("호감도 표기 형식(언어별)")]
     [SerializeField] private string friendshipFormatKo = "{0} 호감도: {1}";
@@ -1048,7 +1049,8 @@ public class DataManager : MonoBehaviour
                 }
             }
 
-            Debug.LogError($"[DataManager] 실패: 이름이 '{n}'인 TMP_Text 오브젝트를 찾지 못했습니다! 이름을 확인해주세요.");
+            // 여기만 Error → Warning 으로 변경됨
+            Debug.LogWarning($"[DataManager] 경고: 이름이 '{n}'인 TMP_Text 오브젝트를 찾지 못했습니다. 이름을 확인해주세요.");
             return null;
         }
 
