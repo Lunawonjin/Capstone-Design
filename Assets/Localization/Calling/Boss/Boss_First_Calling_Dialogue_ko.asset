@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Boss_First_Calling_Dialogue_ko
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ko
+  m_SharedData: {fileID: 11400000, guid: 986d28bc8e3e2b84385e904f752db2bf, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5172039680
+    m_Localized: "\uC548\uB155, \uC2E0\uC785\uC528~ \uC6B0\uB9AC \uD68C\uC0AC\uC5D0
+      \uC628 \uAC78 \uD658\uC601\uD574!!\n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: "\uC6B0\uB9AC\uB294 \uC0C1\uCC98\uBC1B\uC740 \uC601\uD63C\uB4E4\uC744
+      \uCE58\uC720\uD574 \uC8FC\uB294 \uC77C\uC744 \uD558\uACE0 \uC788\uC5B4."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15475631190016
+    m_Localized: "\uC601\uD63C\uB4E4\uACFC \uB300\uD654\uB85C \uCE5C\uD574\uC9C0\uACE0,\n\uB3C4\uC6C0\uC744
+      \uAC74\uB124\uB2E4 \uBCF4\uBA74 \uCE58\uC720\uD560 \uC218 \uC788\uC5B4!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15475660550144
+    m_Localized: "\uBB34\uC2A8 \uC77C\uC744 \uD558\uB294 \uAC74\uC9C0 \uC774\uD574\uAC00
+      \uB418\uC5C8\uC744\uAE4C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15475664744448
+    m_Localized: "\uC544! \uC6B0\uB9AC \uC2E0\uC785\uC740 \u2018\uC740\uD558\uB9C8\uC744\u2019
+      \uB9C8\uC744\uC744 \uC804\uB2F4\uD558\uAC8C \uB420 \uD14C\uB2C8 \n\uBC14\uB85C
+      \uC5EC\uAE30\uB85C \uCD9C\uADFC\uD558\uBA74 \uB3FC."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15475664744449
+    m_Localized: "\uC544, '\uC740\uD558\uB9C8\uC744'\uC740 \uC9D1\uC55E\uC5D0 \uC788\uB294
+      \uBC84\uC2A4\uB97C \uD0C0\uACE0 \uC624\uBA74 \uB3FC ."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108719480705024
+    m_Localized: "\uC138\uB85C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 155652454813696
+    m_Localized: "\uADF8\uB7FC \u2018\uC740\uD558\uB9C8\uC744\u2019\uC5D0 \uC624\uBA74
+      \uB0B4\uAC00 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC744\uAC8C. \n\uACE7 \uBCF4\uC790~!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

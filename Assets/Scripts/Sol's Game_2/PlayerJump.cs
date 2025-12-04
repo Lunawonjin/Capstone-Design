@@ -218,7 +218,7 @@ public class PlayerJump : MonoBehaviour
 
             Vector3 center = col.collider.bounds.center;
             bool fromLeft = transform.position.x < center.x;
-            float dx = fromLeft ? +3f : -3f;
+            float dx = fromLeft ? -3f : +3f;
 
             // 1회 튕김
             transform.position += new Vector3(dx, +3f, 0f);

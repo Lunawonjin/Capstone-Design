@@ -15,18 +15,138 @@ MonoBehaviour:
   m_GroupName: Localization-Assets-Shared
   m_GUID: 0a9ab02ad64ef89429454aab9b929edc
   m_SerializeEntries:
-  - m_GUID: 1767bb0c42b458e46a4ce694f01d098d
-    m_Address: Assets/Localization/Dialogue Shared Data.asset
-    m_ReadOnly: 1
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 21d890adc24c7a04bb808eb18f872e3d
     m_Address: Assets/Localization/UI/UI_Table Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 43272742ab5ecd9488135df7397a6c95
-    m_Address: Assets/Localization/Dialogue Table Shared Data.asset
+  - m_GUID: 2731aa6c1207d1e4e8cf05893a7c1899
+    m_Address: Assets/Localization/Dialogue/Prolog/Prolog_Table Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c6be3474c810b947a60447b5bef645e
+    m_Address: Assets/Localization/Chatting/Sero/Chatting_Detail_Sero Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ca002c8c3df5e04ab67ebe99025e931
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Puzzle_Clear_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d4d168b851240847bf1d6a09ef8f32d
+    m_Address: Assets/Localization/Dialogue/sol_first_meet Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c59ec5375f8cb3449f72b10a779e3ce
+    m_Address: Assets/Localization/Dialogue/Sol_First_Meet_Name Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4e495e59b4ed0d245bbc771a6d06ec71
+    m_Address: Assets/Localization/Dialogue/Boss/Starest_Frist_Visit Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 550a580881f0fde40b78bfd69dc34d7d
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_FinalGame_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57368a9d3741365468ac641b5e624f54
+    m_Address: Assets/Localization/Dialogue/Sol/Speaker/Sol_FinalGame_Speaker Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b756e10fafc51c42a1784b8768b4145
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Second_Meet_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 70968e83c5b612842ac74cdb8ef6ca8a
+    m_Address: Assets/Localization/Messenger/Messenger_Content Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 86175764f01b2b24db84bb8492d3c9d1
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Sol_FinalGame_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b23ebaf2ba70d8408f92e42202fde43
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Starest_SeondMeet_Speaker
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94edb753ccd5da14eae9f71068863694
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Seconday_Busstop_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 959931bcaf0be6f4e8e2308ae9d515b6
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_SaltKey_Lost_Speaker
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 986d28bc8e3e2b84385e904f752db2bf
+    m_Address: Assets/Localization/Calling/Boss/Boss_First_Calling Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c868df77452a8594a9914e1419457157
+    m_Address: Assets/Localization/Dialogue/Salt/Salt's_Talk_Dialogue Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cb021a37b70eeed4fb43fb5775e39b6a
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Starest_SeondMeet_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cccee146a1b9d43408d41a5f3478c428
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Sol_FinalGame_Speaker
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf0b11c58c3b8d64297cda93faec0c9a
+    m_Address: Assets/Localization/Calling/Boss/Boss_Second_Calling_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f3c7de857174a824eb0051daeebf2770
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Seconday_Busstop_Speaker
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fcf133285c569064b912065e24e0979c
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_SaltKey_Lost_Dialogue
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fcf31ff2fc800354fac010d7b801150b
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol's_Talk_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd3dbbc3c8ebf854996cb12a9d324f8e
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Starest_Frist_Visit_Dialogue
+      Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

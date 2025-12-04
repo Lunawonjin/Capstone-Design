@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Starest_First_Visit_Dialogue_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: fd3dbbc3c8ebf854996cb12a9d324f8e, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 5172039680
+    m_Localized: Hi. Glad you made it!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Localized: "I\u2019m your dedicated mentor, Sero.\nWhat should I call you?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 667238731776
+    m_Localized: "No, I\u2019m fine!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 679607734272
+    m_Localized: Yes, please explain!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542025482240
+    m_Localized: "Alright. Then let\u2019s go meet Sol first."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542059036672
+    m_Localized: "This is Sol\u2019s house. Shall we head in together?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7542059036673
+    m_Localized: "Spirits who\u2019ve been hurt live in this village."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287332106240
+    m_Localized: 'We get to know them by talking
+
+      and we help heal them.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077760
+    m_Localized: "Details can come later.\nwe\u2019ll learn as we go."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077761
+    m_Localized: "All right, let\u2019s head in and meet Sol."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15287353077762
+    m_Localized: "I\u2019ll go in first, so follow me at your pace."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2852931410268161
+    m_Localized: "Want me to go over what you\u2019ll be doing one more time?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2852931410268160
+    m_Localized: '{playerName}, huh? Great.
+
+      looking forward to working with
+      you!'
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

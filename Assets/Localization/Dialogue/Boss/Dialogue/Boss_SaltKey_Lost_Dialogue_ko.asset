@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Boss_SaltKey_Lost_Dialogue_ko
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ko
+  m_SharedData: {fileID: 11400000, guid: fcf133285c569064b912065e24e0979c, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 956213694464
+    m_Localized: "\uB300\uD654\uB294 \uC798 \uD558\uACE0 \uC654\uC5B4?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248896
+    m_Localized: "\uC774\uC81C \uC18C\uAE08\uC774 \uC9D1\uC5D0 \uAC00\uBA74 \uB3FC."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248897
+    m_Localized: "\uC18C\uAE08\uC774 \uC9D1\uC5D0 \uB4E4\uC5B4 \uAC00\uB824\uBA74
+      \uC5F4\uC1E0\uAC00 \uD544\uC694\uD55C\uB370..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248898
+    m_Localized: "\uADF8\uAC78 \uB0B4\uAC00 \uC783\uC5B4\uBC84\uB838\uC9C0 \uBB50\uC57C!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248899
+    m_Localized: "\uD558\uD558, \uBBF8\uC548\uD574~! \uCC3E\uC544\uBD10\uC904 \uC218
+      \uC788\uC744\uAE4C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248900
+    m_Localized: "\uB9C8\uC744\uC744 \uB3CC\uC544\uB2E4\uB2C8\uB2E4 \uBCF4\uBA74
+      \uAE38\uAC00\uC5D0 \uB5A8\uC5B4\uC838 \uC788\uC744 \uAC70\uC57C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248901
+    m_Localized: "\uC5F4\uC1E0\uB97C \uBC1C\uACAC\uD558\uBA74 \uC18C\uAE08\uC774
+      \uC9D1\uC5D0 \uBC14\uB85C \uB4E4\uC5B4\uAC00\uBA74 \uB3FC!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248902
+    m_Localized: "\uD63C\uC790 \uC798 \uD560 \uC218 \uC788\uACA0\uC9C0?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248903
+    m_Localized: "\uB098\uB294 \uD68C\uC0AC\uB85C \uB3CC\uC544\uAC00\uBCFC\uAC8C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 956247248904
+    m_Localized: "\uD30C\uC774\uD305\uD574 {playerName}!!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

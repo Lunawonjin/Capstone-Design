@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1526fcc0de4f4083ff88c57902b6c4, type: 3}
+  m_Name: 8ef15ed6-9e4f-45eb-b5fd-cf1274b19318
+  m_EditorClassIdentifier: 
+  m_DefaultSprite: {fileID: 21300000, guid: 08402437ed8ef7a44a4cb57fefd797a0, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  animationFrame: 0
+  animationSpeed: 0
+  damageFloorType: 0
+  damageFloorValue: 0
+  terrainTagValue: 0
+  filename: 
+  hasAnimation: 0
+  id: 8ef15ed6-9e4f-45eb-b5fd-cf1274b19318
+  imageAdjustType: 0
+  isBush: 0
+  isCounter: 0
+  isDamageFloor: 0
+  isLadder: 0
+  isPassBottom: 0
+  isPassLeft: 0
+  isPassRight: 0
+  isPassTop: 0
+  largePartsDataModel:
+    parentId: 25732b33-51ce-42f5-b823-933a090095de
+    x: 0
+    y: 0
+  name: 
+  passType: 2
+  regionId: 0
+  serialNumber: 10420
+  listNumber: 0
+  tileImageDataModel:
+    filename: lowtable_0.png
+    texture: {fileID: 0}
+  type: 7
+  vehicleTypes: []

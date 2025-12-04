@@ -1,4 +1,3 @@
-// Select.cs
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,15 +8,8 @@ using UnityEngine.Localization.Components;
 
 public class Select : MonoBehaviour
 {
-    [Header("새 플레이어 이름 입력 패널")]
-    [SerializeField] private GameObject creat;
-
     [Header("슬롯 UI 라벨 (버튼 하단 Text)")]
     [SerializeField] private TMP_Text[] slotText;
-
-    [Header("이름 입력")]
-    [SerializeField] private TMP_InputField newPlayerInput; // 유저 입력 필드
-    [SerializeField] private TMP_Text newPlayerPreview;     // (선택) 프리뷰 라벨
 
     [Header("시작/폴백 씬 이름")]
     [SerializeField] private string startSceneName = "Player's Room";
@@ -26,29 +18,15 @@ public class Select : MonoBehaviour
     [Tooltip("빈 슬롯이면 프리팹/로컬라이즈 기본 라벨을 그대로 둡니다. 끄면 빈 슬롯 라벨을 공백으로 비웁니다.")]
     [SerializeField] private bool leaveEmptySlotTextUntouched = true;
 
-    private bool[] hasSave;          // 각 슬롯 세이브 존재 여부
-    private string _pendingName = ""; // 입력 캐시
+    private bool[] hasSave;
 
-    // ---------- Unity Lifecycle ----------
     void Awake()
     {
-        if (newPlayerInput != null)
-        {
-            newPlayerInput.onValueChanged.AddListener(OnNameChanged);
-            newPlayerInput.onEndEdit.AddListener(OnNameChanged);
-        }
-
         LocalizationSettings.SelectedLocaleChanged += OnLocaleChanged;
     }
 
     void OnDestroy()
     {
-        if (newPlayerInput != null)
-        {
-            newPlayerInput.onValueChanged.RemoveListener(OnNameChanged);
-            newPlayerInput.onEndEdit.RemoveListener(OnNameChanged);
-        }
-
         LocalizationSettings.SelectedLocaleChanged -= OnLocaleChanged;
     }
 
@@ -58,45 +36,30 @@ public class Select : MonoBehaviour
             Debug.LogWarning("[Select] slotText 가 비었습니다. 슬롯 라벨을 연결하세요.");
 
         hasSave = new bool[Mathf.Max(3, slotText != null ? slotText.Length : 3)];
-
-        if (newPlayerInput != null) _pendingName = newPlayerInput.text?.Trim() ?? "";
         RefreshSlotsUI();
     }
 
-    // ---------- Locale 변경 시: 빈 슬롯만 로컬라이즈 새로고침 ----------
     private void OnLocaleChanged(Locale _)
     {
         if (slotText == null) return;
-
         for (int i = 0; i < hasSave.Length && i < slotText.Length; i++)
         {
             if (slotText[i] == null) continue;
-
             var lse = slotText[i].GetComponent<LocalizeStringEvent>();
             if (!hasSave[i])
             {
-                // 빈 슬롯: 로컬라이즈 유지/갱신
                 if (lse) { lse.enabled = true; lse.RefreshString(); }
                 else if (!leaveEmptySlotTextUntouched) slotText[i].text = string.Empty;
             }
-            // 세이브 슬롯은 이름 고정이므로 아무것도 하지 않음
         }
     }
 
-    // ---------- 유틸 ----------
     private string GetSlotFilePath(int slot)
     {
-        // DataManager에 공개 메서드가 있으면 사용, 없으면 동일 규칙으로 생성
         var dm = DataManager.instance;
         if (dm != null)
-        {
-            // DataManager에 GetSlotFullPath가 있다면 그걸 쓰세요.
-            var mi = typeof(DataManager).GetMethod("GetSlotFullPath");
-            if (mi != null) return (string)mi.Invoke(dm, new object[] { slot });
+            return dm.GetSlotFullPath(slot);
 
-            if (!Directory.Exists(dm.path)) Directory.CreateDirectory(dm.path);
-            return Path.Combine(dm.path, $"slot_{slot}.json");
-        }
         string fallback = Path.Combine(Application.persistentDataPath, "save");
         if (!Directory.Exists(fallback)) Directory.CreateDirectory(fallback);
         return Path.Combine(fallback, $"slot_{slot}.json");
@@ -108,30 +71,11 @@ public class Select : MonoBehaviour
         {
             string json = File.ReadAllText(file);
             PlayerData pd = JsonUtility.FromJson<PlayerData>(json);
-            return pd != null ? pd.Name : null;
+            return pd?.Name;
         }
         catch { return null; }
     }
 
-    private void OnNameChanged(string v)
-    {
-        _pendingName = (v ?? "").Trim();
-    }
-
-    private string GetFinalEnteredName()
-    {
-        if (!string.IsNullOrWhiteSpace(_pendingName))
-            return _pendingName.Trim();
-
-        if (newPlayerPreview != null)
-        {
-            var t = newPlayerPreview.text?.Trim();
-            if (!string.IsNullOrEmpty(t)) return t;
-        }
-        return "";
-    }
-
-    // ---------- UI 갱신 ----------
     private void RefreshSlotsUI()
     {
         for (int i = 0; i < hasSave.Length; i++)
@@ -151,15 +95,31 @@ public class Select : MonoBehaviour
 
         if (exists)
         {
-            // 세이브가 있으면: 로컬라이즈 컴포넌트 꺼서 텍스트 고정
-            if (lse) lse.enabled = false;
-
+            // 저장이 존재하지만 이름이 없을 수도 있으므로 "Player" 같은 임의 텍스트를 넣지 않음.
             string name = ReadPlayerNameSafe(file);
-            label.text = string.IsNullOrEmpty(name) ? "Player" : name; // 저장된 이름 고정 표기
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                if (lse) lse.enabled = false; // 사용자 이름이 있으면 고정 텍스트 사용
+                label.text = name;
+            }
+            else
+            {
+                // 이름이 없으면 로컬라이즈 기본 라벨로 되돌리거나(있다면) 공백 처리
+                if (lse)
+                {
+                    lse.enabled = true;
+                    lse.RefreshString();
+                }
+                else if (!leaveEmptySlotTextUntouched)
+                {
+                    label.text = string.Empty;
+                }
+                // leaveEmptySlotTextUntouched=true 이고 lse가 없다면 프리팹 기본 텍스트 유지
+            }
         }
         else
         {
-            // 빈 슬롯: 로컬라이즈 활성화(언어 변경에 따라 자동 갱신)
             if (lse)
             {
                 lse.enabled = true;
@@ -167,12 +127,11 @@ public class Select : MonoBehaviour
             }
             else if (!leaveEmptySlotTextUntouched)
             {
-                label.text = string.Empty; // 로컬라이즈 미사용이면 공백 처리 옵션
+                label.text = string.Empty;
             }
         }
     }
 
-    // ---------- 슬롯 선택/생성/진입 ----------
     public void Slot(int number)
     {
         if (number < 0 || number >= hasSave.Length)
@@ -180,23 +139,8 @@ public class Select : MonoBehaviour
             Debug.LogError("[Select] 잘못된 슬롯 인덱스: " + number);
             return;
         }
-
         DataManager.instance.nowSlot = number;
-
-        if (hasSave[number])
-        {
-            SafeLoad();
-            GoGame();
-        }
-        else
-        {
-            if (creat) creat.SetActive(true);
-        }
-    }
-
-    public void Creat()
-    {
-        if (creat) creat.SetActive(true);
+        GoGame();
     }
 
     public void GoGame()
@@ -206,7 +150,6 @@ public class Select : MonoBehaviour
         if (s < 0 || s >= hasSave.Length)
         {
             Debug.LogWarning("[Select] 유효한 슬롯이 선택되지 않음.");
-            if (creat) creat.SetActive(true);
             return;
         }
 
@@ -214,44 +157,60 @@ public class Select : MonoBehaviour
 
         if (!exists)
         {
-            string name = GetFinalEnteredName();
-            if (string.IsNullOrWhiteSpace(name))
+            try
             {
-                Debug.LogWarning("[Select] 이름이 비어 있습니다. 이름을 입력해 주세요.");
-                if (creat) creat.SetActive(true);
-                if (newPlayerInput) newPlayerInput.ActivateInputField();
-                return;
+                // 현재 선택된 로케일을 새 세이브에 반영
+                var locale = LocalizationSettings.SelectedLocale;
+                string currentLocaleCode = (locale != null) ? locale.Identifier.Code : "ko";
+
+                // 이름 미설정 상태로 바로 시작 (임의의 "Player" 지정 삭제)
+                DataManager.instance.nowPlayer = new PlayerData
+                {
+                    Name = "",                  // 빈 문자열 유지
+                    Level = 1,
+                    Coin = 0,
+                    Item = 0,
+                    Day = 1,
+                    Scene = startSceneName,
+                    HasSavedPosition = false
+                };
+
+                DataManager.instance.SetLanguageCode(currentLocaleCode, saveImmediately: false);
+
+                DataManager.instance.SaveData();
+                if (s < hasSave.Length) hasSave[s] = true;
+
+                RefreshSingleSlotUI(s);
+
+                if (!string.IsNullOrEmpty(startSceneName))
+                    SceneManager.LoadScene(startSceneName);
+                else
+                    Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
             }
-
-            DataManager.instance.nowPlayer = new PlayerData
+            catch (System.Exception e)
             {
-                Name = name.Trim(),
-                Level = 1,
-                Coin = 0,
-                Item = 0,
-                Day = 1,
-                Scene = startSceneName,
-                HasSavedPosition = false
-            };
-
-            DataManager.instance.SaveData();
-            if (s < hasSave.Length) hasSave[s] = true;
-
-            // 방금 만든 슬롯을 이름 고정 모드로 갱신
-            RefreshSingleSlotUI(s);
+                Debug.LogError($"[Select] 새 플레이어 생성 또는 저장 중 오류 발생: {e.Message}\n{e.StackTrace}");
+            }
         }
         else
         {
             SafeLoad();
+            string savedScene = DataManager.instance.nowPlayer?.Scene;
+            if (!string.IsNullOrEmpty(savedScene))
+            {
+                StartCoroutine(DataManager.instance.LoadSavedSceneAndPlacePlayer());
+            }
+            else
+            {
+                Debug.LogWarning("[Select] 저장 파일에 Scene 정보가 비어 있습니다. startSceneName으로 폴백합니다.");
+                if (!string.IsNullOrEmpty(startSceneName))
+                    SceneManager.LoadScene(startSceneName);
+                else
+                    Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
+            }
         }
-
-        if (!string.IsNullOrEmpty(startSceneName))
-            SceneManager.LoadScene(startSceneName);
-        else
-            Debug.LogError("[Select] startSceneName 이 비어 있습니다.");
     }
 
-    // ---------- 로드/삭제 ----------
     private void SafeLoad()
     {
         try
@@ -279,13 +238,16 @@ public class Select : MonoBehaviour
         {
             if (number < hasSave.Length) hasSave[number] = false;
 
-            // 삭제된 슬롯은 다시 로컬라이즈 모드로 복귀
             RefreshSingleSlotUI(number);
 
             if (DataManager.instance.nowSlot == number)
                 DataManager.instance.DataClear();
 
             Debug.Log("[Select] 슬롯 " + number + " 저장 삭제 완료");
+
+            StartMenu startMenu = FindObjectOfType<StartMenu>();
+            if (startMenu != null)
+                startMenu.RefreshLoadButtonVisibility();
         }
         else
         {

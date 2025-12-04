@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 976c09a84f690f04b93b3b19664317e8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 324582
+  packageName: Cute Pixel Art UI/GUI Kit
+  packageVersion: 1.0
+  assetPath: Assets/Cute Pixel Art UI Kit/Animations/Square.controller
+  uploadId: 767464

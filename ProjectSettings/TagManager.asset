@@ -14,6 +14,10 @@ TagManager:
   - NoBlock
   - HUD
   - Bed
+  - House
+  - Object
+  - Enemy
+  - Boss
   layers:
   - Default
   - TransparentFX
@@ -24,7 +28,7 @@ TagManager:
   - OverUI
   - Player
   - Mud
-  - 
+  - Injection
   - 
   - 
   - 
@@ -50,6 +54,12 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Main
+    uniqueID: 2531580059
+    locked: 0
+  - name: Background
+    uniqueID: 1145609413
     locked: 0
   m_RenderingLayers:
   - Default

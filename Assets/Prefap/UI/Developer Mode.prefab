@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6087179929584960182
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8247567405889014962}
+  - component: {fileID: 3849318044196961140}
+  m_Layer: 0
+  m_Name: Developer Mode
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8247567405889014962
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6087179929584960182}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1958.9159, y: 1086.8243, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3849318044196961140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6087179929584960182}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e754c357e26b1e44b9c2794d8882ea03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeveloperMode
+  developerPanel: {fileID: 0}
+  dialogueRunner: {fileID: 0}
+  autoFindDialogueRunner: 1
+  includeInactiveOnFind: 1
+  playerMove: {fileID: 0}
+  autoFindPlayerMove: 1
+  includeInactivePlayerOnFind: 1
+  speedStep: 5
+  minSpeed: 3
+  maxSpeed: 20
+  autoHookSceneButtons: 1
+  rehookOnPanelOpen: 1
+  applyDataButton: {fileID: 0}
+  inputName: {fileID: 0}
+  applyNameButton: {fileID: 0}
+  inputDay: {fileID: 0}
+  applyDayButton: {fileID: 0}
+  inputCoin: {fileID: 0}
+  applyCoinButton: {fileID: 0}
+  inputSolFriendShip: {fileID: 0}
+  applySolFriendShipButton: {fileID: 0}
+  inputSaltFriendShip: {fileID: 0}
+  applySaltFriendShipButton: {fileID: 0}
+  inputRyuFriendShip: {fileID: 0}
+  applyRyuFriendShipButton: {fileID: 0}
+  inputWhiteFriendShip: {fileID: 0}
+  applyWhiteFriendShipButton: {fileID: 0}
+  ddStartGame: {fileID: 0}
+  applyStartGameButton: {fileID: 0}
+  ddCanFirstSleep: {fileID: 0}
+  applyCanFirstSleepButton: {fileID: 0}
+  ddStarestFirstVisit: {fileID: 0}
+  applyStarestFirstVisitButton: {fileID: 0}
+  ddSolTodayTalk: {fileID: 0}
+  applySolTodayTalkButton: {fileID: 0}
+  ddSaltTodayTalk: {fileID: 0}
+  applySaltTodayTalkButton: {fileID: 0}
+  ddRyuTodayTalk: {fileID: 0}
+  applyRyuTodayTalkButton: {fileID: 0}
+  ddWhiteTodayTalk: {fileID: 0}
+  applyWhiteTodayTalkButton: {fileID: 0}
+  ddSolFirstMeet: {fileID: 0}
+  applySolFirstMeetButton: {fileID: 0}
+  ddSaltFirstMeet: {fileID: 0}
+  applySaltFirstMeetButton: {fileID: 0}
+  ddRyuFirstMeet: {fileID: 0}
+  applyRyuFirstMeetButton: {fileID: 0}
+  ddWhiteFirstMeet: {fileID: 0}
+  applyWhiteFirstMeetButton: {fileID: 0}
+  ddDiaryOpen: {fileID: 0}
+  applyDiaryOpenButton: {fileID: 0}
+  autoHookApplyButtons: 1
+  boolFalseLabel: False
+  boolTrueLabel: True

@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1526fcc0de4f4083ff88c57902b6c4, type: 3}
+  m_Name: e6369eb9-f211-4c62-8260-e1df26171c22
+  m_EditorClassIdentifier: 
+  m_DefaultSprite: {fileID: 21300000, guid: ee87bf14c697c2642af62594dd94bde5, type: 3}
+  m_DefaultGameObject: {fileID: 0}
+  m_DefaultColliderType: 1
+  m_TilingRules: []
+  animationFrame: 0
+  animationSpeed: 0
+  damageFloorType: 0
+  damageFloorValue: 0
+  terrainTagValue: 0
+  filename: 
+  hasAnimation: 0
+  id: e6369eb9-f211-4c62-8260-e1df26171c22
+  imageAdjustType: 0
+  isBush: 0
+  isCounter: 0
+  isDamageFloor: 0
+  isLadder: 0
+  isPassBottom: 0
+  isPassLeft: 0
+  isPassRight: 0
+  isPassTop: 0
+  largePartsDataModel:
+    parentId: de14b114-4415-4e7c-8db3-9477762c0d64
+    x: 0
+    y: 2
+  name: 
+  passType: 2
+  regionId: 0
+  serialNumber: 10428
+  listNumber: 0
+  tileImageDataModel:
+    filename: planter_b_2.png
+    texture: {fileID: 0}
+  type: 7
+  vehicleTypes: []

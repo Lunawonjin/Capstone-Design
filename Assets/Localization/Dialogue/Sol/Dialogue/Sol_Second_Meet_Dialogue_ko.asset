@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Sol_Second_Meet_Dialogue_ko
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ko
+  m_SharedData: {fileID: 11400000, guid: 6b756e10fafc51c42a1784b8768b4145, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 2339134443520
+    m_Localized: "\uC774\uAC74 \uC5EC\uAE30\uACE0... \uC800\uAC70\uB294...."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339188969472
+    m_Localized: "\uC73C\uC559!!! \uBAB0\uB77C \uC548 \uD574!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163776
+    m_Localized: "\uBB34\uC2A8 \uC77C\uC774\uC57C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163777
+    m_Localized: "\uBB50 \uB54C\uBB38\uC5D0 \uADF8\uB798?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163778
+    m_Localized: "\uAE5C\uC9DD\uC774\uC57C! \uC544, \uC640\uC8FC\uC168\uB124\uC694!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163779
+    m_Localized: "\uC5BC\uB978 \uB180\uB7EC \uB098\uAC00\uC57C \uD558\uB294\uB370...
+      \uADFC\uB370 \uC774\uAC70\uB97C \uC9C0\uAE08...."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163780
+    m_Localized: "\uD37C\uC990 \uB9DE\uCD94\uACE0 \uC788\uB358 \uAC70\uC57C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163781
+    m_Localized: "\uD37C\uC990\uC774\uB124! \uC7AC\uBC0C\uACA0\uB2E4."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163782
+    m_Localized: "\uB9DE\uC544\uC694. \uC194\uC774\uAC00 \uD558\uB8E8\uC885\uC77C
+      \uD588\uB294\uB370\uB3C4 \uBAA8\uB974\uACA0\uC5B4\uC694!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163783
+    m_Localized: "{playerName}\uB2D8\uC774 \uB3C4\uC640\uC8FC\uBA74 \uC548 \uB3FC\uC694...?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163784
+    m_Localized: "\uADF8\uB798"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163785
+    m_Localized: "\uC88B\uC544"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2339193163786
+    m_Localized: "\uC9C4\uC9DC\uC694!? \uB2E4\uD589\uC774\uB2E4!!"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

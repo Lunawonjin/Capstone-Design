@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Sol_First_Meet_Dialogue Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: Sol_First_Meet_Dialogue
+  m_TableCollectionNameGuidString: 3d4d168b851240847bf1d6a09ef8f32d
+  m_Entries:
+  - m_Id: 5172039680
+    m_Key: Dialogue_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238400507904
+    m_Key: Dialogue_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976980905984
+    m_Key: Dialogue_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976980905985
+    m_Key: Dialogue_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100288
+    m_Key: Dialogue_005
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100289
+    m_Key: Dialogue_006
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9147165118464
+    m_Key: Dialogue_Choice1_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100290
+    m_Key: Dialogue_Choice1_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9420180754432
+    m_Key: Dialogue_Choice1_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100291
+    m_Key: Dialogue_Choice1_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9567400824832
+    m_Key: Dialogue_Choice2_S1_Re_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20500135219200
+    m_Key: Dialogue_Choice2_S2_Re_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220647078752256
+    m_Key: Dialogue_Choice2_A1_Re_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 220649352065024
+    m_Key: Dialogue_Choice2_A1_Re_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 221271946162176
+    m_Key: Dialogue_Choice2_A2_Re_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100292
+    m_Key: Dialogue_Choice2_A2_Re_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100293
+    m_Key: Dialogue_Choice2_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100294
+    m_Key: Dialogue_Choice2_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100295
+    m_Key: Dialogue_Choice2_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100296
+    m_Key: Dialogue_Choice2_Same_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100297
+    m_Key: Dialogue_Choice3_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100298
+    m_Key: Dialogue_Choice3_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16216976985100299
+    m_Key: Dialogue_Choice3_Same_001
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 8315386108424749132
+  references:
+    version: 2
+    RefIds:
+    - rid: 8315386108424749132
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1759152333048

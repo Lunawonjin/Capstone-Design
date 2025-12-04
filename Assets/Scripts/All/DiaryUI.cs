@@ -1,7 +1,7 @@
 // DiaryUI.cs
 // Unity 6 (LTS)
 // 도감 패널 열기/닫기
-// - Tab: DiaryPanel, DiaryAssets 둘 다 활성화
+// - Tab: DiaryPanel, DiaryAssets 둘 다 활성화 (단, DataManager.nowPlayer.DiaryOpen == true일 때만)
 // - 연출(스케일/알파)은 DiaryAssets에만 적용
 // - Esc: 닫기(외부 차단 플래그 지원)
 // - Exit 버튼: 클릭 시 닫기(비활성화)
@@ -82,7 +82,7 @@ public class DiaryUI : MonoBehaviour
         _cgAssets = diaryAssets.GetComponent<CanvasGroup>();
         _rtAssets = diaryAssets.GetComponent<RectTransform>();
 
-        if (bookIconButton != null) bookIconButton.onClick.AddListener(Toggle);
+        if (bookIconButton != null) bookIconButton.onClick.AddListener(TryToggleByDiaryOpen);
         if (exitButton != null) exitButton.onClick.AddListener(Close); // Exit 버튼으로 닫기
     }
 
@@ -98,7 +98,7 @@ public class DiaryUI : MonoBehaviour
 
     void OnDestroy()
     {
-        if (bookIconButton != null) bookIconButton.onClick.RemoveListener(Toggle);
+        if (bookIconButton != null) bookIconButton.onClick.RemoveListener(TryToggleByDiaryOpen);
         if (exitButton != null) exitButton.onClick.RemoveListener(Close);
     }
 
@@ -107,7 +107,7 @@ public class DiaryUI : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null && !_isAnimating)
         {
-            if (WasPressed(Keyboard.current, toggleKey)) Toggle();
+            if (WasPressed(Keyboard.current, toggleKey)) TryToggleByDiaryOpen();
 
             // 외부 차단 중이면 Esc로 닫기 금지
             if (_isOpen && !externalEscBlocked && WasPressed(Keyboard.current, closeKey))
@@ -116,10 +116,24 @@ public class DiaryUI : MonoBehaviour
 #else
         if (!_isAnimating)
         {
-            if (Input.GetKeyDown(toggleKey)) Toggle();
+            if (Input.GetKeyDown(toggleKey)) TryToggleByDiaryOpen();
             if (_isOpen && !externalEscBlocked && Input.GetKeyDown(closeKey)) Close();
         }
 #endif
+    }
+
+    // ───────── 변경 핵심: DataManager.nowPlayer.DiaryOpen 플래그 검사 ─────────
+    private bool IsDiaryOpenAllowed()
+    {
+        var dm = DataManager.instance;
+        var pd = dm != null ? dm.nowPlayer : null;
+        return pd != null && pd.DiaryOpen; // true일 때만 열기 허용
+    }
+
+    private void TryToggleByDiaryOpen()
+    {
+        if (!IsDiaryOpenAllowed()) return; // 무반응
+        Toggle();
     }
 
     public void Toggle()

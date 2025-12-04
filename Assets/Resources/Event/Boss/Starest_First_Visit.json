@@ -1,0 +1,32 @@
+{
+  "defaultStepDuration": 1.0,
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 2.5 },
+
+  "npcSpawns": [
+    { "npcName": "Boss", "x": 0.5, "y": 4.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+  ],
+
+  "steps": [
+    { "axis": "y", "delta": 1.5 }
+  ],
+
+  "afterPlayerActions": [
+    { "type": "dialogue", "owner": "Boss", "eventName": "Starest_First_Visit" }
+  ],
+
+  "dialogueReactions": [
+    {
+      "onKey": "Dialogue_Choice1_Same_001",
+      "actions": [
+        { "type": "dialoguePanelActive", "active": false },
+        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": 2.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": -8, "dy": 0.0 },
+        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": 2.5 },
+        { "type": "npcSetActive", "npcName": "Boss", "active": false },
+        { "type": "delay", "duration": 0.5 }
+      ]
+    }
+  ]
+}

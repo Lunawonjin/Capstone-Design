@@ -32,22 +32,17 @@ public class TogglePanelWithPause : MonoBehaviour
     // =====================================================================
     private static class PauseCoordinator
     {
-        // --- Time.timeScale 잠금 ---
         private static int _timeLocks = 0;
         private static float _savedTimeScale = 1f;
 
-        // --- 오디오 잠금 ---
         private static int _audioLocks = 0;
         private static bool _savedAudioPaused = false;
 
-        // --- 임의 Behaviour 잠금 ---
         private class BoolLock { public int count; public bool saved; }
         private static readonly Dictionary<Behaviour, BoolLock> _behaviourLocks = new();
 
-        // --- PlayerMove 잠금 ---
         private static readonly Dictionary<PlayerMove, BoolLock> _playerMoveLocks = new();
 
-        // --- Animator 잠금 ---
         private class AnimLock { public int count; public float savedSpeed; }
         private static readonly Dictionary<Animator, AnimLock> _animLocks = new();
 
@@ -205,8 +200,10 @@ public class TogglePanelWithPause : MonoBehaviour
     [SerializeField] private Button button;
 
     [Header("Exit Button")]
-    [Tooltip("Exit(닫기) 버튼. 누르면 이 패널을 비활성화합니다.")]
-    [SerializeField] private Button exitButton;   // ★ 추가
+    [Tooltip("Exit(닫기) 버튼 1. 누르면 이 패널을 비활성화합니다.")]
+    [SerializeField] private Button exitButton1;
+    [Tooltip("Exit(닫기) 버튼 2. 누르면 이 패널을 비활성화하고 MessengerContent도 끕니다.")]
+    [SerializeField] private Button exitButton2;
 
     [Header("Toggle Targets")]
     [Tooltip("켜고 끌 UI 루트(들). 여러 개면 모두 같은 타이밍에 ON/OFF 됩니다.")]
@@ -275,6 +272,10 @@ public class TogglePanelWithPause : MonoBehaviour
     [Tooltip("ESC 오프너를 묶는 그룹 ID. 같은 ID 안에서 단 하나만 오너로 동작합니다.")]
     [SerializeField] private string escGroupId = "MainUI";
 
+    [Header("Messenger Content (Optional)")]
+    [Tooltip("Exit2를 눌렀을 때 함께 끌 MessengerContent 오브젝트")]
+    [SerializeField] private GameObject messengerContent;
+
     // =====================================================================
     // 내부 상태/버퍼
     // =====================================================================
@@ -332,9 +333,13 @@ public class TogglePanelWithPause : MonoBehaviour
         if (button != null)
             button.onClick.AddListener(OnButtonClicked);
 
-        // ★ Exit 버튼 리스너 등록
-        if (exitButton != null)
-            exitButton.onClick.AddListener(OnClickExit);
+        // Exit1 → 기본 종료
+        if (exitButton1 != null)
+            exitButton1.onClick.AddListener(OnClickExit);
+
+        // Exit2 → 기본 종료 + MessengerContent 비활성화
+        if (exitButton2 != null)
+            exitButton2.onClick.AddListener(OnClickExitAndHideMessenger);
 
         if (isEscOpener)
             RegisterEscOpener(escGroupId, this, escPriority);
@@ -345,9 +350,11 @@ public class TogglePanelWithPause : MonoBehaviour
         if (button != null)
             button.onClick.RemoveListener(OnButtonClicked);
 
-        // ★ Exit 버튼 리스너 해제
-        if (exitButton != null)
-            exitButton.onClick.RemoveListener(OnClickExit);
+        if (exitButton1 != null)
+            exitButton1.onClick.RemoveListener(OnClickExit);
+
+        if (exitButton2 != null)
+            exitButton2.onClick.RemoveListener(OnClickExitAndHideMessenger);
 
         if (isEscOpener)
             UnregisterEscOpener(escGroupId, this);
@@ -358,9 +365,7 @@ public class TogglePanelWithPause : MonoBehaviour
 
     private void Update()
     {
-        // ------------------------------------------------------------
         // ESC 글로벌 토글
-        // ------------------------------------------------------------
         if (enableEscClose && !_IsEscBlockedByModal() && _WasEscPressed())
         {
             bool anyThisActive = AnyTargetActive();
@@ -376,9 +381,7 @@ public class TogglePanelWithPause : MonoBehaviour
             }
         }
 
-        // ------------------------------------------------------------
         // 워치독: 외부 active 변화를 상태와 동기화
-        // ------------------------------------------------------------
         if (!autoSyncWithTargets || toggleTargets == null || toggleTargets.Length == 0) return;
 
         bool anyActive = AnyTargetActive();
@@ -403,12 +406,21 @@ public class TogglePanelWithPause : MonoBehaviour
         else TurnOff();
     }
 
-    // ★ Exit 버튼 핸들러: 켜져 있고 모달이 아니면 끕니다.
+    // Exit1: 기본 종료
     private void OnClickExit()
     {
         if (_IsEscBlockedByModal()) return; // 모달 보호
         if (!AnyTargetActive()) return;     // 이미 꺼져 있으면 무시
-        TurnOff();                           // 비활성화 + Pause 해제
+        TurnOff();
+    }
+
+    // Exit2: 기본 종료 + MessengerContent 비활성화
+    private void OnClickExitAndHideMessenger()
+    {
+        if (_IsEscBlockedByModal()) return;
+        if (AnyTargetActive()) TurnOff();
+        if (messengerContent && messengerContent.activeSelf)
+            messengerContent.SetActive(false);
     }
 
     // =====================================================================

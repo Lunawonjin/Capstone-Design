@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Messenger_Content_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 70968e83c5b612842ac74cdb8ef6ca8a, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 98652626817024
+    m_Localized: "Hello! It\u2019s Sol. Hehe.\nI\u2019m so excited for tomorrow that
+      I can\u2019t sleep\u2026 so I wanted to message you!\nIt\u2019s always been
+      my wish to run around and play with friends.\nMaybe you\u2019ll help make that
+      wish come true, {playerName}. Thump-thump!\nAh, it\u2019s late now. I\u2019m
+      going to bed.\nSee you tomorrow\u2014promise!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98652626817025
+    m_Localized: Sol
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936105504768
+    m_Localized: "Had a good talk with Sol? For a first day, you did well\u2014even
+      if you were nervous.\nToday, don\u2019t push yourself; take a slow lap around
+      the village.\nAlong the way, it\u2019s good to trade a few greetings with the
+      other spirits.\nEveryone here carries their own story. Don\u2019t chase the
+      \u201Cright answer\u201D; listen to their hearts first.\nAll right, {playerName}.
+      I\u2019m rooting for your path."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936113893376
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 394936038395904
+    m_Localized: "Let\u2019s go outside."
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []
