@@ -1,140 +1,188 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[RequireComponent(typeof(SpriteRenderer))]
 public class SyringePoolShooter : MonoBehaviour
 {
-    [Header("Prefab / Pool")]
-    [Tooltip("주사기 발사체 프리팹")]
+    [Header("연결")]
+    [Tooltip("플레이어 이동 스크립트 (방향 제어용)")]
+    [SerializeField] private PlayerMover playerMover;
+    [SerializeField] private GameOverUIManager gameOverManager;
+
+    [Header("체력 설정")]
+    [SerializeField] private int maxHp = 5;
+    [SerializeField] private int currentHp;
+
+    [Header("피격 효과")]
+    [SerializeField] private Color hitColor = Color.red;
+    [SerializeField] private float hitDuration = 0.1f;
+
+    [Header("발사 설정")]
+    [SerializeField] private float fireCooldown = 1.0f;
+    [SerializeField] private KeyCode fireKey = KeyCode.Mouse0;
+    [SerializeField] private Transform firePoint;
+
+    [Header("풀 설정")]
     [SerializeField] private SyringeProjectile projectilePrefab;
+    [SerializeField] private int poolSize = 10;
 
-    [Tooltip("미리 생성해 둘 풀 크기")]
-    [SerializeField] private int poolSize = 20;
+    [Header("공격 애니메이션")]
+    [SerializeField] private Animator attackAnimator;
+    [SerializeField] private string attackStateName = "Attack";
+    [SerializeField] private float attackDuration = 0.3f;
 
-    [Tooltip("풀 오브젝트들이 들어갈 부모(비우면 자동 생성)")]
-    [SerializeField] private Transform poolParent;
+    private readonly List<SyringeProjectile> pool = new List<SyringeProjectile>();
+    private float fireTimer = 0f;
+    private bool shootingEnabled = false;
+    private bool attackPlaying = false;
+    private float attackTimer = 0f;
 
-    [Header("Shoot")]
-    [Tooltip("좌클릭으로 발사")]
-    [SerializeField] private bool shootOnLeftClick = true;
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private Coroutine hitRoutine;
 
-    [Tooltip("한 발 쏘고 나서 다음 발까지의 시간(초). 기본 1초")]
-    [SerializeField] private float fireInterval = 1.0f;
-
-    [Tooltip("발사 위치(비우면 이 오브젝트 위치)")]
-    [SerializeField] private Transform muzzle;
-
-    [Tooltip("마우스 방향으로 발사")]
-    [SerializeField] private bool aimToMouse = true;
-
-    [Tooltip("마우스 조준에 쓸 카메라(비우면 MainCamera)")]
-    [SerializeField] private Camera aimCamera;
-
-    private readonly Queue<SyringeProjectile> poolQueue = new Queue<SyringeProjectile>();
-    private readonly List<SyringeProjectile> allProjectiles = new List<SyringeProjectile>();
-
-    private float nextFireTime = 0f;
+    public void SetShootingEnabled(bool enabled) { shootingEnabled = enabled; }
 
     void Awake()
     {
-        if (aimCamera == null) aimCamera = Camera.main;
+        currentHp = maxHp;
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null) originalColor = spriteRenderer.color;
+        if (firePoint == null) firePoint = transform;
 
-        if (poolParent == null)
+        if (playerMover == null) playerMover = GetComponent<PlayerMover>();
+
+        if (projectilePrefab != null)
         {
-            GameObject p = new GameObject("SyringePool");
-            poolParent = p.transform;
+            for (int i = 0; i < Mathf.Max(1, poolSize); i++)
+            {
+                SyringeProjectile proj = Instantiate(projectilePrefab, transform);
+                proj.gameObject.SetActive(false);
+                proj.Init(this);
+                pool.Add(proj);
+            }
         }
-
-        PrewarmPool();
+        if (attackAnimator == null) attackAnimator = GetComponentInParent<Animator>();
+        shootingEnabled = false;
     }
 
     void Update()
     {
-        if (!shootOnLeftClick) return;
+        if (currentHp <= 0) return;
 
-        if (Input.GetMouseButtonDown(0))
+        fireTimer += Time.deltaTime;
+
+        if (attackPlaying)
         {
-            TryShoot();
+            attackTimer += Time.deltaTime;
+            if (attackTimer >= attackDuration)
+            {
+                attackPlaying = false;
+                attackTimer = 0f;
+                if (playerMover != null) playerMover.SetAnimationOverride(false);
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            OnDamage(currentHp, "Boss");
+            return;
+        }
+
+        if (!shootingEnabled) return;
+
+        if (Input.GetKeyDown(fireKey) && fireTimer >= fireCooldown)
+        {
+            Fire();
         }
     }
 
-    private void TryShoot()
+    public void OnDamage(int damageAmount, string attackerTag = "Unknown")
     {
-        if (Time.time < nextFireTime) return;
-        nextFireTime = Time.time + Mathf.Max(0.01f, fireInterval);
+        if (currentHp <= 0) return;
+        currentHp -= damageAmount;
+        if (hitRoutine != null) StopCoroutine(hitRoutine);
+        hitRoutine = StartCoroutine(HitFlash());
+        if (currentHp <= 0) Die(attackerTag);
+    }
 
-        SyringeProjectile proj = GetProjectile();
+    private IEnumerator HitFlash()
+    {
+        if (spriteRenderer == null) yield break;
+        spriteRenderer.color = hitColor;
+        yield return new WaitForSeconds(hitDuration);
+        if (currentHp > 0) spriteRenderer.color = originalColor;
+    }
+
+    private void Die(string killerTag)
+    {
+        currentHp = 0;
+        shootingEnabled = false;
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
+        var col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+        if (gameOverManager != null) gameOverManager.ShowDeadUI(killerTag);
+    }
+
+    private void Fire()
+    {
+        SyringeProjectile proj = GetFromPool();
         if (proj == null) return;
 
-        Vector3 spawnPos = (muzzle != null) ? muzzle.position : transform.position;
-        proj.transform.position = spawnPos;
-        proj.transform.rotation = Quaternion.identity;
-
-        Vector2 direction = Vector2.right;
-
-        if (aimToMouse && aimCamera != null)
-        {
-            Vector3 mouseWorld = aimCamera.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorld.z = spawnPos.z;
-            Vector3 d3 = mouseWorld - spawnPos;
-            direction = new Vector2(d3.x, d3.y);
-        }
-
+        fireTimer = 0f;
+        proj.transform.position = firePoint.position;
         proj.gameObject.SetActive(true);
-        proj.Launch(direction, this);
-    }
 
-    private void PrewarmPool()
-    {
-        poolQueue.Clear();
-        allProjectiles.Clear();
+        // [핵심 수정] 마우스 위치를 기반으로 방향 계산
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 dir = (mousePos - transform.position).normalized;
 
-        for (int i = 0; i < poolSize; i++)
+        // PlayerMover에게 "이쪽을 바라보라(FlipX)"고 명령
+        if (playerMover != null)
         {
-            SyringeProjectile proj = Instantiate(projectilePrefab, poolParent);
-            proj.gameObject.SetActive(false);
-            poolQueue.Enqueue(proj);
-            allProjectiles.Add(proj);
-        }
-    }
-
-    private SyringeProjectile GetProjectile()
-    {
-        if (poolQueue.Count > 0)
-        {
-            return poolQueue.Dequeue();
+            playerMover.SetFaceDirection(dir);
         }
 
-        SyringeProjectile proj = Instantiate(projectilePrefab, poolParent);
-        proj.gameObject.SetActive(false);
-        allProjectiles.Add(proj);
-        return proj;
+        proj.Launch(dir);
+        PlayAttackAnimation();
+    }
+
+    private void PlayAttackAnimation()
+    {
+        if (attackAnimator == null) return;
+
+        if (playerMover != null) playerMover.SetAnimationOverride(true);
+
+        if (!attackAnimator.enabled) attackAnimator.enabled = true;
+
+        if (!string.IsNullOrEmpty(attackStateName))
+        {
+            attackAnimator.Play(attackStateName, 0, 0f);
+            attackAnimator.speed = 1f;
+        }
+
+        attackPlaying = true;
+        attackTimer = 0f;
+    }
+
+    private SyringeProjectile GetFromPool()
+    {
+        foreach (var p in pool) if (!p.gameObject.activeInHierarchy) return p;
+        if (projectilePrefab != null)
+        {
+            SyringeProjectile extra = Instantiate(projectilePrefab, transform);
+            extra.gameObject.SetActive(false);
+            extra.Init(this);
+            pool.Add(extra);
+            return extra;
+        }
+        return null;
     }
 
     public void ReturnProjectile(SyringeProjectile proj)
     {
-        if (proj == null) return;
-
-        proj.gameObject.SetActive(false);
-        proj.transform.SetParent(poolParent, false);
-        poolQueue.Enqueue(proj);
+        if (proj) proj.gameObject.SetActive(false);
     }
-
-#if UNITY_EDITOR
-    [ContextMenu("Rebuild Pool")]
-    private void CtxRebuildPool()
-    {
-        for (int i = 0; i < allProjectiles.Count; i++)
-        {
-            if (allProjectiles[i] != null)
-            {
-                if (Application.isPlaying) Destroy(allProjectiles[i].gameObject);
-                else DestroyImmediate(allProjectiles[i].gameObject);
-            }
-        }
-        allProjectiles.Clear();
-        poolQueue.Clear();
-        PrewarmPool();
-    }
-#endif
 }

@@ -372,7 +372,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3201950316217843551, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
       propertyPath: m_VerticalAlignment
-      value: 256
+      value: 512
       objectReference: {fileID: 0}
     - target: {fileID: 3201950316217843551, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
       propertyPath: m_HorizontalAlignment
@@ -388,7 +388,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3229419210352428139, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -40
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4450041586140269673, guid: 00b95ac0f2fffd544ab43e8b4ed6a417, type: 3}
       propertyPath: m_SizeDelta.y

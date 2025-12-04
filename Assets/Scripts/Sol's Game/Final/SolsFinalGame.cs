@@ -11,60 +11,49 @@ public class SolsFinalGame : MonoBehaviour
     [SerializeField] private Animator playerAnimator;
 
     [Header("이동 스크립트(둘 중 하나 자동 탐색)")]
-    [SerializeField] private MonoBehaviour movementComponent; // PlayerMover 또는 PlayerMove
+    [SerializeField] private MonoBehaviour movementComponent;
 
     [Header("낙하 상태 스프라이트")]
-    [Tooltip("Ground 태그 바닥과 닿지 않았을 때 플레이어 스프라이트로 바꿀 이미지")]
     [SerializeField] private Sprite fallingSprite;
 
+    [Header("주사기 줍고 나서 모습(애니메이터용)")]
+    [SerializeField] private string rightIdleStateName = "Right_Walk";
+
     [Header("바닥 판정")]
-    [Tooltip("바닥 오브젝트는 Tag가 Ground여야 합니다.")]
     [SerializeField] private string groundTag = "Ground";
-    [Tooltip("발 밑 검사 박스 높이")]
     [SerializeField] private float groundCheckHeight = 0.08f;
-    [Tooltip("발 밑 검사 박스 여유값")]
     [SerializeField] private float groundCheckPadding = 0.02f;
 
     [Header("주사기 상호작용(Trigger여야 함)")]
-    [Tooltip("씬에 있는 주사기 오브젝트를 직접 넣어주세요.")]
     [SerializeField] private GameObject syringeObject;
-    [Tooltip("비우면 syringeObject에서 자동 탐색")]
     [SerializeField] private Collider2D syringeCollider;
     [SerializeField] private KeyCode interactKey = KeyCode.F;
 
+    [Header("주사기 발사 컨트롤")]
+    [SerializeField] private SyringePoolShooter syringeShooter;
+
     [Header("Wall 비활성화")]
-    [Tooltip("카메라 연출 시작 전에 비활성화할 Wall 오브젝트")]
     [SerializeField] private GameObject wallObject;
 
     [Header("카메라 이동")]
     [SerializeField] private Transform targetCamera;
     [SerializeField] private float cameraTargetX = 13f;
-    [Tooltip("카메라가 목표 위치까지 이동하는 시간(초)")]
     [SerializeField] private float cameraMoveDuration = 1.0f;
 
     [Header("카메라 임팩트(더 콰과광)")]
-    [Tooltip("카메라 도착 후 임팩트까지 대기 시간(초)")]
     [SerializeField] private float impactDelay = 1.0f;
-
-    [Tooltip("임팩트 '펀치' 강도(먼저 한 번 크게 튐)")]
     [SerializeField] private float impactPunchMagnitude = 0.35f;
-    [Tooltip("임팩트 '펀치' 지속 시간(초)")]
     [SerializeField] private float impactPunchDuration = 0.08f;
-
-    [Tooltip("임팩트 쉐이크 강도(그 다음 덜컥거림)")]
     [SerializeField] private float impactShakeMagnitude = 0.22f;
-    [Tooltip("임팩트 쉐이크 지속 시간(초)")]
     [SerializeField] private float impactShakeDuration = 0.28f;
 
     [Header("컨트롤 잠금 유지")]
-    [Tooltip("카메라 연출 후에도 이동 컨트롤 잠금을 유지합니다.")]
+    [Tooltip("카메라 연출 후에도 이동 컨트롤 잠금을 유지할지 여부")]
     [SerializeField] private bool keepControlLockedAfterCamera = true;
 
     [Header("카메라 연출 후 적 활성화")]
-    [Tooltip("카메라 연출이 끝난 뒤 Activate()할 적들")]
     [SerializeField] private SolsFinalGameEnemy[] enemiesToActivate;
 
-    private Sprite originalSprite;
     private bool moveWasEnabledBeforeAir = true;
     private bool animatorWasEnabledBeforeAir = true;
 
@@ -72,23 +61,17 @@ public class SolsFinalGame : MonoBehaviour
     private readonly Collider2D[] groundHits = new Collider2D[16];
 
     private bool cameraMoving = false;
-
-    // 카메라 연출 이후 강제 컨트롤 잠금
     private bool forceControlLocked = false;
+    private RigidbodyConstraints2D originalConstraints;
+    private bool lastCanMoveX = true;
+    private bool hasPickedUpSyringe = false;
 
     void Awake()
     {
-        if (playerSpriteRenderer == null)
-            playerSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-
-        if (playerRb == null)
-            playerRb = GetComponentInChildren<Rigidbody2D>();
-
-        if (playerCollider == null)
-            playerCollider = GetComponentInChildren<Collider2D>();
-
-        if (playerAnimator == null)
-            playerAnimator = GetComponentInChildren<Animator>();
+        if (playerSpriteRenderer == null) playerSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (playerRb == null) playerRb = GetComponentInChildren<Rigidbody2D>();
+        if (playerCollider == null) playerCollider = GetComponentInChildren<Collider2D>();
+        if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
 
         if (movementComponent == null)
         {
@@ -101,28 +84,50 @@ public class SolsFinalGame : MonoBehaviour
             }
         }
 
-        if (targetCamera == null && Camera.main != null)
-            targetCamera = Camera.main.transform;
+        if (targetCamera == null && Camera.main != null) targetCamera = Camera.main.transform;
+        if (syringeCollider == null && syringeObject != null) syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
+        if (syringeShooter == null) syringeShooter = GetComponentInChildren<SyringePoolShooter>();
 
-        if (playerSpriteRenderer != null)
-            originalSprite = playerSpriteRenderer.sprite;
+        if (syringeShooter != null) syringeShooter.SetShootingEnabled(false);
 
-        if (syringeCollider == null && syringeObject != null)
-            syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
+        if (playerRb != null)
+        {
+            originalConstraints = playerRb.constraints;
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
     }
 
     void Update()
     {
         bool syringeOverlapped = CheckSyringeOverlap();
 
+        // [주사기 획득 시점]
         if (!cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
         {
             syringeObject.SetActive(false);
+            hasPickedUpSyringe = true;
+
+            if (syringeShooter != null)
+                syringeShooter.SetShootingEnabled(true);
+
+            SetLookRightStatic();
 
             if (wallObject != null)
                 wallObject.SetActive(false);
 
+            // 주의: 여기서 적을 활성화하지 않고 카메라 이동 코루틴 시작만 함
             MoveCameraToX(cameraTargetX);
+        }
+
+        if (playerRb != null)
+        {
+            bool canMoveXNow = CanMoveX();
+            if (canMoveXNow != lastCanMoveX)
+            {
+                lastCanMoveX = canMoveXNow;
+                ApplyRigidbodyXConstraint(lastCanMoveX);
+            }
         }
     }
 
@@ -165,24 +170,45 @@ public class SolsFinalGame : MonoBehaviour
         }
         else
         {
-            if (playerSpriteRenderer != null)
-                playerSpriteRenderer.sprite = originalSprite;
-
-            if (playerAnimator != null)
-                playerAnimator.enabled = animatorWasEnabledBeforeAir;
-
-            if (movementComponent != null)
+            if (!hasPickedUpSyringe)
             {
-                if (forceControlLocked)
+                if (playerAnimator != null)
+                    playerAnimator.enabled = animatorWasEnabledBeforeAir;
+
+                if (movementComponent != null)
                 {
-                    movementComponent.enabled = false;
-                }
-                else
-                {
-                    movementComponent.enabled = moveWasEnabledBeforeAir;
+                    if (forceControlLocked)
+                        movementComponent.enabled = false;
+                    else
+                        movementComponent.enabled = moveWasEnabledBeforeAir;
                 }
             }
+            else
+            {
+                SetLookRightStatic();
+            }
         }
+
+        if (playerRb != null)
+        {
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
+    }
+
+    private bool CanMoveX()
+    {
+        return movementComponent != null && movementComponent.enabled && !forceControlLocked;
+    }
+
+    private void ApplyRigidbodyXConstraint(bool canMoveX)
+    {
+        if (playerRb == null) return;
+
+        if (canMoveX)
+            playerRb.constraints = originalConstraints & ~RigidbodyConstraints2D.FreezePositionX;
+        else
+            playerRb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionX;
     }
 
     private bool CheckGroundedUnderFeetByTag()
@@ -190,7 +216,6 @@ public class SolsFinalGame : MonoBehaviour
         if (playerCollider == null) return false;
 
         Bounds b = playerCollider.bounds;
-
         Vector2 boxCenter = new Vector2(b.center.x, b.min.y - groundCheckHeight * 0.5f - groundCheckPadding);
         Vector2 boxSize = new Vector2(b.size.x * 0.9f, groundCheckHeight);
 
@@ -200,12 +225,9 @@ public class SolsFinalGame : MonoBehaviour
         {
             Collider2D col = groundHits[i];
             if (col == null) continue;
-
             if (col == playerCollider || col.transform.IsChildOf(transform)) continue;
-
             if (HasGroundTagUpwards(col.transform)) return true;
         }
-
         return false;
     }
 
@@ -222,10 +244,7 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (syringeObject == null || !syringeObject.activeInHierarchy) return false;
         if (playerCollider == null || !playerCollider.enabled) return false;
-
-        if (syringeCollider == null)
-            syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
-
+        if (syringeCollider == null) syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
         if (syringeCollider == null || !syringeCollider.enabled) return false;
 
         ColliderDistance2D dist = Physics2D.Distance(playerCollider, syringeCollider);
@@ -251,14 +270,16 @@ public class SolsFinalGame : MonoBehaviour
         {
             playerRb.linearVelocity = Vector2.zero;
             playerRb.angularVelocity = 0f;
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
         }
 
         Vector3 startPos = targetCamera.position;
         Vector3 endPos = new Vector3(x, startPos.y, startPos.z);
 
+        // 1. 카메라 이동
         float duration = Mathf.Max(0.01f, cameraMoveDuration);
         float t = 0f;
-
         while (t < 1f)
         {
             t += Time.deltaTime / duration;
@@ -266,13 +287,16 @@ public class SolsFinalGame : MonoBehaviour
             targetCamera.position = Vector3.Lerp(startPos, endPos, eased);
             yield return null;
         }
-
         targetCamera.position = endPos;
 
+        // 2. 대기 (임팩트 전 긴장감)
         float delay = Mathf.Max(0f, impactDelay);
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
+        // 3. 쾅! (펀치)
         yield return StartCoroutine(CameraPunchRoutine(endPos, impactPunchDuration, impactPunchMagnitude));
+
+        // 4. 덜덜덜 (쉐이크)
         yield return StartCoroutine(CameraShakeRoutine(endPos, impactShakeDuration, impactShakeMagnitude));
 
         targetCamera.position = endPos;
@@ -282,7 +306,7 @@ public class SolsFinalGame : MonoBehaviour
 
         ApplyGroundState(isGrounded);
 
-        // 카메라 연출 "완전히 끝난 뒤" 적 시작
+        // [변경] 모든 카메라 연출이 끝난 "지금" 적들을 활성화!
         ActivateEnemies();
 
         cameraMoving = false;
@@ -303,9 +327,7 @@ public class SolsFinalGame : MonoBehaviour
     {
         float d = Mathf.Max(0.01f, duration);
         float m = Mathf.Max(0f, magnitude);
-
         Vector3 downPos = basePos + new Vector3(0f, -m, 0f);
-
         float half = d * 0.5f;
         float t = 0f;
 
@@ -331,20 +353,27 @@ public class SolsFinalGame : MonoBehaviour
     {
         float d = Mathf.Max(0.01f, duration);
         float m = Mathf.Max(0f, magnitude);
-
         float elapsed = 0f;
         while (elapsed < d)
         {
             elapsed += Time.deltaTime;
             float p = Mathf.Clamp01(elapsed / d);
             float damper = 1f - (p * p);
-
             float ox = (Random.value * 2f - 1f) * m * damper;
             float oy = (Random.value * 2f - 1f) * m * damper;
-
             targetCamera.position = basePos + new Vector3(ox, oy, 0f);
             yield return null;
         }
+    }
+
+    private void SetLookRightStatic()
+    {
+        if (playerAnimator == null) return;
+        if (string.IsNullOrEmpty(rightIdleStateName)) return;
+
+        playerAnimator.enabled = true;
+        playerAnimator.Play(rightIdleStateName, 0, 0f);
+        playerAnimator.speed = 0f;
     }
 
 #if UNITY_EDITOR
@@ -352,10 +381,8 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (playerCollider == null) return;
         Bounds b = playerCollider.bounds;
-
         Vector2 boxCenter = new Vector2(b.center.x, b.min.y - groundCheckHeight * 0.5f - groundCheckPadding);
         Vector2 boxSize = new Vector2(b.size.x * 0.9f, groundCheckHeight);
-
         Gizmos.DrawWireCube(boxCenter, boxSize);
     }
 #endif

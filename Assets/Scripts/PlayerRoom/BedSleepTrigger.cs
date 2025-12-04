@@ -10,14 +10,21 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(Collider2D))]
 public class BedSleepTrigger : MonoBehaviour
 {
+    [Header("설정")]
+    [Tooltip("체크시: 1일차에만 수면 UI/코인 연출이 나오고, 2일차부터는 바로 넘어감.\n해제시: 매일 수면 UI 연출이 나옴")]
+    public bool isFirstDayOnly = true;
+
+    [Tooltip("체크시: 게임 시작(씬 로드) 직후 검은 화면에서 서서히 밝아짐 (Player's Room에 체크 추천)")]
+    public bool startWithFadeIn = false;
+
     [Header("패널 / 버튼")]
     public GameObject goodNightPanel;   // 전체 패널 루트
-    public GameObject goodNightQA;      // 질문/버튼 컨테이너(잘 수 있을 때만 켜짐)
-    public Button sleepButton;          // 자러간다
-    public Button notYetButton;         // 아직
+    public GameObject goodNightQA;      // 질문/버튼 컨테이너
+    public Button sleepButton;          // 자러간다 버튼
+    public Button notYetButton;         // 아직 버튼
 
-    [Header("CantGoodNight 텍스트(UI_Table/UI_CantGoodNight)")]
-    public TMP_Text cantGoodNightText;  // 잘 수 없을 때 문구
+    [Header("CantGoodNight 텍스트")]
+    public TMP_Text cantGoodNightText;
 
     [Header("플레이어(비우면 자동 탐색)")]
     public PlayerMove playerMove;
@@ -26,47 +33,67 @@ public class BedSleepTrigger : MonoBehaviour
     [Header("진입시 바로 다시 못열게 잠금")]
     public bool lockIfPlayerInsideOnStart = true;
 
-    [Header("페이드 설정(없으면 자동 생성)")]
-    [SerializeField] private CanvasGroup fadeCanvasGroup;  // 검은 화면 페이드용
-    [SerializeField] private float fadeDuration = 0.6f;    // 페이드 시간
+    [Header("페이드 설정")]
+    [Tooltip("페이드 화면을 생성할 캔버스를 지정하세요. 비워두면 자동으로 찾습니다.")]
+    [SerializeField] private Canvas targetFadeCanvas;
+    [SerializeField] private CanvasGroup fadeCanvasGroup;
+    [SerializeField] private float fadeDuration = 0.6f;
+
+    [Header("수면 요약 UI (연출용)")]
+    [SerializeField] private GameObject sleepUIRoot;
+
+    [Space(10)]
+    [SerializeField] private TMP_Text dayText;
+    [SerializeField] private RectTransform dayUIRect;
+
+    [Space(10)]
+    [SerializeField] private TMP_Text coinText;
+    [SerializeField] private RectTransform coinUIRect;
+
+    [Space(10)]
+    [SerializeField] private Button sleepNextButton;
+    [SerializeField] private float sleepSlideDuration = 0.5f;
+    [SerializeField] private float sleepSlideStartX = -500f;
+    [SerializeField] private float sleepSlideTargetX = 0f;
+
+    [Header("씬 설정")]
+    [SerializeField] private string prologSceneName = "Prolog";
+    [SerializeField] private string playerRoomSceneName = "Player's Room"; // 이동할 씬 이름
 
     [Header("디버그")]
     public bool verboseLog = false;
 
-    // 내부 상태 값
-    private Collider2D _col;
-    private bool _cantSleepActive = false;     // "잘 수 없음" 모드인지
-    private bool _sleepingRoutine = false;     // 수면 처리 중인지
-    private bool _requireExitToReopen = false; // 한번 닫히면 나갔다 다시 들어와야 열리게 하는 플래그
-    private bool _sceneLoading = false;        // 씬 로드 중 중복 호출 방지
+    // 내부 상태
+    private bool _cantSleepActive = false;
+    private bool _sleepingRoutine = false;
+    private bool _requireExitToReopen = false;
+    private bool _sceneLoading = false;
+    private bool _sleepNextClicked = false;
     private const string PlayerTag = "Player";
-
-    // 씬 이름 상수
-    private const string PrologSceneName = "Prolog";
-    private const string PlayerRoomSceneName = "Player's Room";
 
     private void OnValidate()
     {
-        // 트리거 콜라이더 강제
         var col = GetComponent<Collider2D>();
         if (col && !col.isTrigger) col.isTrigger = true;
     }
 
     private void Awake()
     {
-        _col = GetComponent<Collider2D>();
+        if (fadeCanvasGroup == null) CreateAutoFadeOverlay();
 
-        // 페이드 캔버스가 없으면 자동 생성
-        if (fadeCanvasGroup == null)
-            CreateAutoFadeOverlay();
-
+        // startWithFadeIn 옵션이 켜져있으면 처음부터 검은 화면(Alpha 1)으로 시작
         if (fadeCanvasGroup != null)
         {
-            fadeCanvasGroup.alpha = 0f;
+            fadeCanvasGroup.alpha = startWithFadeIn ? 1f : 0f;
+            fadeCanvasGroup.blocksRaycasts = startWithFadeIn;
             fadeCanvasGroup.gameObject.SetActive(true);
         }
 
-        // 시작 시 UI 전부 끔
+        // UI 초기화
+        if (sleepUIRoot) sleepUIRoot.SetActive(false);
+        if (dayUIRect) dayUIRect.gameObject.SetActive(false);
+        if (coinUIRect) coinUIRect.gameObject.SetActive(false);
+
         if (goodNightPanel) goodNightPanel.SetActive(false);
         if (goodNightQA) goodNightQA.SetActive(false);
         if (cantGoodNightText)
@@ -78,11 +105,9 @@ public class BedSleepTrigger : MonoBehaviour
 
     private void Start()
     {
-        // 플레이어 자동 탐색
         if (autoFindPlayerMove && !playerMove)
             playerMove = FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include);
 
-        // 버튼 리스너 연결
         if (sleepButton)
         {
             sleepButton.onClick.RemoveAllListeners();
@@ -93,19 +118,36 @@ public class BedSleepTrigger : MonoBehaviour
             notYetButton.onClick.RemoveAllListeners();
             notYetButton.onClick.AddListener(OnClickNotYet);
         }
+        if (sleepNextButton)
+        {
+            sleepNextButton.onClick.RemoveAllListeners();
+            sleepNextButton.onClick.AddListener(OnClickSleepNextButton);
+        }
 
-        // 시작하자마자 플레이어가 안에 있으면 재오픈 잠금
         if (lockIfPlayerInsideOnStart)
             StartCoroutine(CoLockIfPlayerAlreadyInsideOnStart());
+
+        // 시작 시 페이드 인 효과 (검은 화면 -> 투명)
+        if (startWithFadeIn && fadeCanvasGroup != null)
+        {
+            StartCoroutine(FadeTo(0f, fadeDuration));
+        }
+        else if (fadeCanvasGroup != null && fadeCanvasGroup.alpha > 0.01f)
+        {
+            // 혹시 이전 씬에서 검은 상태로 넘어온 경우 방어적으로 한 번 초기화
+            StartCoroutine(FadeTo(0f, 0.1f));
+        }
     }
 
     private void Update()
     {
-        // 패널 열려있는 동안 이동 막기
         if (playerMove)
-            playerMove.controlEnabled = !(goodNightPanel && goodNightPanel.activeInHierarchy);
+        {
+            bool isPanelOpen = (goodNightPanel && goodNightPanel.activeInHierarchy);
+            bool isSleepUIOpen = (sleepUIRoot && sleepUIRoot.activeInHierarchy);
+            playerMove.controlEnabled = !(isPanelOpen || isSleepUIOpen || _sceneLoading);
+        }
 
-        // "잘 수 없음" 모드일 때 클릭/스페이스로 닫기
         if (_cantSleepActive && (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space)))
             CloseCantSleep();
     }
@@ -115,13 +157,11 @@ public class BedSleepTrigger : MonoBehaviour
         if (!other.CompareTag(PlayerTag)) return;
         if (_requireExitToReopen || _sleepingRoutine || _sceneLoading) return;
 
-        // 데이터 기반으로 "첫날 + 첫 수면 불가" 조건 체크
         bool cantSleep = false;
         var dm = DataManager.instance;
         if (dm != null && dm.nowPlayer != null)
             cantSleep = (dm.nowPlayer.Day == 1 && dm.nowPlayer.CanFirstSleep == false);
 
-        // 현재 씬이 Prolog면 무조건 QA를 보여주고 "잘 수 없음" 문구는 띄우지 않음
         if (cantSleep && !IsPrologScene())
             ShowCantSleep();
         else
@@ -134,42 +174,24 @@ public class BedSleepTrigger : MonoBehaviour
         _requireExitToReopen = false;
     }
 
-    // 패널 열기
     private void OpenPanel()
     {
         if (!goodNightPanel) return;
-
-        // 질문/버튼은 켜고, "잘 수 없음" 문구는 끔
         if (goodNightQA) goodNightQA.SetActive(true);
-        if (cantGoodNightText)
-        {
-            cantGoodNightText.text = "";
-            cantGoodNightText.gameObject.SetActive(false);
-        }
-
+        if (cantGoodNightText) cantGoodNightText.gameObject.SetActive(false);
         goodNightPanel.SetActive(true);
-        if (verboseLog) Debug.Log("[BedSleepTrigger] OpenPanel");
     }
 
-    // 패널 닫기
     private void ClosePanel()
     {
         if (goodNightPanel) goodNightPanel.SetActive(false);
-        if (verboseLog) Debug.Log("[BedSleepTrigger] ClosePanel");
     }
 
-    // "잘 수 없음" 패널 표시
     private void ShowCantSleep()
     {
-        // Prolog에서는 Cant 문구를 절대 안 띄우고 QA로 대체
-        if (IsPrologScene())
-        {
-            OpenPanel();
-            return;
-        }
+        if (IsPrologScene()) { OpenPanel(); return; }
 
         _cantSleepActive = true;
-
         if (goodNightQA) goodNightQA.SetActive(false);
         if (cantGoodNightText)
         {
@@ -177,106 +199,206 @@ public class BedSleepTrigger : MonoBehaviour
             cantGoodNightText.text = msg;
             cantGoodNightText.gameObject.SetActive(true);
         }
-
         if (goodNightPanel) goodNightPanel.SetActive(true);
-        if (verboseLog) Debug.Log("[BedSleepTrigger] CantSleep ON (click/space to close)");
     }
 
-    // "잘 수 없음" 패널 닫기
     private void CloseCantSleep()
     {
         _cantSleepActive = false;
-
-        if (cantGoodNightText)
-        {
-            cantGoodNightText.text = "";
-            cantGoodNightText.gameObject.SetActive(false);
-        }
-
-        if (goodNightPanel) goodNightPanel.SetActive(false);
-
-        // 닫히면 나갔다 들어와야 다시 열리게
+        if (cantGoodNightText) cantGoodNightText.gameObject.SetActive(false);
+        if (goodNightPanel) goodNightPanel.gameObject.SetActive(false);
         _requireExitToReopen = true;
-        if (verboseLog) Debug.Log("[BedSleepTrigger] CantSleep CLOSED");
     }
 
-    // 자러간다 버튼
-    private void OnClickSleep()
-    {
-        if (_sleepingRoutine || _sceneLoading) return;
-        _sleepingRoutine = true;
-
-        // Prolog에서는 데이터매니저에 어떤 저장도 하지 않음
-        if (!IsPrologScene())
-        {
-            ApplySleepAndSave();
-        }
-
-        ClosePanel();
-
-        _requireExitToReopen = true;
-        _sleepingRoutine = false;
-
-        // 페이드 아웃 후 Player's Room으로 이동
-        StartCoroutine(CoFadeOutAndLoadPlayersRoom());
-    }
-
-    // 아직 버튼
     private void OnClickNotYet()
     {
         ClosePanel();
         _requireExitToReopen = true;
     }
 
-    // 하루 넘기고 저장(Prolog에서는 호출되지 않음)
+    private void OnClickSleep()
+    {
+        if (_sleepingRoutine || _sceneLoading) return;
+
+        // Prolog 씬일 경우 별도 처리 (씬 이동)
+        if (IsPrologScene())
+        {
+            _sleepingRoutine = true;
+            ClosePanel();
+            StartCoroutine(CoPrologSequence());
+            return;
+        }
+
+        _sleepingRoutine = true;
+        _sceneLoading = true;
+
+        ClosePanel();
+
+        int currentDay = 1;
+        if (DataManager.instance != null) currentDay = DataManager.instance.nowPlayer.Day;
+
+        bool skipAnimation = (isFirstDayOnly && currentDay >= 2);
+
+        if (skipAnimation)
+        {
+            StartCoroutine(CoQuickSleepSequence());
+        }
+        else
+        {
+            bool isDay1 = (currentDay == 1);
+            StartCoroutine(CoFullSleepSequence(isDay1));
+        }
+
+        _requireExitToReopen = true;
+        _sleepingRoutine = false;
+    }
+
+    // Prolog 전용 시퀀스: 페이드 아웃 -> 씬 이동
+    private IEnumerator CoPrologSequence()
+    {
+        // 1. 페이드 아웃 (검게)
+        yield return StartCoroutine(FadeTo(1f, fadeDuration));
+
+        // 2. 필요하다면 여기서 데이터 저장
+
+        // 3. 씬 이동
+        SceneManager.LoadScene(playerRoomSceneName);
+    }
+
+    // 빠른 수면 (화면 깜빡임만)
+    private IEnumerator CoQuickSleepSequence()
+    {
+        yield return StartCoroutine(FadeTo(1f, fadeDuration));
+
+        ApplySleepAndSave();
+        yield return new WaitForSeconds(0.5f);
+
+        yield return StartCoroutine(FadeTo(0f, fadeDuration));
+
+        _sceneLoading = false;
+    }
+
+    // 풀 애니메이션 수면 (검은 배경 위에서 UI 연출)
+    private IEnumerator CoFullSleepSequence(bool isDay1)
+    {
+        // 페이드 인 (화면 검게)
+        yield return StartCoroutine(FadeTo(1f, fadeDuration));
+
+        ApplySleepAndSave();
+
+        if (sleepUIRoot == null)
+        {
+            yield return StartCoroutine(FadeTo(0f, fadeDuration));
+            _sceneLoading = false;
+            yield break;
+        }
+
+        sleepUIRoot.SetActive(true);
+        sleepUIRoot.transform.SetAsLastSibling(); // UI를 맨 앞으로
+
+        if (dayUIRect) dayUIRect.gameObject.SetActive(false);
+        if (coinUIRect) coinUIRect.gameObject.SetActive(false);
+        if (sleepNextButton) sleepNextButton.gameObject.SetActive(false);
+
+        if (dayText != null && DataManager.instance != null)
+        {
+            var dm = DataManager.instance;
+            dayText.text = dm.FormatDayAndWeekLocalized(dm.nowPlayer.Day, dm.GetWeekday(), dm.GetLanguageCode());
+        }
+        else if (dayText != null) dayText.text = "Day ?";
+
+        int currentCoin = (DataManager.instance != null) ? DataManager.instance.nowPlayer.Coin : 0;
+        if (coinText != null) coinText.text = currentCoin.ToString();
+
+        // 슬라이드 애니메이션
+        if (dayUIRect)
+        {
+            dayUIRect.gameObject.SetActive(true);
+            yield return StartCoroutine(SlideRectX(dayUIRect, sleepSlideStartX, sleepSlideTargetX, sleepSlideDuration));
+        }
+
+        if (coinUIRect)
+        {
+            coinUIRect.gameObject.SetActive(true);
+            yield return StartCoroutine(SlideRectX(coinUIRect, sleepSlideStartX, sleepSlideTargetX, sleepSlideDuration));
+        }
+
+        // 코인 보상 (1일차)
+        if (isDay1 && DataManager.instance != null)
+        {
+            int startCoin = DataManager.instance.nowPlayer.Coin;
+            int rewardAmount = 10;
+
+            DataManager.instance.AddCoin(rewardAmount);
+            DataManager.instance.SaveData();
+
+            int endCoin = DataManager.instance.nowPlayer.Coin;
+            float elapsed = 0f;
+            while (elapsed < 0.8f)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / 0.8f);
+                int visibleCoin = (int)Mathf.Lerp(startCoin, endCoin, t);
+                if (coinText) coinText.text = visibleCoin.ToString();
+                yield return null;
+            }
+            if (coinText) coinText.text = endCoin.ToString();
+        }
+
+        // Next 버튼
+        _sleepNextClicked = false;
+        if (sleepNextButton) sleepNextButton.gameObject.SetActive(true);
+
+        yield return new WaitUntil(() => _sleepNextClicked);
+
+        // 종료
+        sleepUIRoot.SetActive(false);
+        yield return StartCoroutine(FadeTo(0f, 0.6f)); // 화면 밝게
+
+        _sceneLoading = false;
+    }
+
+    private void OnClickSleepNextButton()
+    {
+        if (_sleepNextClicked) return;
+        _sleepNextClicked = true;
+    }
+
     private void ApplySleepAndSave()
     {
+        if (IsPrologScene()) return;
+
         var dm = DataManager.instance;
         if (dm == null) return;
 
+        // 1) 날짜 증가
         dm.AddDay(1);
 
+        // 2) 새 날이 되었으니 모든 NPC Today_Talk 관련 상태를 리셋
+        NPCTalkManager.ResetAllTodayTalkForNewDay(dm.nowPlayer);
+
+        // 3) 플레이어 위치 저장
         Vector3 pos = playerMove
             ? playerMove.transform.position
             : (GameObject.FindGameObjectWithTag("Player")?.transform.position ?? Vector3.zero);
 
         dm.SetPlayerPosition(pos);
 
-        if (dm.nowSlot >= 0)
-            dm.SaveData();
+        // 4) 세이브
+        if (dm.nowSlot >= 0) dm.SaveData();
     }
 
-    // 페이드 아웃 -> 씬 로드
-    private IEnumerator CoFadeOutAndLoadPlayersRoom()
-    {
-        if (_sceneLoading) yield break;
-        _sceneLoading = true;
-
-        // 페이드 캔버스가 없으면 즉시 로드
-        if (fadeCanvasGroup == null)
-        {
-            SceneManager.LoadScene(PlayerRoomSceneName);
-            yield break;
-        }
-
-        yield return StartCoroutine(FadeTo(1f, fadeDuration));
-
-        SceneManager.LoadScene(PlayerRoomSceneName);
-    }
-
-    // 현재 씬이 Prolog인지 체크
     private bool IsPrologScene()
     {
-        return SceneManager.GetActiveScene().name == PrologSceneName;
+        return SceneManager.GetActiveScene().name == prologSceneName;
     }
 
-    // 페이드만 담당
     private IEnumerator FadeTo(float targetAlpha, float duration)
     {
-        if (fadeCanvasGroup == null)
-            yield break;
+        if (fadeCanvasGroup == null) yield break;
 
         fadeCanvasGroup.gameObject.SetActive(true);
+        if (targetAlpha > 0.01f) fadeCanvasGroup.blocksRaycasts = true;
 
         float startAlpha = fadeCanvasGroup.alpha;
         float time = 0f;
@@ -285,33 +407,54 @@ public class BedSleepTrigger : MonoBehaviour
         {
             time += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(time / Mathf.Max(0.0001f, duration));
-            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, t);
+            float eased = t * t * (3f - 2f * t);
+            fadeCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, eased);
             yield return null;
         }
 
         fadeCanvasGroup.alpha = targetAlpha;
+
+        if (targetAlpha <= 0.01f)
+        {
+            fadeCanvasGroup.blocksRaycasts = false;
+            // 완전히 투명해지면 아예 비활성화해서 다른 씬에서 방해 안 되도록 처리
+            fadeCanvasGroup.gameObject.SetActive(false);
+        }
     }
 
-    // 시작 시 플레이어가 이미 트리거 안에 있으면 재오픈 잠금
+    private IEnumerator SlideRectX(RectTransform rect, float startX, float targetX, float duration)
+    {
+        if (rect == null) yield break;
+
+        float time = 0f;
+        Vector2 startPos = rect.anchoredPosition;
+        startPos.x = startX;
+        rect.anchoredPosition = startPos;
+
+        while (time < duration)
+        {
+            time += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(time / Mathf.Max(0.0001f, duration));
+            float eased = t * t * (3f - 2f * t);
+            float newX = Mathf.Lerp(startX, targetX, eased);
+            rect.anchoredPosition = new Vector2(newX, startPos.y);
+            yield return null;
+        }
+        rect.anchoredPosition = new Vector2(targetX, startPos.y);
+    }
+
     private IEnumerator CoLockIfPlayerAlreadyInsideOnStart()
     {
         yield return null;
         float timer = 0.4f;
-
         while (timer > 0f)
         {
             timer -= Time.unscaledDeltaTime;
-            if (IsPlayerOverlappingMe(out _))
-            {
-                _requireExitToReopen = true;
-                if (verboseLog) Debug.Log("[BedSleepTrigger] Player already inside on start -> require exit");
-                yield break;
-            }
+            if (IsPlayerOverlappingMe(out _)) { _requireExitToReopen = true; yield break; }
             yield return null;
         }
     }
 
-    // 플레이어가 트리거 안에 겹쳐있는지 검사
     private bool IsPlayerOverlappingMe(out Collider2D playerCollider)
     {
         playerCollider = null;
@@ -319,53 +462,58 @@ public class BedSleepTrigger : MonoBehaviour
         if (!col) return false;
 
         var results = new List<Collider2D>(8);
-        var filter = new ContactFilter2D { useTriggers = true };
-        col.Overlap(filter, results);
+        col.Overlap(new ContactFilter2D { useTriggers = true }, results);
 
-        for (int i = 0; i < results.Count; i++)
+        foreach (var c in results)
         {
-            var c = results[i];
-            if (c && c.CompareTag(PlayerTag))
-            {
-                playerCollider = c;
-                return true;
-            }
+            if (c && c.CompareTag(PlayerTag)) { playerCollider = c; return true; }
         }
         return false;
     }
 
-    // 페이드용 검은 화면 오버레이 자동 생성
     private void CreateAutoFadeOverlay()
     {
-        Canvas parentCanvas = FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);
-        if (parentCanvas == null)
+        Canvas canvasToUse = targetFadeCanvas;
+
+        if (canvasToUse == null)
         {
-            if (verboseLog) Debug.LogWarning("[BedSleepTrigger] Canvas를 찾지 못해 페이드 오버레이를 만들 수 없습니다.");
-            return;
+            Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var c in allCanvases)
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay)
+                {
+                    canvasToUse = c;
+                    break;
+                }
+            }
+            if (canvasToUse == null && allCanvases.Length > 0)
+                canvasToUse = allCanvases[0];
         }
 
+        if (canvasToUse == null) return;
+
         GameObject fadeObj = new GameObject("AutoFadeOverlay");
-        fadeObj.layer = parentCanvas.gameObject.layer;
-        fadeObj.transform.SetParent(parentCanvas.transform, false);
+        fadeObj.layer = canvasToUse.gameObject.layer;
+        // 태그는 사용하지 않는다. (HUD로 두면 다른 시스템이 잘못 잡을 수 있음)
+        // fadeObj.tag = "Untagged";
+
+        fadeObj.transform.SetParent(canvasToUse.transform, false);
 
         RectTransform rt = fadeObj.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        rt.localScale = Vector3.one;
         rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = Vector2.zero;
 
         Image img = fadeObj.AddComponent<Image>();
         img.color = Color.black;
-        img.raycastTarget = false;
+        img.raycastTarget = true;
 
         fadeCanvasGroup = fadeObj.AddComponent<CanvasGroup>();
         fadeCanvasGroup.alpha = 0f;
+        fadeCanvasGroup.blocksRaycasts = false;
 
         fadeObj.transform.SetAsLastSibling();
-
-        if (verboseLog) Debug.Log("[BedSleepTrigger] 자동 페이드 오버레이 생성 완료");
     }
 }

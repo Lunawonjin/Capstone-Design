@@ -16,6 +16,8 @@ TagManager:
   - Bed
   - House
   - Object
+  - Enemy
+  - Boss
   layers:
   - Default
   - TransparentFX
