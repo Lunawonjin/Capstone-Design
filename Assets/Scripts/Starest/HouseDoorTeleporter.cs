@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -157,6 +158,14 @@ public class HouseDoorTeleporter : MonoBehaviour
     public int CurrentOwnerIndex { get; private set; } = -1;
 
     private int currentHouseIndex = -1;
+
+    // ───────────────────────── NPC 이벤트 연동 ─────────────────────────
+    [Header("NPC 이벤트 연동")]
+    [Tooltip("NpcEventDebugLoader를 할당하면 집 출입 시 특정 이벤트를 트리거할 수 있습니다.")]
+    [SerializeField] private NpcEventDebugLoader npcEventLoader;
+
+    [Tooltip("Sol_First_Meet 종료 후 Sol 집에서 마을로 나올 때 Boss_SaltKey_Lost 이벤트 자동 실행")]
+    [SerializeField] private bool runBossSaltKeyLostOnExitFromSol = true;
 
     // ───────────────────────── 초기화 ─────────────────────────
     private void Reset()
@@ -459,6 +468,92 @@ public class HouseDoorTeleporter : MonoBehaviour
         {
             string owner = (index >= 0 && index < ownerNames.Length) ? ownerNames[index] : "";
             SetState_OnExitToVillageByName(owner);
+
+            // ★ Sol 집에서 마을로 나올 때 Boss_SaltKey_Lost 체크/실행
+            OnExitHouseToVillage(owner);
+        }
+    }
+
+    // ───────── Sol 집 → 마을 나올 때 이벤트 트리거 ─────────
+    private void OnExitHouseToVillage(string ownerName)
+    {
+        if (!runBossSaltKeyLostOnExitFromSol) return;
+        if (string.IsNullOrWhiteSpace(ownerName)) return;
+        if (!string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase)) return;
+        if (npcEventLoader == null) return;
+
+        if (!IsBossSaltKeyLostConditionMet()) return;
+
+        if (verboseLog)
+            Debug.Log("[Teleporter] Sol 집에서 마을로 나옴 → Boss_SaltKey_Lost 조건 충족, 이벤트 실행 시도");
+
+        bool ok = npcEventLoader.RunEventByName_External("Boss", "Boss_SaltKey_Lost", () =>
+        {
+            SetPlayerBoolFlag("Boss_SaltKey_Lost", true);
+        });
+
+        if (!ok && verboseLog)
+            Debug.LogWarning("[Teleporter] Boss_SaltKey_Lost 실행 실패 (NpcEventDebugLoader 참조 또는 JSON/이름 확인 필요)");
+    }
+
+    // Sol_First_Meet == true 이고 Boss_SaltKey_Lost == false 인지 확인
+    private bool IsBossSaltKeyLostConditionMet()
+    {
+        bool solFirstMeet = GetPlayerBoolFlag("Sol_First_Meet");
+        bool bossSaltKeyLost = GetPlayerBoolFlag("Boss_SaltKey_Lost");
+
+        if (verboseLog)
+            Debug.Log($"[Teleporter] Boss_SaltKey_Lost 체크: Sol_First_Meet={solFirstMeet}, Boss_SaltKey_Lost={bossSaltKeyLost}");
+
+        return solFirstMeet && !bossSaltKeyLost;
+    }
+
+    // PlayerData의 bool 플래그 읽기
+    private bool GetPlayerBoolFlag(string flagName)
+    {
+        if (string.IsNullOrWhiteSpace(flagName)) return false;
+        if (DataManager.instance == null || DataManager.instance.nowPlayer == null) return false;
+
+        var pd = DataManager.instance.nowPlayer;
+        var t = pd.GetType();
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase;
+
+        var f = t.GetField(flagName, flags);
+        if (f != null && f.FieldType == typeof(bool))
+        {
+            return (bool)f.GetValue(pd);
+        }
+
+        var p = t.GetProperty(flagName, flags);
+        if (p != null && p.PropertyType == typeof(bool) && p.CanRead)
+        {
+            return (bool)p.GetValue(pd);
+        }
+
+        return false;
+    }
+
+    // PlayerData의 bool 플래그 쓰기
+    private void SetPlayerBoolFlag(string flagName, bool value)
+    {
+        if (string.IsNullOrWhiteSpace(flagName)) return;
+        if (DataManager.instance == null || DataManager.instance.nowPlayer == null) return;
+
+        var pd = DataManager.instance.nowPlayer;
+        var t = pd.GetType();
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.IgnoreCase;
+
+        var f = t.GetField(flagName, flags);
+        if (f != null && f.FieldType == typeof(bool))
+        {
+            f.SetValue(pd, value);
+            return;
+        }
+
+        var p = t.GetProperty(flagName, flags);
+        if (p != null && p.PropertyType == typeof(bool) && p.CanWrite)
+        {
+            p.SetValue(pd, value);
         }
     }
 
@@ -695,7 +790,7 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (fadeOverlay && fadeOverlay.gameObject)
         {
             var c = fadeOverlay.color; c.a = 0f; fadeOverlay.color = c;
-            fadeOverlay.raycastTarget = false; // ★ 클릭 막지 않도록
+            fadeOverlay.raycastTarget = false; // 클릭 막지 않도록
             if (!fadeOverlay.gameObject.activeSelf) fadeOverlay.gameObject.SetActive(true);
             EnsureOverlayCanvasOnTop(fadeOverlay);
             return;
@@ -716,7 +811,7 @@ public class HouseDoorTeleporter : MonoBehaviour
 
         var img = imgGo.GetComponent<Image>();
         img.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0f);
-        img.raycastTarget = false; // ★ 클릭 차단 금지
+        img.raycastTarget = false; // 클릭 차단 금지
 
         var rt = img.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;

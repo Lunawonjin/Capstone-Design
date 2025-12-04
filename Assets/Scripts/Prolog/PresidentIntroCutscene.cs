@@ -25,11 +25,13 @@ public class PresidentIntroSequence : MonoBehaviour
         "Dialogue_009_President",
         "Dialogue_010_President",
         "Dialogue_011_President",
-        "Dialogue_012_Player",
+        "Dialogue_012_President",
         "Dialogue_013_President",
-        "Dialogue_014_President",
-        "Dialogue_015_President",
-        "Dialogue_016_Player"
+        "Dialogue_014_Player",
+        "Dialogue_015_President",   // 암흑. 집으로 이동. 플레이어 어질어질 모션
+        "Dialogue_016_President",
+        "Dialogue_017_President",   // 대표 슉 하고 사라짐
+        "Dialogue_018_Player"       // 마지막: 플레이어 "무슨 일이 일어난 거지..."
     };
 
     [Header("캐릭터 트랜스폼")]
@@ -40,15 +42,15 @@ public class PresidentIntroSequence : MonoBehaviour
     [SerializeField] private GameObject mainRoot;
     [SerializeField] private GameObject playerRoomRoot;
 
-    [Header("Dialogue_013 이후 위치")]
-    [SerializeField] private Vector3 playerPosAfter013 = new Vector3(22f, 0f, 0f);
-    [SerializeField] private Vector3 presidentPosAfter013 = new Vector3(24f, 0f, 0f);
+    [Header("Dialogue_015 이후 위치")]
+    [SerializeField] private Vector3 playerPosAfter015 = new Vector3(22f, 0f, 0f);
+    [SerializeField] private Vector3 presidentPosAfter015 = new Vector3(24f, 0f, 0f);
 
-    [Header("대표 사라짐 연출")]
+    [Header("대표 사라짐 연출(Dialogue_017 이후)")]
     [SerializeField] private float vanishDuration = 0.4f;
     [SerializeField] private float vanishMoveUp = 0.5f;
 
-    [Header("플레이어 흔들림 연출")]
+    [Header("플레이어 흔들림 연출(Dialogue_015 이후 이동 직후)")]
     [SerializeField] private float shakeDuration = 0.8f;
     [SerializeField] private float shakeAmount = 0.15f;
 
@@ -159,34 +161,42 @@ public class PresidentIntroSequence : MonoBehaviour
             string key = dialogueKeys[i];
             Debug.Log("[PresidentIntroSequence] 대사 시작: " + key);
 
-            // 일반 대사 출력
+            // 한 줄 출력
             yield return StartCoroutine(ShowOneLine(key, isFirstLine: i == 0));
 
             Debug.Log("[PresidentIntroSequence] 대사 종료: " + key);
 
-            // Dialogue_013 이후: 이동/전환 연출
-            if (i == 12)
+            // 여기서 인덱스가 아니라 "대사 키"로만 분기함
+
+            // Dialogue_015_President 이후: 암흑 → 집 이동 → 플레이어 흔들림
+            if (key == "Dialogue_015_President")
             {
-                Debug.Log("[PresidentIntroSequence] 013 이후 전환 연출 시작");
+                Debug.Log("[PresidentIntroSequence] Dialogue_015 이후 전환 연출 시작");
                 yield return StartCoroutine(HandleMidTransition());
-                Debug.Log("[PresidentIntroSequence] 013 이후 전환 연출 종료");
+                Debug.Log("[PresidentIntroSequence] Dialogue_015 이후 전환 연출 종료");
             }
-
-            // Dialogue_015 이후: 대표 사라짐
-            if (i == 14)
+            // Dialogue_017_President 이후: 대표 슉 하고 사라짐
+            else if (key == "Dialogue_017_President")
             {
-                Debug.Log("[PresidentIntroSequence] 대표 사라짐 연출 시작");
+                Debug.Log("[PresidentIntroSequence] Dialogue_017 이후 대표 사라짐 연출 시작");
                 yield return StartCoroutine(VanishPresident());
-                Debug.Log("[PresidentIntroSequence] 대표 사라짐 연출 종료");
+                Debug.Log("[PresidentIntroSequence] Dialogue_017 이후 대표 사라짐 연출 종료");
             }
-
-            // Dialogue_016 이후: 페이드 아웃 -> 페이드 인(씬 이동 없음)
-            if (i == 15)
+            // Dialogue_018_Player 이후: 마지막 페이드 아웃/인 + 미션 UI
+            else if (key == "Dialogue_018_Player")
             {
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 시작(씬 이동 없음)");
                 yield return StartCoroutine(FadeOutThenIn());
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 종료");
-                MissionUI.gameObject.SetActive(true);
+
+                if (MissionUI != null)
+                {
+                    MissionUI.gameObject.SetActive(true);
+                }
+                else
+                {
+                    Debug.LogWarning("[PresidentIntroSequence] MissionUI가 설정되지 않았습니다.");
+                }
             }
         }
 
@@ -199,10 +209,10 @@ public class PresidentIntroSequence : MonoBehaviour
     /// <summary>
     /// 한 줄 재생 규칙
     /// - 타이핑 중:
-    ///   첫 클릭: 즉시 전부 출력
-    ///   두 번째 클릭부터: 타이핑 끝나면 다음 줄로 넘김 예약
+    ///   첫 입력: 즉시 전부 출력
+    ///   두 번째 입력부터: 타이핑이 끝난 뒤 다음 줄로 넘김 예약
     /// - 타이핑 끝:
-    ///   예약이 있거나 클릭이 들어오면 다음 줄로 진행
+    ///   예약이 있거나 입력이 들어오면 다음 줄로 진행
     /// </summary>
     private IEnumerator ShowOneLine(string key, bool isFirstLine)
     {
@@ -270,8 +280,9 @@ public class PresidentIntroSequence : MonoBehaviour
         }
     }
 
-    // 013 이후: 페이드 아웃 -> 방 전환 -> 위치 이동 -> 페이드 인 -> 플레이어 흔들림
-    // 이 전체 연출 동안 말풍선은 숨기고, 연출 완료 후 다시 켬
+    // Dialogue_015 이후:
+    // 페이드 아웃 → 방/루트 전환 → 위치 이동 → 앵커 재연결 → 페이드 인 → 플레이어 흔들림
+    // 이 전체 동안 말풍선은 숨기고, 연출 끝나면 다시 켬
     private IEnumerator HandleMidTransition()
     {
         Debug.Log("[PresidentIntroSequence] HandleMidTransition 시작");
@@ -290,9 +301,9 @@ public class PresidentIntroSequence : MonoBehaviour
 
         // 3) 캐릭터 위치 이동
         if (playerTransform != null)
-            playerTransform.position = playerPosAfter013;
+            playerTransform.position = playerPosAfter015;
         if (presidentTransform != null)
-            presidentTransform.position = presidentPosAfter013;
+            presidentTransform.position = presidentPosAfter015;
 
         // 4) 앵커 재연결
         if (anchor != null)
@@ -302,6 +313,7 @@ public class PresidentIntroSequence : MonoBehaviour
             anchor.SetWorldCamera(Camera.main, snap: false);
             anchor.SetSpeakerId("President", snapNow: false);
 
+            // 카메라/레이아웃 한 프레임 갱신 대기 후 스냅
             yield return new WaitForEndOfFrame();
             anchor.SnapNow();
 
@@ -311,7 +323,7 @@ public class PresidentIntroSequence : MonoBehaviour
         // 5) 화면 다시 밝게
         yield return StartCoroutine(FadeTo(0f));
 
-        // 6) 플레이어 흔들림(말풍선 숨김 유지)
+        // 6) 플레이어 흔들림(이 구간에서도 말풍선 숨김 상태 유지)
         yield return StartCoroutine(ShakePlayer());
 
         // 7) 연출 종료 후 말풍선 다시 켬
@@ -396,6 +408,8 @@ public class PresidentIntroSequence : MonoBehaviour
 
         // 3) 페이드 인
         yield return StartCoroutine(FadeTo(0f, fadeDuration));
+
+        // 마지막이니까 말풍선 다시 켜는 작업은 생략
     }
 
     // 페이드만 담당(말풍선 on/off는 바깥에서 처리)

@@ -9,7 +9,7 @@ using UnityEngine.Localization.Settings;
 public class CallingSystem : MonoBehaviour
 {
     // ─────────────────────────────────────────────────────────────
-    // 로깅
+    // 로깅 & 조건 클래스
     // ─────────────────────────────────────────────────────────────
     public enum LogVerbosity { Off, Errors, Warnings, Info, Verbose }
     [Header("로깅")] public LogVerbosity logLevel = LogVerbosity.Info;
@@ -19,9 +19,6 @@ public class CallingSystem : MonoBehaviour
     void LogW(string m) { if (L(LogVerbosity.Warnings)) Debug.LogWarning(Pfx + m); }
     void LogE(string m) { if (L(LogVerbosity.Errors)) Debug.LogError(Pfx + m); }
 
-    // ─────────────────────────────────────────────────────────────
-    // 조건(데이터 매니저 값 등) 평가용
-    // ─────────────────────────────────────────────────────────────
     [Serializable]
     public class Condition
     {
@@ -42,7 +39,6 @@ public class CallingSystem : MonoBehaviour
         public bool Evaluate()
         {
             var dm = DataManager.instance;
-
             switch (varType)
             {
                 case VarType.Bool:
@@ -199,16 +195,13 @@ public class CallingSystem : MonoBehaviour
     public bool autoFindInactive = true;
 
     // ─────────────────────────────────────────────────────────────
-    // Player 제어(완전 하드락 + 애니메이터까지 Off)
+    // Player 제어
     // ─────────────────────────────────────────────────────────────
     [Header("Player Move Freeze (PhonePanel 활성 시)")]
     public PlayerMove playerMove;
     public bool autoFindPlayerMove = true;
     public bool includeInactiveOnFind = true;
-
-    [Tooltip("PhonePanel이 열려있는 동안 LateUpdate에서 강제로 조작/애니메이션을 잠급니다.")]
     public bool hardLockWhilePhoneOpen = true;
-    [Tooltip("하드락 시 Animator.enabled를 꺼서 방향키 입력에도 프레임이 바뀌지 않도록 함")]
     public bool alsoDisableAnimatorWhilePhoneOpen = true;
 
     bool _frozenByPhone = false;
@@ -221,6 +214,8 @@ public class CallingSystem : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     bool _autoBound;
     Coroutine _shakeLoop;
+    Coroutine _slideCoroutine; // ★★★ 슬라이드 전용 코루틴 변수 추가
+
     RectTransform _iconRT;
     Vector2 _iconBasePos;
     float _iconBaseRot;
@@ -350,7 +345,6 @@ public class CallingSystem : MonoBehaviour
             phoneIconButton.onClick.RemoveListener(OnPhoneIconClicked_Internal);
             phoneIconButton.onClick.AddListener(OnPhoneIconClicked_Internal);
         }
-        else LogW("Phone_icon_BT 버튼을 찾지 못했습니다.");
     }
 
     void OnPhoneIconClicked_Internal()
@@ -365,7 +359,7 @@ public class CallingSystem : MonoBehaviour
         EnsurePhonePanelObjects();
         SetupPhonePanel(call);
 
-        ShowPhonePanel(); // 이동/애니는 LateUpdate에서 하드락
+        ShowPhonePanel();
     }
 
     void SetupPhonePanel(CallDef call)
@@ -400,6 +394,9 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 패널 Show / Hide (수정된 부분)
+    // ─────────────────────────────────────────────────────────────
     void ShowPhonePanel()
     {
         if (!phonePanel || !phone) return;
@@ -407,16 +404,18 @@ public class CallingSystem : MonoBehaviour
         SetExtraObjectsActive(false);
         phonePanel.SetActive(true);
 
-        StopAllCoroutines();
-        StartCoroutine(CoSlide(phone, slideFromY, slideToY, slideDuration, keepActiveAtEnd: true));
+        // ★★★ StopAllCoroutines() 삭제 -> 슬라이드 코루틴만 정지
+        if (_slideCoroutine != null) StopCoroutine(_slideCoroutine);
+        _slideCoroutine = StartCoroutine(CoSlide(phone, slideFromY, slideToY, slideDuration, keepActiveAtEnd: true));
     }
 
     void HidePhonePanelAndDeactivate()
     {
         if (!phonePanel || !phone) return;
 
-        StopAllCoroutines();
-        StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, keepActiveAtEnd: false));
+        // ★★★ StopAllCoroutines() 삭제 -> CoEndAndDismissPhone이 끊기지 않도록 함
+        if (_slideCoroutine != null) StopCoroutine(_slideCoroutine);
+        _slideCoroutine = StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, keepActiveAtEnd: false));
     }
 
     System.Collections.IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool keepActiveAtEnd)
@@ -438,8 +437,8 @@ public class CallingSystem : MonoBehaviour
         {
             phonePanel.SetActive(false);
             SetExtraObjectsActive(true);
-            // 이동/애니 복구는 LateUpdate가 담당(패널 비활성 감지)
         }
+        _slideCoroutine = null; // 완료 후 초기화
     }
 
     void OnClickHangUp()
@@ -499,14 +498,51 @@ public class CallingSystem : MonoBehaviour
 
         if (callingEndObject) callingEndObject.SetActive(true);
 
-        // ─────────────────────────────────────────────────────────
-        // Boss_First_Calling 종료 시:
-        // - DataManager.nowPlayer.StartGame = true
-        // - MapMenuController.PlayerGoStarest = true  ← ★ 추가
-        // ─────────────────────────────────────────────────────────
+        // ★★★ 전체 코루틴(Shake 등)은 여기서 정리해도 됨, 하지만 이제 CoEndAndDismissPhone은 안전함
+        StopAllCoroutines();
+        StartCoroutine(CoEndAndDismissPhone());
+    }
+
+    System.Collections.IEnumerator CoEndAndDismissPhone()
+    {
+        // 1초 대기 (다이얼로그 종료 직후 클릭 방지)
+        yield return new WaitForSecondsRealtime(1f);
+
+        // 2초 동안 입력 대기
+        float timeout = 0.5f; // 필요시 늘리세요
+        float elapsed = 0f;
+
+        while (elapsed < timeout)
+        {
+            if (Input.anyKeyDown ||
+                Input.GetMouseButtonDown(0) ||
+                (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+            {
+                break;
+            }
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // 입력 혹은 타임아웃 후 슬라이드 다운 시작
+        // ★★★ 이 함수가 이제 StopAllCoroutines를 부르지 않으므로 아래 코드는 계속 실행됨
+        HidePhonePanelAndDeactivate();
+
+        // 슬라이드가 끝날 때까지 대기
+        yield return new WaitForSecondsRealtime(slideDuration);
+
+        // 미션 패널 및 게임 로직 실행
         if (_currentCallIndex >= 0 && _currentCallIndex < calls.Count)
         {
             var endedCall = calls[_currentCallIndex];
+
+            // 1) 미션 패널 호출
+            if (endedCall != null && MissionPanel.Instance != null)
+            {
+                MissionPanel.Instance.ShowByKey(endedCall.callingName);
+            }
+
+            // 2) Boss_First_Calling 처리
             if (endedCall != null && string.Equals(endedCall.callingName, "Boss_First_Calling", StringComparison.Ordinal))
             {
                 var dm = DataManager.instance;
@@ -517,7 +553,6 @@ public class CallingSystem : MonoBehaviour
                     LogI("StartGame -> true (after Boss_First_Calling)");
                 }
 
-                // ★ MapMenuController의 PlayerGoStarest 활성화
 #if UNITY_2023_1_OR_NEWER
                 var map = UnityEngine.Object.FindAnyObjectByType<MapMenuController>(FindObjectsInactive.Include);
 #else
@@ -528,34 +563,15 @@ public class CallingSystem : MonoBehaviour
                     map.PlayerGoStarest = true;
                     LogI("MapMenuController.PlayerGoStarest -> true");
                 }
-                else
-                {
-                    LogW("MapMenuController를 찾지 못해 PlayerGoStarest를 설정하지 못했습니다.");
-                }
             }
         }
 
-        StopAllCoroutines();
-        StartCoroutine(CoEndAndDismissPhone());
-    }
-
-    System.Collections.IEnumerator CoEndAndDismissPhone()
-    {
-        yield return new WaitForSecondsRealtime(1f);
-
-        while (true)
-        {
-            if (Input.anyKeyDown ||
-                Input.GetMouseButtonDown(0) ||
-                (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
-                break;
-            yield return null;
-        }
-
-        HidePhonePanelAndDeactivate();
         _currentCallIndex = -1;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 기타 유틸 및 폰트 오버라이드
+    // ─────────────────────────────────────────────────────────────
     void ApplyPhoneFontOverrideIfNeeded()
     {
         if (!usePhoneFontOverride || dialogueRunner == null) return;
@@ -668,9 +684,6 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 오브젝트 자동 바인딩/토글
-    // ─────────────────────────────────────────────────────────────
     void AutoBindIfNeeded()
     {
         if (_autoBound) return;
@@ -711,7 +724,7 @@ public class CallingSystem : MonoBehaviour
             if (mngrGO)
             {
                 dialogueRunner = mngrGO.GetComponent<DialogueRunnerStringTables>()
-                               ?? mngrGO.GetComponentInChildren<DialogueRunnerStringTables>(true);
+                                ?? mngrGO.GetComponentInChildren<DialogueRunnerStringTables>(true);
                 LogI($"DialogueManager auto-bound → {GetPath(mngrGO.transform)}");
             }
         }
@@ -751,9 +764,6 @@ public class CallingSystem : MonoBehaviour
             if (disableWhilePhoneActive[i]) disableWhilePhoneActive[i].SetActive(active);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 유틸
-    // ─────────────────────────────────────────────────────────────
     static GameObject FindActiveInScene(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
@@ -772,7 +782,6 @@ public class CallingSystem : MonoBehaviour
         if (string.IsNullOrEmpty(path)) return null;
         var parts = path.Split('/');
         Transform cur = null;
-
         var roots = Resources.FindObjectsOfTypeAll<Transform>();
         foreach (var r in roots)
         {

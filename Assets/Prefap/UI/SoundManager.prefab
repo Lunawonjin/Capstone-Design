@@ -50,6 +50,10 @@ MonoBehaviour:
   bgmClips:
   - key: Starest
     clip: {fileID: 8300000, guid: 29b2ada5ad0cb8147ad8a73974897401, type: 3}
+  - key: Puzzle
+    clip: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+  - key: StartMenu
+    clip: {fileID: 8300000, guid: a97ac4cced38d2549a5e4f031c4e9392, type: 3}
   sfxClips: []
   bgmVolume: 0.5
   bgmMute: 0
@@ -71,6 +75,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SceneBgmRouter
   routes:
   - sceneName: StartMenu
+    bgmKey: StartMenu
+    startTime: 0
+    fadeSeconds: 0
+  - sceneName: Sol's Game Puzzle
+    bgmKey: Puzzle
+    startTime: 0
+    fadeSeconds: 0
+  - sceneName: Starest
     bgmKey: Starest
     startTime: 0
     fadeSeconds: 0

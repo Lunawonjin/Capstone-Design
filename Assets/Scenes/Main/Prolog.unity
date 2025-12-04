@@ -844,18 +844,20 @@ MonoBehaviour:
   - Dialogue_008_Player
   - Dialogue_009_President
   - Dialogue_010_President
-  - Dialogue_011_President
-  - Dialogue_012_Player
+  - 'Dialogue_011_President '
+  - Dialogue_012_President
   - Dialogue_013_President
-  - Dialogue_014_President
+  - Dialogue_014_Player
   - Dialogue_015_President
-  - Dialogue_016_Player
+  - Dialogue_016_President
+  - Dialogue_017_President
+  - Dialogue_018_Player
   playerTransform: {fileID: 1984392224}
   presidentTransform: {fileID: 1596140460}
   mainRoot: {fileID: 132198677}
   playerRoomRoot: {fileID: 954482753}
-  playerPosAfter013: {x: 0, y: 0, z: 0}
-  presidentPosAfter013: {x: -2, y: 0, z: 0}
+  playerPosAfter015: {x: 0, y: 0, z: 0}
+  presidentPosAfter015: {x: -2, y: 0, z: 0}
   vanishDuration: 0.4
   vanishMoveUp: 0.5
   shakeDuration: 0.8
@@ -868,7 +870,6 @@ MonoBehaviour:
   playerMove: {fileID: 0}
   autoFindPlayerMove: 1
   MissionUI: {fileID: 672026499}
-  typingSpeedMultiplier: 1.25
 --- !u!1 &1273444008 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7000421499693629223, guid: c99cf281692537e41b21e721ac8c4641, type: 3}

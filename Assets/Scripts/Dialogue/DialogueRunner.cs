@@ -91,6 +91,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
     [Header("Speaker table mode")]
     public SpeakerLoadMode speakerMode = SpeakerLoadMode.Auto;
 
+    [Header("Special effects")]
+    [Tooltip("Boss_SaltKey_Lost 이벤트의 Dialogue_004에서 펀치 이펙트 적용 여부")]
+    [SerializeField] private bool enableBossSaltPunch = true;
+    [Tooltip("펀치 이펙트 재생 시간(초)")]
+    [SerializeField, Min(0f)] private float bossSaltPunchDuration = 0.25f;
+    [Tooltip("최대 스케일 배수(1.1 ~ 1.3 정도 추천)")]
+    [SerializeField] private float bossSaltPunchScale = 1.15f;
+
     // ===== Internal state =====
     private RectTransform _choiceRoot;
     private VerticalLayoutGroup _vlg;
@@ -136,6 +144,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private bool _inReChoice = false;
     private readonly List<int> _reRemainingOptions = new();
     private int _reChoiceN = -1;
+
+    // Punch effect runtime
+    private Coroutine _punchRoutine;
 
     private void Awake()
     {
@@ -189,6 +200,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
         if (charDelay < 0f) charDelay = 0f;
         _wait = new WaitForSeconds(Mathf.Max(0f, charDelay));
         if (advanceCooldownSec < 0f) advanceCooldownSec = 0f;
+        if (bossSaltPunchDuration < 0f) bossSaltPunchDuration = 0f;
+        if (bossSaltPunchScale < 1f) bossSaltPunchScale = 1f;
     }
 
     private void OnDisable()
@@ -197,6 +210,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
         {
             StopCoroutine(_typingRoutine);
             _typingRoutine = null;
+        }
+
+        if (_punchRoutine != null)
+        {
+            StopCoroutine(_punchRoutine);
+            _punchRoutine = null;
         }
 
         _resumePending = (_mode != Mode.Done);
@@ -954,6 +973,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
             _typingRoutine = null;
         }
 
+        if (_punchRoutine != null)
+        {
+            StopCoroutine(_punchRoutine);
+            _punchRoutine = null;
+        }
+
         _inputUnlocked = false;
         _advanceCooldownLeft = advanceCooldownSec;
 
@@ -964,6 +989,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 bodyText.enableAutoSizing = false;
                 bodyText.fontSize = GetBodyFontSize();
                 bodyText.text = full;
+                if (bodyText.rectTransform != null)
+                    bodyText.rectTransform.localScale = Vector3.one;
             }
             _isTyping = false;
             if (nextIndicator) nextIndicator.SetActive(true);
@@ -972,6 +999,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
 
         _typingRoutine = StartCoroutine(TypeLine(full));
+
+        // Boss_SaltKey_Lost의 Dialogue_004일 때만 두둥 이펙트 적용
+        TryPlayPunchEffectForKey(key);
     }
 
     private IEnumerator TypeLine(string fullText)
@@ -1044,6 +1074,57 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         _inputUnlocked = true;
         _advanceCooldownLeft = advanceCooldownSec;
+    }
+
+    // ===== Punch effect =====
+    private void TryPlayPunchEffectForKey(string key)
+    {
+        if (!enableBossSaltPunch) return;
+        if (bodyText == null || bodyText.rectTransform == null) return;
+
+        // Boss_SaltKey_Lost 이벤트의 Dialogue_004에서만 적용
+        if (!string.Equals(_eventName, "Boss_SaltKey_Lost", StringComparison.Ordinal)) return;
+        if (!string.Equals(key, "Dialogue_004", StringComparison.OrdinalIgnoreCase)) return;
+
+        if (_punchRoutine != null)
+        {
+            StopCoroutine(_punchRoutine);
+            _punchRoutine = null;
+        }
+
+        _punchRoutine = StartCoroutine(CoPunchBodyText());
+    }
+
+    private IEnumerator CoPunchBodyText()
+    {
+        var rt = bodyText != null ? bodyText.rectTransform : null;
+        if (rt == null)
+        {
+            _punchRoutine = null;
+            yield break;
+        }
+
+        Vector3 originalScale = Vector3.one;
+        rt.localScale = originalScale;
+
+        float duration = Mathf.Max(0.0001f, bossSaltPunchDuration);
+        float maxScale = Mathf.Max(1f, bossSaltPunchScale);
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / duration);
+
+            // 0 ~ 1 구간에서 부드럽게 올라갔다 내려오는 사인 곡선 사용
+            float s = 1f + Mathf.Sin(u * Mathf.PI) * (maxScale - 1f);
+
+            rt.localScale = new Vector3(s, s, 1f);
+            yield return null;
+        }
+
+        rt.localScale = originalScale;
+        _punchRoutine = null;
     }
 
     // ===== Canvas / choice root =====
@@ -1145,7 +1226,13 @@ public class DialogueRunnerStringTables : MonoBehaviour
         ReleaseAllButtons();
 
         SetSpeakerUI(false);
-        if (bodyText) { bodyText.text = ""; bodyText.ForceMeshUpdate(); }
+        if (bodyText)
+        {
+            bodyText.text = "";
+            bodyText.ForceMeshUpdate();
+            if (bodyText.rectTransform != null)
+                bodyText.rectTransform.localScale = Vector3.one;
+        }
 
         _mode = Mode.Done;
 
@@ -1156,6 +1243,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _inReChoice = false;
         _reRemainingOptions.Clear();
         _reChoiceN = -1;
+
+        if (_punchRoutine != null)
+        {
+            StopCoroutine(_punchRoutine);
+            _punchRoutine = null;
+        }
 
         OnDialogueEnd();
 
@@ -1275,6 +1368,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
                     bodyText.enableAutoSizing = false;
                     bodyText.fontSize = GetBodyFontSize();
                     bodyText.text = _currentFullText ?? "";
+                    if (bodyText.rectTransform != null)
+                        bodyText.rectTransform.localScale = Vector3.one;
                 }
                 _isTyping = false;
                 if (nextIndicator) nextIndicator.SetActive(true);
@@ -1302,6 +1397,12 @@ public class DialogueRunnerStringTables : MonoBehaviour
             _typingRoutine = null;
         }
 
+        if (_punchRoutine != null)
+        {
+            StopCoroutine(_punchRoutine);
+            _punchRoutine = null;
+        }
+
         _currentFullText = latestBody;
 
         if (retypeOnResume && isActiveAndEnabled)
@@ -1318,6 +1419,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 bodyText.enableAutoSizing = false;
                 bodyText.fontSize = GetBodyFontSize();
                 bodyText.text = _currentFullText;
+                if (bodyText.rectTransform != null)
+                    bodyText.rectTransform.localScale = Vector3.one;
             }
             _isTyping = false;
             _inputUnlocked = true;

@@ -274,7 +274,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 2
   m_Sprite: {fileID: -1069860751996309369, guid: 8805e94ac95963c4cbeba0d1151cf3a3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -8486,6 +8486,7 @@ GameObject:
   - component: {fileID: 813181091}
   - component: {fileID: 813181090}
   - component: {fileID: 813181092}
+  - component: {fileID: 813181093}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -8653,6 +8654,27 @@ MonoBehaviour:
   sfxMute: 0
   sfxPoolSize: 10
   sfxPoolHardLimit: 32
+--- !u!114 &813181093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 813181089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03f4becf35b833f40a95cd5513284608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MissionPanel
+  targetPanelImageName: MissionPanel
+  targetDetailTextName: MissionDetail
+  missionPanelImage: {fileID: 0}
+  missionDetailText: {fileID: 0}
+  missionRoot: {fileID: 0}
+  hideOnAwake: 1
+  missions:
+  - key: Boss_First_Calling
+    detailText: "\uBC16\uC73C\uB85C \uB098\uAC00\uC11C \n\uBC84\uC2A4\uB97C \uD0C0\uC790"
 --- !u!1 &878272164 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
@@ -12924,6 +12946,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5898765620428417160, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5979335648219102375, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6065586249727096225, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
@@ -27938,6 +27964,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1186580114}
     m_Modifications:
+    - target: {fileID: 3377513914089235619, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4163446674544961289, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12.18
