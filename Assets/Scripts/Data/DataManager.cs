@@ -86,6 +86,9 @@ public class PlayerData
     //다이어리 해금
     public bool DiaryOpen;
 
+    //소금이 집 해금
+    public bool Salt_House_Key;
+
     //메신저 상태
     public List<string> MessengerDelivered = new List<string>();
     public List<string> MessengerReadList = new List<string>();
@@ -133,6 +136,7 @@ public class PlayerData
         White_FriendShip = 0;
 
         DiaryOpen = false;
+        Salt_House_Key = false;
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();

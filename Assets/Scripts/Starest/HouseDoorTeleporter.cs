@@ -4,15 +4,10 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 // ─────────────────────────────────────────────────────────────
-// HouseDoorTeleporter (단일 파일 완결형, 레이캐스트 차단 제거 버전)
-//  - 인덱스 매칭 하우스 <-> 도어 이동
-//  - 태그=Door + 이름 매칭으로 Road/Starest/StarestCenter 전환
-//  - 페이드 인 → 좌표/루트/카메라 토글 → 페이드 아웃
-//  - Bus는 절대 비활성화하지 않음(요청 사항)
-//  - 내장 페이더 사용(GraphicRaycaster 미사용, Image.raycastTarget=false)
-//  - StarestCenter 활성/비활성 시 BGM 제어(키="Starest")
+// HouseDoorTeleporter (수정됨: 집 입장 시 미션 패널 즉시 비활성화 기능 추가)
 // ─────────────────────────────────────────────────────────────
 [DisallowMultipleComponent]
 public class HouseDoorTeleporter : MonoBehaviour
@@ -20,6 +15,10 @@ public class HouseDoorTeleporter : MonoBehaviour
     [Header("플레이어 참조(비우면 본 컴포넌트의 Transform)")]
     [SerializeField] private Transform playerTransform;
     private Rigidbody2D playerRb2D;
+
+    // PlayerMove 연동
+    [Header("플레이어 컨트롤 잠금용")]
+    [SerializeField] private PlayerMove playerMove;
 
     // ==========================
     // 인덱스 매칭 기반(기존 기능)
@@ -52,6 +51,33 @@ public class HouseDoorTeleporter : MonoBehaviour
 
     [SerializeField] private bool useRigidbodySnap = true;
     [SerializeField] private bool verboseLog = true;
+
+    // ─────────────────────────────────────────
+    // ★ [추가] 미션 패널 연동 설정
+    // ─────────────────────────────────────────
+    [Header("미션 패널 연동")]
+    [Tooltip("이 이름의 주인이 사는 집에 들어가면 미션 패널을 강제로 끕니다.")]
+    [SerializeField] private string hideMissionOnOwnerName = "Sol";
+
+    // ─────────────────────────────────────────
+    // Salt 집 잠금 설정
+    // ─────────────────────────────────────────
+    [Header("Salt 집 잠금 설정")]
+    [Tooltip("Salt 집 owner 이름 (ownerNames 배열 값과 일치해야 합니다)")]
+    [SerializeField] private string saltOwnerName = "Salt";
+
+    [Tooltip("Salt_House_Key 가 false일 때 띄울 Dialogue UI 패널 루트")]
+    [SerializeField] private GameObject saltDoorLockedPanel;
+
+    [Tooltip("잠금 안내 문구를 표시할 TextMeshProUGUI")]
+    [SerializeField] private TextMeshProUGUI saltDoorLockedText;
+
+    [Tooltip("문이 잠겨 있을 때 기본 안내 문구 (인스펙터에서 수정 가능)")]
+    [TextArea]
+    [SerializeField] private string saltDoorLockedMessage = "문이 잠겨 있다. 열쇠를 찾으러 가자.";
+
+    // 패널 활성 상태 추적
+    private bool saltLockedPanelActive = false;
 
     // ===========================================
     // Starest ↔ Road 전환(태그=Door, 이름 매칭)
@@ -193,10 +219,13 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (playerTransform == null) playerTransform = transform;
         playerRb2D = playerTransform.GetComponent<Rigidbody2D>();
 
+        if (playerMove == null)
+            playerMove = FindFirstObjectByType<PlayerMove>();
+
         EnsureOwnerFlagsSized();
         RebuildOwnerMap();
 
-        EnsureFadeOverlay(); // 내장 페이더 준비 (클릭 차단 제거)
+        EnsureFadeOverlay(); // 내장 페이더 준비
 
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -221,7 +250,6 @@ public class HouseDoorTeleporter : MonoBehaviour
             ClearAllFlags();
         }
 
-        // 씬이 갓 로드됐는데 StarestCenterRoot가 이미 켜져 있다면 BGM 상태를 맞춘다.
         if (starestCenterRoot)
         {
             if (starestCenterRoot.activeInHierarchy) SetCenterBgmActive(true);
@@ -231,11 +259,44 @@ public class HouseDoorTeleporter : MonoBehaviour
 
     private void Update()
     {
-        // 집과 겹칠 때 F로 입장(기존)
+        // 1) Salt 잠금 패널이 떠 있는 동안 입력을 감지해서 닫기
+        if (saltLockedPanelActive && saltDoorLockedPanel != null && saltDoorLockedPanel.activeSelf)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
+            {
+                saltDoorLockedPanel.SetActive(false);
+                saltLockedPanelActive = false;
+
+                if (playerMove != null)
+                    playerMove.SetControlEnabled(true);
+
+                if (verboseLog)
+                    Debug.Log("[Teleporter] Salt 잠금 패널 닫힘 → 플레이어 컨트롤 해제");
+            }
+
+            // 패널이 떠 있는 동안에는 더 이상 집 입장 처리하지 않음
+            return;
+        }
+
+        // 2) 집과 겹칠 때 F로 입장
         if (currentHouseIndex != -1 && IsIndexValid(currentHouseIndex))
         {
             if (houseActivationKey == KeyCode.None || Input.GetKeyDown(houseActivationKey))
             {
+                // Salt 집인지 먼저 확인
+                if (IsSaltHouseIndex(currentHouseIndex))
+                {
+                    bool hasSaltKey = GetPlayerBoolFlag("Salt_House_Key");
+
+                    if (!hasSaltKey)
+                    {
+                        ShowSaltHouseLockedDialogue();
+                        currentHouseIndex = -1;
+                        return;
+                    }
+                }
+
+                // 조건 통과 시 기존대로 집 입장
                 Sequence_HouseToDoor(currentHouseIndex);
                 currentHouseIndex = -1;
             }
@@ -350,8 +411,7 @@ public class HouseDoorTeleporter : MonoBehaviour
         return string.Equals(a?.Trim(), b?.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    // 공통 전환 코루틴:
-    // null → 그 항목은 상태 변경 안 함, true/false → 강제 설정
+    // 공통 전환 코루틴
     private System.Collections.IEnumerator Co_SwitchSet(
         Vector2 targetPos,
         bool? setRoadRoot,
@@ -364,10 +424,8 @@ public class HouseDoorTeleporter : MonoBehaviour
     {
         _isSwitchingByDoor = true;
 
-        // 0) 페이드 인(검은 화면)
         if (useDoorFade) yield return FadeTo(1f, Mathf.Max(0.01f, fadeInDuration));
 
-        // 1) 목적지 관련 활성화(켜야 하는 것들 먼저 켬)
         if (setRoadRoot.HasValue && setRoadRoot.Value && roadRoot && !roadRoot.activeSelf) roadRoot.SetActive(true);
         if (setStarestRoadRoot.HasValue && setStarestRoadRoot.Value && starestRoadRoot && !starestRoadRoot.activeSelf) starestRoadRoot.SetActive(true);
         if (setStarestCenterRoot.HasValue && setStarestCenterRoot.Value && starestCenterRoot && !starestCenterRoot.activeSelf) starestCenterRoot.SetActive(true);
@@ -376,24 +434,19 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (setStarestCamera.HasValue && setStarestCamera.Value && starestCamera && !starestCamera.activeSelf) starestCamera.SetActive(true);
         if (setPlayerCamera.HasValue && setPlayerCamera.Value && playerCameraRoot && !playerCameraRoot.activeSelf) playerCameraRoot.SetActive(true);
 
-        // ★ Bus는 절대 끄지 않음: on 지시일 때만 켠다
         if (ensureBusOn && busObject) { if (!busObject.activeSelf) busObject.SetActive(true); }
 
-        // ▶ BGM: StarestCenter 토글에 맞춰 제어
         if (setStarestCenterRoot.HasValue)
         {
             if (setStarestCenterRoot.Value) SetCenterBgmActive(true);
             else SetCenterBgmActive(false);
         }
 
-        // 2) 좌표 이동(물리 안전)
         SnapPlayer(new Vector3(targetPos.x, targetPos.y, playerTransform.position.z));
 
-        // 3) 동기화 여유
         yield return new WaitForFixedUpdate();
         yield return null;
 
-        // 4) 출발지 관련 비활성(꺼야 하는 것들 끔)
         if (setRoadRoot.HasValue && !setRoadRoot.Value && roadRoot) roadRoot.SetActive(false);
         if (setStarestRoadRoot.HasValue && !setStarestRoadRoot.Value && starestRoadRoot) starestRoadRoot.SetActive(false);
         if (setStarestCenterRoot.HasValue && !setStarestCenterRoot.Value && starestCenterRoot) starestCenterRoot.SetActive(false);
@@ -402,31 +455,71 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (setStarestCamera.HasValue && !setStarestCamera.Value && starestCamera) starestCamera.SetActive(false);
         if (setPlayerCamera.HasValue && !setPlayerCamera.Value && playerCameraRoot) playerCameraRoot.SetActive(false);
 
-        // 5) 페이드 아웃(바로 복귀)
         if (useDoorFade) yield return FadeTo(0f, Mathf.Max(0f, fadeOutDuration));
 
         _isSwitchingByDoor = false;
     }
 
-    // ───────── 기존 인덱스 기반 시퀀스 ─────────
+    // ───────── [수정됨] 집 입장 시 미션 패널을 "찾아서" 강제로 끄는 로직 추가 ─────────
     private void Sequence_HouseToDoor(int index)
     {
+        // 1. 다른 캐릭터 집 비활성화
         if (deactivateOtherCharacterHousesFirst)
         {
             for (int i = 0; i < characterHouses.Length; i++)
                 if (characterHouses[i] && characterHouses[i].activeSelf) characterHouses[i].SetActive(false);
         }
+
+        // 2. 해당 인덱스의 캐릭터 집 활성화
         if (index >= 0 && index < characterHouses.Length && characterHouses[index] && !characterHouses[index].activeSelf)
             characterHouses[index].SetActive(true);
 
+        // 3. 카메라/맵 정리
         if (cameraToDisable && cameraToDisable.activeSelf) cameraToDisable.SetActive(false);
 
         var map = GetMapToDisableOrNull(index);
         if (map && map.activeSelf) map.SetActive(false);
 
         SetCurrentOwner(index);
+
+        // ★ [핵심 수정] 미션 패널 강제 종료 (싱글톤 무시, 전체 검색)
+        // Sol 집(또는 지정된 집)에 들어갈 때 실행
+        if (!string.IsNullOrEmpty(CurrentOwnerName) &&
+            string.Equals(CurrentOwnerName, hideMissionOnOwnerName, StringComparison.OrdinalIgnoreCase))
+        {
+            // Instance가 꼬였을 수 있으므로, 씬에 있는 '모든' MissionPanel 컴포넌트를 다 찾습니다.
+            MissionPanel[] allPanels = FindObjectsByType<MissionPanel>(FindObjectsSortMode.None);
+
+            bool turnedOffAny = false;
+            foreach (var panel in allPanels)
+            {
+                // 켜져 있는 놈은 다 끕니다.
+                if (panel != null && panel.gameObject.activeSelf)
+                {
+                    panel.gameObject.SetActive(false);
+                    turnedOffAny = true;
+                }
+            }
+
+            // (비상용) 혹시 컴포넌트 없이 이름으로만 존재하는 경우를 대비해 GameObject 이름으로도 찾습니다.
+            GameObject objByName = GameObject.Find("MissionPanel"); // 이름이 정확해야 함
+            if (objByName != null && objByName.activeSelf)
+            {
+                objByName.SetActive(false);
+                turnedOffAny = true;
+            }
+
+            if (verboseLog)
+            {
+                if (turnedOffAny) Debug.Log($"[Teleporter] {CurrentOwnerName} 집 입장: 미션 패널을 찾아 강제로 껐습니다.");
+                else Debug.Log($"[Teleporter] {CurrentOwnerName} 집 입장: 켜져 있는 미션 패널이 발견되지 않았습니다.");
+            }
+        }
+
+        // 4. 플레이어 이동
         TeleportToDoorIndex(index);
 
+        // 5. 상태 플래그 갱신
         if (ShouldUseStarestFlags())
             SetState_OnEnterHouseByName(CurrentOwnerName);
     }
@@ -469,7 +562,6 @@ public class HouseDoorTeleporter : MonoBehaviour
             string owner = (index >= 0 && index < ownerNames.Length) ? ownerNames[index] : "";
             SetState_OnExitToVillageByName(owner);
 
-            // ★ Sol 집에서 마을로 나올 때 Boss_SaltKey_Lost 체크/실행
             OnExitHouseToVillage(owner);
         }
     }
@@ -496,7 +588,6 @@ public class HouseDoorTeleporter : MonoBehaviour
             Debug.LogWarning("[Teleporter] Boss_SaltKey_Lost 실행 실패 (NpcEventDebugLoader 참조 또는 JSON/이름 확인 필요)");
     }
 
-    // Sol_First_Meet == true 이고 Boss_SaltKey_Lost == false 인지 확인
     private bool IsBossSaltKeyLostConditionMet()
     {
         bool solFirstMeet = GetPlayerBoolFlag("Sol_First_Meet");
@@ -555,6 +646,41 @@ public class HouseDoorTeleporter : MonoBehaviour
         {
             p.SetValue(pd, value);
         }
+    }
+
+    // ───────── Salt 집 관련 유틸 ─────────
+    private bool IsSaltHouseIndex(int index)
+    {
+        if (string.IsNullOrWhiteSpace(saltOwnerName)) return false;
+        if (ownerNames == null || index < 0 || index >= ownerNames.Length) return false;
+
+        return string.Equals(ownerNames[index], saltOwnerName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ShowSaltHouseLockedDialogue()
+    {
+        if (saltDoorLockedPanel == null)
+        {
+            if (verboseLog) Debug.LogWarning("[Teleporter] Salt 집 잠금: Dialogue Panel이 지정되지 않았습니다.");
+            return;
+        }
+
+        if (saltDoorLockedText != null)
+        {
+            if (!string.IsNullOrEmpty(saltDoorLockedMessage))
+                saltDoorLockedText.text = saltDoorLockedMessage;
+        }
+
+        if (!saltDoorLockedPanel.activeSelf)
+            saltDoorLockedPanel.SetActive(true);
+
+        saltLockedPanelActive = true;
+
+        if (playerMove != null)
+            playerMove.SetControlEnabled(false);
+
+        if (verboseLog)
+            Debug.Log("[Teleporter] Salt_House_Key = false → 집 입장 차단, 잠금 안내 UI 표시, 플레이어 컨트롤 잠금");
     }
 
     // ───────── 유틸 ─────────
@@ -786,21 +912,19 @@ public class HouseDoorTeleporter : MonoBehaviour
     {
         if (!useDoorFade) return;
 
-        // 기존 Overlay를 지정받았으면 알파/설정만 정리
         if (fadeOverlay && fadeOverlay.gameObject)
         {
             var c = fadeOverlay.color; c.a = 0f; fadeOverlay.color = c;
-            fadeOverlay.raycastTarget = false; // 클릭 막지 않도록
+            fadeOverlay.raycastTarget = false;
             if (!fadeOverlay.gameObject.activeSelf) fadeOverlay.gameObject.SetActive(true);
             EnsureOverlayCanvasOnTop(fadeOverlay);
             return;
         }
 
-        // 자동 생성 (GraphicRaycaster 없이 생성)
         var canvasGo = new GameObject("[DoorFadeCanvas]", typeof(Canvas), typeof(CanvasScaler));
         var canvas = canvasGo.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = short.MaxValue; // 최상단
+        canvas.sortingOrder = short.MaxValue;
 
         var scaler = canvasGo.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -811,7 +935,7 @@ public class HouseDoorTeleporter : MonoBehaviour
 
         var img = imgGo.GetComponent<Image>();
         img.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0f);
-        img.raycastTarget = false; // 클릭 차단 금지
+        img.raycastTarget = false;
 
         var rt = img.GetComponent<RectTransform>();
         rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
@@ -857,7 +981,6 @@ public class HouseDoorTeleporter : MonoBehaviour
         fadeOverlay.color = target;
     }
 
-    // ───────── BGM 제어 유틸 ─────────
     private void SetCenterBgmActive(bool on)
     {
         if (SoundManager.Instance == null) return;

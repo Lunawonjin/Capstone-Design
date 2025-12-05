@@ -100,6 +100,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a25b35c9e872db84c99668b9085bad52
+    m_Address: Salt_First_Meet_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: af1e5a71e3c3a0346ba2be40d5dd8721
     m_Address: Salt's_Talk_Dialogue_en
     m_ReadOnly: 1
@@ -150,6 +156,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ca77824813c8c19418da18036ffaa92c
     m_Address: Sol_FinalGame_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d4bb08f30c4b0ea48a094f17b098235c
+    m_Address: Salt_First_Meet_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

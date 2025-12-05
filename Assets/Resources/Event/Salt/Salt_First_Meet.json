@@ -2,43 +2,137 @@
   "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
-  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
+
+  "player": {
+    "forceUsePlayerMoveSpeed": true,
+    "moveSpeed": 1.0
+  },
 
   "npcSpawns": [
-    { "npcName": "Salt",  "x": 33.0, "y": 19.0, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+    {
+      "npcName": "Salt",
+      "x": 30.7,
+      "y": 8.16131,
+      "z": 0.0,
+      "deactivateExisting": true,
+      "relativeToPlayer": false
+    }
+  ],
+
+  "preActions": [
   ],
 
   "steps": [
-    { "axis": "y", "delta": 1.5 }
+    { "axis": "y", "delta": 1.5 },
+    { "axis": "x", "delta": -1.0 }
   ],
 
   "afterPlayerActions": [
-    { "type": "npcMove", "npcName": "Boss", "dx": 0.0, "dy": -1.0, "duration": 1.0 },
-    { "type": "dialogue", "owner": "Salt", "eventName": "Salt_First_Meet" }
+    {
+      "type": "npcMove",
+      "npcName": "Salt",
+      "dx": 0.0,
+      "dy": 0.7,
+      "duration": 0.15
+    },
+    {
+      "type": "npcMove",
+      "npcName": "Salt",
+      "dx": 0.0,
+      "dy": -0.7,
+      "duration": 0.12
+    },
+
+    {
+      "type": "npcMove",
+      "npcName": "Salt",
+      "dx": 0.0,
+      "dy": 1.33869,
+      "duration": 0.5
+    },
+    {
+      "type": "npcMove",
+      "npcName": "Salt",
+      "dx": 5.2,
+      "dy": 0.0,
+      "duration": 0.5
+    },
+    {
+      "type": "npcMove",
+      "npcName": "Salt",
+      "dx": 0.0,
+      "dy": 1.8,
+      "duration": 0.5
+    },
+
+    {
+      "type": "npcShake",
+      "npcName": "Salt",
+      "amplitude": 0.15,
+      "frequency": 18.0,
+      "loop": true
+    },
+
+    {
+      "type": "playerMove",
+      "axis": "y",
+      "delta": 2.5,
+      "duration": 1.2
+    },
+
+    {
+      "type": "dialogue",
+      "owner": "Salt",
+      "eventName": "Salt_First_Meet"
+    }
   ],
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_005",
+      "onKey": "Dialogue_001",
       "actions": [
-        { "type": "dialoguePanelActive", "active": false },
-        { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },
-        { "type": "npcMove", "npcName": "Boss", "dx": 0.0,  "dy": -3.0 },
-        { "type": "npcSetActive", "npcName": "Boss", "active": false },
-        { "type": "npcMove", "npcName": "Sol", "dx": 0.0,  "dy": -1.0 },
-        { "type": "dialoguePanelRestoreNow" }
+        {
+          "type": "playerMove",
+          "axis": "x",
+          "delta": 2.9,
+          "duration": 1.2
+        }
       ]
     },
 
-    { "onKey": "Dialogue_Choice3_A2_001",
+    {
+      "onKey": "Dialogue_002",
       "actions": [
-        { "type": "affinityDown", "dataName": "Sol_FriendShip", "delta": -1, "clamp": true, "min": -100, "max": 100 }
-      ]
-    },
-
-    { "onKey": "Dialogue_Choice3_Same_001",
-      "actions": [
-        { "type": "affinityUp", "dataName": "Sol_FriendShip", "delta": 1, "clamp": true, "min": -100, "max": 100 }
+        {
+          "type": "npcShakeStop",
+          "npcName": "Salt"
+        },
+        {
+          "type": "npcMove",
+          "npcName": "Salt",
+          "dx": 0.0,
+          "dy": -0.6,
+          "duration": 0.4
+        },
+        {
+          "type": "npcMove",
+          "npcName": "Salt",
+          "dx": -1.9,
+          "dy": 0.0,
+          "duration": 0.5
+        },
+        {
+          "type": "npcMove",
+          "npcName": "Salt",
+          "dx": 0.0,
+          "dy": -4.8,
+          "duration": 0.7
+        },
+        {
+          "type": "npcSetActive",
+          "npcName": "Salt",
+          "active": false
+        }
       ]
     }
   ]

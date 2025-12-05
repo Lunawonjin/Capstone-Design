@@ -7,7 +7,7 @@ using UnityEngine;
 public class SyringePoolShooter : MonoBehaviour
 {
     [Header("연결")]
-    [Tooltip("플레이어 이동 스크립트 (방향 제어용)")]
+    [Tooltip("플레이어 이동/방향 제어 스크립트")]
     [SerializeField] private PlayerMover playerMover;
     [SerializeField] private GameOverUIManager gameOverManager;
 
@@ -19,16 +19,36 @@ public class SyringePoolShooter : MonoBehaviour
     [SerializeField] private Color hitColor = Color.red;
     [SerializeField] private float hitDuration = 0.1f;
 
-    [Header("발사 설정")]
-    [SerializeField] private float fireCooldown = 1.0f;
+    [Header("발사 공통 설정")]
+    [SerializeField] private float fireCooldown = 0.5f;
     [Tooltip("애니메이션 시작 후 발사체가 나갈 때까지의 지연 시간")]
-    [SerializeField] private float projectileLaunchDelay = 0.5f; // ★ 추가된 지연 시간 변수
+    [SerializeField] private float projectileLaunchDelay = 0.2f;
     [SerializeField] private KeyCode fireKey = KeyCode.Mouse0;
     [SerializeField] private Transform firePoint;
 
     [Header("풀 설정")]
     [SerializeField] private SyringeProjectile projectilePrefab;
     [SerializeField] private int poolSize = 10;
+
+    [Header("기본 샷 설정")]
+    [Tooltip("기본 샷 이동 속도 (멀리 날아가게 하려면 값을 키우면 됨)")]
+    [SerializeField] private float normalSpeed = 14f;      // 이전보다 조금 빠르게
+    [Tooltip("기본 샷에 적용되는 중력 (포물선 궤적)")]
+    [SerializeField] private float normalGravity = 9.8f;
+    [Tooltip("기본 샷 데미지")]
+    [SerializeField] private int normalDamage = 1;
+
+    [Header("차지 샷 설정")]
+    [Tooltip("이 시간 이상 키를 누르고 있으면 차지 샷 발사")]
+    [SerializeField] private float chargeTime = 1.0f;
+    [Tooltip("차지 샷 이동 속도 (직선, 빠르게)")]
+    [SerializeField] private float chargedSpeed = 22f;
+    [Tooltip("차지 샷 중력 (0이면 완전 직선)")]
+    [SerializeField] private float chargedGravity = 0f;
+    [Tooltip("차지 샷 데미지 (한 번 맞으면 3회 피격 판정)")]
+    [SerializeField] private int chargedDamage = 3;
+    [Tooltip("차지 샷이 관통할 수 있는 최대 적 수")]
+    [SerializeField] private int chargedPierceCount = 2;
 
     [Header("공격 애니메이션")]
     [SerializeField] private Animator attackAnimator;
@@ -38,14 +58,23 @@ public class SyringePoolShooter : MonoBehaviour
     private readonly List<SyringeProjectile> pool = new List<SyringeProjectile>();
     private float fireTimer = 0f;
     private bool shootingEnabled = false;
+
+    // 애니메이션 제어
     private bool attackPlaying = false;
     private float attackTimer = 0f;
+
+    // 차지 샷 제어
+    private bool isCharging = false;
+    private float chargeTimer = 0f;
 
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private Coroutine hitRoutine;
 
-    public void SetShootingEnabled(bool enabled) { shootingEnabled = enabled; }
+    public void SetShootingEnabled(bool enabled)
+    {
+        shootingEnabled = enabled;
+    }
 
     void Awake()
     {
@@ -66,7 +95,9 @@ public class SyringePoolShooter : MonoBehaviour
                 pool.Add(proj);
             }
         }
+
         if (attackAnimator == null) attackAnimator = GetComponentInParent<Animator>();
+
         shootingEnabled = false;
     }
 
@@ -76,12 +107,10 @@ public class SyringePoolShooter : MonoBehaviour
 
         fireTimer += Time.deltaTime;
 
-        // 애니메이션 재생 중 PlayerMover 제어 관리
+        // 공격 애니메이션 구간 동안 PlayerMover 애니 제어
         if (attackPlaying)
         {
             attackTimer += Time.deltaTime;
-            // attackDuration은 플레이어 움직임을 멈추는 용도로 사용됨
-            // 실제 발사와는 별개로 동작
             if (attackTimer >= attackDuration)
             {
                 attackPlaying = false;
@@ -90,6 +119,7 @@ public class SyringePoolShooter : MonoBehaviour
             }
         }
 
+        // 디버그용: 0번 키로 즉사
         if (Input.GetKeyDown(KeyCode.Alpha0))
         {
             OnDamage(currentHp, "Boss");
@@ -98,59 +128,94 @@ public class SyringePoolShooter : MonoBehaviour
 
         if (!shootingEnabled) return;
 
-        // 쿨타임 체크 후 발사 시퀀스 시작
-        if (Input.GetKeyDown(fireKey) && fireTimer >= fireCooldown)
+        // 차지 시작/유지
+        if (Input.GetKey(fireKey))
         {
-            StartCoroutine(CoFireSequence());
+            isCharging = true;
+            chargeTimer += Time.deltaTime;
+        }
+
+        // 키 뗐을 때 발사
+        if (Input.GetKeyUp(fireKey) && fireTimer >= fireCooldown)
+        {
+            bool isChargedShot = isCharging && chargeTimer >= chargeTime;
+
+            Vector3 mousePosWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 dir = mousePosWorld - transform.position;
+            if (dir.sqrMagnitude < 1e-6f) dir = Vector2.right;
+            dir.Normalize();
+
+            StartCoroutine(CoFireSequence(dir, isChargedShot));
+
+            fireTimer = 0f;
+            isCharging = false;
+            chargeTimer = 0f;
         }
     }
 
-    // ★ 발사 시퀀스 코루틴: 애니메이션 -> 대기 -> 발사체 생성
-    private IEnumerator CoFireSequence()
+    // 공격 시퀀스: 방향/차지 여부 전달
+    private IEnumerator CoFireSequence(Vector2 dir, bool isChargedShot)
     {
-        // 1. 쿨타임 초기화
-        fireTimer = 0f;
-
-        // 2. 마우스 방향 계산 (클릭 시점 기준)
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 dir = (mousePos - transform.position).normalized;
-
-        // 3. 플레이어 방향 전환
+        // 방향 맞추기
         if (playerMover != null)
         {
             playerMover.SetFaceDirection(dir);
         }
 
-        // 4. 애니메이션 재생 (즉시)
+        // 공격 애니메이션
         PlayAttackAnimation();
 
-        // 5. 설정된 시간(0.5초) 만큼 대기
+        // 발사체 나가기 전까지 딜레이
         yield return new WaitForSeconds(projectileLaunchDelay);
 
-        // 대기 중에 죽었으면 발사하지 않음
+        // 그 사이 죽었으면 발사 안 함
         if (currentHp <= 0) yield break;
 
-        // 6. 실제 발사체 생성 및 날리기
-        LaunchProjectile(dir);
+        LaunchProjectile(dir, isChargedShot);
     }
 
-    // 실제 발사체를 날리는 로직 분리
-    private void LaunchProjectile(Vector2 dir)
+    private void LaunchProjectile(Vector2 dir, bool isChargedShot)
     {
         SyringeProjectile proj = GetFromPool();
         if (proj == null) return;
 
         proj.transform.position = firePoint.position;
         proj.gameObject.SetActive(true);
-        proj.Launch(dir);
+
+        if (isChargedShot)
+        {
+            // 차지 샷: 직선, 빠른 속도, 관통 2회, 데미지 3
+            proj.Launch(
+                dir,
+                chargedSpeed,
+                chargedGravity,
+                chargedDamage,
+                true,
+                chargedPierceCount
+            );
+        }
+        else
+        {
+            // 기본 샷: 포물선, 조금 더 멀리 날아가도록 속도↑
+            proj.Launch(
+                dir,
+                normalSpeed,
+                normalGravity,
+                normalDamage,
+                false,
+                0
+            );
+        }
     }
 
     public void OnDamage(int damageAmount, string attackerTag = "Unknown")
     {
         if (currentHp <= 0) return;
         currentHp -= damageAmount;
+
         if (hitRoutine != null) StopCoroutine(hitRoutine);
         hitRoutine = StartCoroutine(HitFlash());
+
         if (currentHp <= 0) Die(attackerTag);
     }
 
@@ -167,8 +232,10 @@ public class SyringePoolShooter : MonoBehaviour
         currentHp = 0;
         shootingEnabled = false;
         if (spriteRenderer != null) spriteRenderer.enabled = false;
+
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
+
         if (gameOverManager != null) gameOverManager.ShowDeadUI(killerTag);
     }
 
@@ -176,12 +243,10 @@ public class SyringePoolShooter : MonoBehaviour
     {
         if (attackAnimator == null) return;
 
-        // PlayerMover에게 애니메이션 제어권 가져옴
         if (playerMover != null) playerMover.SetAnimationOverride(true);
 
         if (!attackAnimator.enabled) attackAnimator.enabled = true;
 
-        // 애니메이션 강제 처음부터 재생 (한 번만 나가게 함)
         if (!string.IsNullOrEmpty(attackStateName))
         {
             attackAnimator.Play(attackStateName, -1, 0f);
@@ -194,7 +259,11 @@ public class SyringePoolShooter : MonoBehaviour
 
     private SyringeProjectile GetFromPool()
     {
-        foreach (var p in pool) if (!p.gameObject.activeInHierarchy) return p;
+        foreach (var p in pool)
+        {
+            if (!p.gameObject.activeInHierarchy) return p;
+        }
+
         if (projectilePrefab != null)
         {
             SyringeProjectile extra = Instantiate(projectilePrefab, transform);

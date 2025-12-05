@@ -887,7 +887,7 @@ MonoBehaviour:
   currentHp: 0
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitDuration: 0.1
-  fireCooldown: 1
+  fireCooldown: 0.8
   projectileLaunchDelay: 0.5
   fireKey: 323
   firePoint: {fileID: 220807422}
