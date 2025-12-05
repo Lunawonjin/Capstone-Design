@@ -40,7 +40,6 @@ public class SolsFinalGameEnemy : MonoBehaviour
     [SerializeField] private Color hitColor = Color.red;
     [SerializeField] private float hitColorDuration = 0.1f;
 
-    // 보스 전용 변수
     [Header("Boss Jump Settings")]
     [SerializeField] private float bossRiseSpeed = 15.0f;
     [SerializeField] private float bossStompWaitTime = 3.0f;
@@ -107,7 +106,11 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
         if (rb != null)
         {
+#if UNITY_2022_2_OR_NEWER
             rb.linearVelocity = Vector2.zero;
+#else
+            rb.velocity = Vector2.zero;
+#endif
             rb.angularVelocity = 0f;
             rb.gravityScale = 0f;
         }
@@ -217,7 +220,16 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
     private void MoveRigidbody(float dt)
     {
-        if (isBoss || !canMove) { rb.linearVelocity = Vector2.zero; return; }
+        if (isBoss || !canMove)
+        {
+#if UNITY_2022_2_OR_NEWER
+            rb.linearVelocity = Vector2.zero;
+#else
+            rb.velocity = Vector2.zero;
+#endif
+            return;
+        }
+
         Vector2 p = rb.position;
         p.x -= xSpeed * dt;
         p.y += ySpeed * yDir * dt;
@@ -228,7 +240,7 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
     private void PlayLandingEffect()
     {
-        Debug.Log("보스 착지! 쿠궁!");
+        Debug.Log("보스 착지 연출");
         if (audioSource != null && landSound != null) audioSource.PlayOneShot(landSound);
         if (Camera.main != null) StartCoroutine(CameraShakeRoutine(Camera.main.transform, landShakeDuration, landShakeMagnitude));
     }
@@ -249,15 +261,34 @@ public class SolsFinalGameEnemy : MonoBehaviour
     }
 
     public void Activate() { isActive = true; }
-    public void Deactivate() { isActive = false; if (rb != null) rb.linearVelocity = Vector2.zero; }
 
+    public void Deactivate()
+    {
+        isActive = false;
+        if (rb != null)
+        {
+#if UNITY_2022_2_OR_NEWER
+            rb.linearVelocity = Vector2.zero;
+#else
+            rb.velocity = Vector2.zero;
+#endif
+        }
+    }
+
+    // 기존 호출용: 데미지 1 고정
     public void TakeHit(Vector2 hitPosition)
     {
-        currentHits++;
-        int currentHp = hitsToDie - currentHits;
+        TakeHit(hitPosition, 1);
+    }
 
-        // [추가됨] 보스 체력 로그 출력
-        Debug.Log($"<color=yellow>보스 피격! 남은 체력: {currentHp} / {hitsToDie}</color>");
+    // 새 버전: 데미지 가중치 적용
+    public void TakeHit(Vector2 hitPosition, int damage)
+    {
+        int add = Mathf.Max(1, damage); // 최소 1
+        currentHits += add;
+
+        int currentHp = hitsToDie - currentHits;
+        Debug.Log($"보스 피격! 남은 체력: {currentHp} / {hitsToDie} (이번 피해량: {add})");
 
         if (anim != null) anim.SetTrigger("Hit");
 
@@ -276,7 +307,7 @@ public class SolsFinalGameEnemy : MonoBehaviour
     private IEnumerator Phase2SummonRoutine()
     {
         isPhase2Active = true;
-        Debug.Log("⚠️ 보스 페이즈 2 시작! 소환 패턴 발동!");
+        Debug.Log("보스 페이즈 2 시작, 소환 패턴 발동");
         while (isActive && currentHits < hitsToDie)
         {
             if (minionPrefab != null)
@@ -288,7 +319,7 @@ public class SolsFinalGameEnemy : MonoBehaviour
                     Vector3 spawnPos = new Vector3(randomX, spawnY, 0);
                     Instantiate(minionPrefab, spawnPos, Quaternion.identity);
                 }
-                Debug.Log($"쫄병 {summonCount}마리 소환됨!");
+                Debug.Log($"쫄병 {summonCount}마리 소환됨");
             }
             yield return new WaitForSeconds(summonInterval);
         }
@@ -328,7 +359,14 @@ public class SolsFinalGameEnemy : MonoBehaviour
     private IEnumerator DieWithDelay()
     {
         isActive = false;
-        if (rb != null) rb.linearVelocity = Vector2.zero;
+        if (rb != null)
+        {
+#if UNITY_2022_2_OR_NEWER
+            rb.linearVelocity = Vector2.zero;
+#else
+            rb.velocity = Vector2.zero;
+#endif
+        }
         yield return new WaitForSeconds(0.5f);
         gameObject.SetActive(false);
     }

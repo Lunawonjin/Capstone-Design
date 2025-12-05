@@ -40,9 +40,12 @@ public class MissionPanel : MonoBehaviour
     private Dictionary<string, MissionEntry> missionMap;
     public static MissionPanel Instance { get; private set; }
 
-    // ★ 상태 저장용 변수 추가 (씬이 바뀌어도 값을 기억하기 위해)
+    // ★ 상태 저장용 변수
     private string _currentMissionText = "";
     private bool _isPanelActive = false;
+
+    // ★ [추가] 1회용 이벤트 체크 변수 ("은하마을로 가보자" 트리거용)
+    private bool _hasTriggeredStarestMission = false;
 
     private void Awake()
     {
@@ -64,7 +67,6 @@ public class MissionPanel : MonoBehaviour
         }
         else
         {
-            // ★ 초기 상태 동기화
             _isPanelActive = true;
         }
     }
@@ -84,7 +86,23 @@ public class MissionPanel : MonoBehaviour
         // 1. 새로운 씬의 UI를 찾아서 연결
         TryAutoBindUI();
 
-        // 2. ★ 중요: 저장해뒀던 상태(텍스트, 활성여부)를 새로운 UI에 강제 적용
+        // ---------------------------------------------------------
+        // ★ [추가] 1회용 로직: 씬 이름이 "Starest"이고, 아직 실행된 적 없다면
+        // ---------------------------------------------------------
+        if (scene.name == "Starest" && !_hasTriggeredStarestMission)
+        {
+            // 텍스트 내용 변경
+            _currentMissionText = "은하마을로 가보자";
+
+            // 1회용이므로 플래그를 true로 변경하여 중복 실행 방지
+            _hasTriggeredStarestMission = true;
+
+            // 필요하다면 여기서 패널을 강제로 켤 수도 있습니다. (선택사항)
+            // _isPanelActive = true; 
+        }
+        // ---------------------------------------------------------
+
+        // 2. 저장해뒀던(혹은 방금 변경한) 상태를 새로운 UI에 강제 적용
         RestoreState();
     }
 
@@ -98,7 +116,6 @@ public class MissionPanel : MonoBehaviour
         }
 
         // 활성/비활성 상태 복구
-        // 단순히 SetActive만 부르면 내부 변수가 꼬일 수 있으므로 UI 컴포넌트만 직접 제어
         if (missionRoot != null) missionRoot.SetActive(_isPanelActive);
         else if (missionPanelImage != null) missionPanelImage.gameObject.SetActive(_isPanelActive);
         else if (missionDetailText != null) missionDetailText.gameObject.SetActive(_isPanelActive);

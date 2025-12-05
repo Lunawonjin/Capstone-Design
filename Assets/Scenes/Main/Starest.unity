@@ -7672,6 +7672,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6215032474290790748, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6518350068818649051, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -7687,6 +7691,14 @@ PrefabInstance:
     - target: {fileID: 8902041053661530796, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9076021452020556119, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 9076021452020556119, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9208901449072354737, guid: fb485dd0ca3426d4c842a4dfcd3a8667, type: 3}
       propertyPath: m_IsActive
@@ -8519,9 +8531,10 @@ GameObject:
   - component: {fileID: 327053439}
   - component: {fileID: 327053441}
   - component: {fileID: 327053440}
+  - component: {fileID: 327053442}
   m_Layer: 0
   m_Name: Key
-  m_TagString: Untagged
+  m_TagString: Door
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8571,11 +8584,11 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.047301352}
+  m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -8585,7 +8598,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.6, y: 1.1369399}
+  m_Size: {x: 3, y: 2}
   m_EdgeRadius: 0
 --- !u!212 &327053441
 SpriteRenderer:
@@ -8633,7 +8646,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: -105049869037762682, guid: 7b8756c770bfb9f469b99adcfdb4ce74, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -8645,6 +8658,21 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &327053442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327053438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7439a4703fb0c842a399cd03bf47dd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SaltHouseKeyPickup
+  playerTag: Player
+  interactKey: 102
+  pressKeyUI: {fileID: 0}
 --- !u!1 &350414476
 GameObject:
   m_ObjectHideFlags: 0
@@ -18674,13 +18702,16 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!65 &417964760
-BoxCollider:
+--- !u!61 &417964760
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 417964755}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -18689,12 +18720,34 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2.75969, y: 0.834048, z: 0.2}
-  m_Center: {x: -0.0054661436, y: -0.9566002, z: 0}
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0.0036709309, y: -1.0863929}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 3.5125, y: 3.6375}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 2.0048585, y: 1.1743368}
+  m_EdgeRadius: 0
 --- !u!1 &424056536
 GameObject:
   m_ObjectHideFlags: 0
@@ -21226,6 +21279,16 @@ MonoBehaviour:
   bossEventName: Starest_First_Visit
   specialObjectToActivate: {fileID: 1150108857}
   specialObjectShowDuration: 0.5
+  missionTriggers:
+  - eventName: Starest_First_Visit
+    missionText: "\uC138\uB85C\uB97C \uB530\uB77C\uAC00 \uBD84\uD64D\uC0C9\n\uC194\uC774
+      \uC9D1\uC5D0 \uB4E4\uC5B4\uAC00\uC790"
+  - eventName: Boss_SaltKey_Lost
+    missionText: "\uB9C8\uC744\uC744 \uB3CC\uC544\uB2E4\uB2C8\uBA70 \uC5F4\uC1E0\uB97C
+      \uCC3E\uC790"
+  - eventName: Sol_First_Meet
+    missionText: 
+  hideMissionOnHouseOwner: Sol
   starestCenterRoot: {fileID: 1190056252}
   runFirstVisitWhenStarestCenterActivates: 1
 --- !u!114 &645547100
@@ -22237,11 +22300,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.5
+      value: 9.46
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 12
+      value: 15.391
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.z
@@ -22440,6 +22503,7 @@ GameObject:
   m_Component:
   - component: {fileID: 726983049}
   - component: {fileID: 726983048}
+  - component: {fileID: 726983050}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -22490,6 +22554,7 @@ MonoBehaviour:
     Ryu_FriendShip: 0
     White_FriendShip: 0
     DiaryOpen: 0
+    Salt_House_Key: 0
     MessengerDelivered: []
     MessengerReadList: []
     ActiveSceneName: 
@@ -22583,6 +22648,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &726983050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726983047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03f4becf35b833f40a95cd5513284608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MissionPanel
+  targetPanelImageName: MissionPanel
+  targetDetailTextName: MissionDetail
+  missionPanelImage: {fileID: 0}
+  missionDetailText: {fileID: 0}
+  missionRoot: {fileID: 0}
+  hideOnAwake: 1
+  missions: []
 --- !u!1 &735952349
 GameObject:
   m_ObjectHideFlags: 0
@@ -23208,6 +23292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HouseDoorTeleporter
   playerTransform: {fileID: 889705227}
+  playerMove: {fileID: 0}
   houses:
   - {fileID: 1402272197}
   - {fileID: 417964755}
@@ -23237,7 +23322,7 @@ MonoBehaviour:
   - {x: 0, y: 0.7}
   houseReturnOffsets:
   - {x: 0, y: -0.5}
-  - {x: 0, y: -0.5}
+  - {x: 0, y: -1.5}
   - {x: 0, y: -0.5}
   - {x: 0, y: -0.5}
   cameraToDisable: {fileID: 0}
@@ -23246,6 +23331,12 @@ MonoBehaviour:
   doorReturnKey: 115
   useRigidbodySnap: 0
   verboseLog: 1
+  hideMissionOnOwnerName: Sol
+  saltOwnerName: Salt
+  saltDoorLockedPanel: {fileID: 61904102}
+  saltDoorLockedText: {fileID: 427889967}
+  saltDoorLockedMessage: "\uBB38\uC774 \uC7A0\uACA8 \uC788\uB2E4. \uC5F4\uC1E0\uB97C
+    \uCC3E\uC73C\uB7EC \uAC00\uC790."
   roadRoot: {fileID: 1751717581}
   starestRoadRoot: {fileID: 2044017009}
   busObject: {fileID: 170945631}
@@ -23563,6 +23654,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 666888511}
+  - {fileID: 1723196880}
   - {fileID: 258513219}
   - {fileID: 152375492}
   - {fileID: 1922017511}
@@ -27454,11 +27546,11 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.000000059604645, y: -0.06944308}
+  m_Offset: {x: -0.000000059604645, y: -0.19242829}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -27468,7 +27560,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.74611795, y: 0.96257776}
+  m_Size: {x: 0.74611795, y: 1.2085481}
   m_EdgeRadius: 0
 --- !u!212 &1466858930
 SpriteRenderer:
@@ -29870,6 +29962,11 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!4 &1723196880 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+  m_PrefabInstance: {fileID: 1726457802}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1723975803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30503,6 +30600,67 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3247807206644763578, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
   m_PrefabInstance: {fileID: 1723975803}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1726457802
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 988804744}
+    m_Modifications:
+    - target: {fileID: 5980299466681931656, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_Name
+      value: Salt (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 5980299466681931656, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 34
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 5.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8740062842705991555, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4f0ad4443931b824db2634e549db468f, type: 3}
 --- !u!1 &1735187115
 GameObject:
   m_ObjectHideFlags: 0
@@ -32445,6 +32603,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6047474900357910673, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_text
+      value: "\uBBF8 \uC158"
+      objectReference: {fileID: 0}
     - target: {fileID: 6393498565044971116, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -32943,6 +33105,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1907306375}
   - component: {fileID: 1907306374}
+  - component: {fileID: 1907306376}
   m_Layer: 0
   m_Name: "\uC18C\uAE08\uC774 \uBCBD\uB09C\uB85C_0"
   m_TagString: Untagged
@@ -33017,12 +33180,58 @@ Transform:
   m_GameObject: {fileID: 1907306373}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.49, y: 1.01, z: 9.893078}
+  m_LocalPosition: {x: 4.3, y: 1.5, z: 9.893078}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2024297844}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &1907306376
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907306373}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 2, y: 3}
+    newSize: {x: 3.2, y: 4.8}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 2, y: 3}
+  m_EdgeRadius: 0
 --- !u!1 &1910194241
 GameObject:
   m_ObjectHideFlags: 0
@@ -35068,6 +35277,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HouseDoorTeleporter
   playerTransform: {fileID: 2113234089}
+  playerMove: {fileID: 0}
   houses:
   - {fileID: 1402272197}
   - {fileID: 417964755}
@@ -35106,6 +35316,12 @@ MonoBehaviour:
   doorReturnKey: 115
   useRigidbodySnap: 0
   verboseLog: 1
+  hideMissionOnOwnerName: Sol
+  saltOwnerName: Salt
+  saltDoorLockedPanel: {fileID: 0}
+  saltDoorLockedText: {fileID: 0}
+  saltDoorLockedMessage: "\uBB38\uC774 \uC7A0\uACA8 \uC788\uB2E4. \uC5F4\uC1E0\uB97C
+    \uCC3E\uC73C\uB7EC \uAC00\uC790."
   roadRoot: {fileID: 1751717581}
   starestRoadRoot: {fileID: 2044017009}
   busObject: {fileID: 170945631}

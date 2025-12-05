@@ -63,6 +63,12 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5f5f22fb65f9a1f4eb0e3955a8ec7382
+    m_Address: Assets/Localization/Dialogue/Salt/Salt_First_Meet_Dialogue Shared
+      Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6b756e10fafc51c42a1784b8768b4145
     m_Address: Assets/Localization/Dialogue/Sol/Dialogue/Sol_Second_Meet_Dialogue
       Shared Data.asset
@@ -100,6 +106,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 986d28bc8e3e2b84385e904f752db2bf
     m_Address: Assets/Localization/Calling/Boss/Boss_First_Calling Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a42e1e1aa3d06b24d99a1128e91bc2dc
+    m_Address: Assets/Localization/Dialogue/Salt/Speaker/Salt_First_Meet_Speaker
+      Shared Data.asset
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
