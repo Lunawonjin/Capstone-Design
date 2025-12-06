@@ -462,7 +462,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundVolumeSlider
   volumeType: 0
-  updateOnStart: 1
 --- !u!114 &107169190
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4970,11 +4969,14 @@ MonoBehaviour:
     Salt_First_Meet: 0
     Ryu_First_Meet: 0
     White_First_Meet: 0
+    Sol_Second_Meet: 0
+    Boss_SaltKey_Lost: 0
     Sol_FriendShip: 0
     Salt_FriendShip: 0
     Ryu_FriendShip: 0
     White_FriendShip: 0
     DiaryOpen: 0
+    Salt_House_Key: 0
     MessengerDelivered: []
     MessengerReadList: []
     ActiveSceneName: 
@@ -5153,7 +5155,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundVolumeSlider
   volumeType: 1
-  updateOnStart: 1
 --- !u!114 &1496322664
 MonoBehaviour:
   m_ObjectHideFlags: 0
