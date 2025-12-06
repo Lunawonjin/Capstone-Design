@@ -27,62 +27,62 @@ MonoBehaviour:
       \uB108\uBB34 \uC218\uACE0 \uB9CE\uC558\uC5B4!!"
     m_Metadata:
       m_Items: []
-  - m_Id: 660463226916865
-    m_Localized: "\uC544\uB2C8\uC5D0\uC694! \uC194\uC774\uB97C \uB9CC\uB098\uC11C
-      \uC88B\uC558\uC5B4\uC694."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 660463226916875
-    m_Localized: "\uADF8\uB7FC {playerName}. \uC55E\uC73C\uB85C \uD30C\uC774\uD305\uC774\uC57C~!!"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218249703424
-    m_Localized: "\uC774\uC81C \uBB58 \uD558\uBA74 \uB420\uAE4C\uC694?"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646464
-    m_Localized: "\uC624\uB298\uC740 \uBB34\uB9AC\uD558\uC9C0 \uB9D0\uACE0, \uB9C8\uC744\uC744
-      \uCC9C\uCC9C\uD788 \uD55C \uBC14\uD034 \uB3CC\uC544\uBD10."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646465
-    m_Localized: "\uADF8\uB7EC\uBA74\uC11C \uB2E4\uB978 \uC601\uD63C\uB4E4\uACFC\uB3C4
-      \uAC00\uBCCD\uAC8C \uC548\uBD80 \uB098\uB204\uB294\uAC83\uB3C4 \uC88B\uC544~"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646466
-    m_Localized: "\uAD81\uAE08\uD55C\uAC70 \uC788\uC744\uAE4C?"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646467
-    m_Localized: "\uC5EC\uAE34 \uC5B4\uB5A4 \uACF3\uC774\uC5D0\uC694?"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646468
-    m_Localized: "\uAD1C\uCC2E\uC544\uC694."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646469
-    m_Localized: "\uC774\uACF3\uC740 \uC0C1\uCC98 \uBC1B\uC740 \uC601\uD63C\uB4E4\uC774
-      \uC0B4\uC544\uAC00\uB294 \uB9C8\uC744\uC774\uC57C."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 750218291646470
-    m_Localized: "\uC774 \uBD88\uC30D\uD55C \uC601\uD63C\uB4E4\uC744 \uCE58\uC720\uD558\uB294\uAC8C
-      \uB108\uC758 \uC77C\uC774\uC57C."
-    m_Metadata:
-      m_Items: []
   - m_Id: 750218291646471
     m_Localized: "\uADF8\uB798."
     m_Metadata:
       m_Items: []
-  - m_Id: 750218291646472
+  - m_Id: 3211298272120832
+    m_Localized: "\uC624\uB298\uC740 \uBB34\uB9AC\uD558\uC9C0 \uB9D0\uACE0, \uB9C8\uC744\uC744
+      \uCC9C\uCC9C\uD788 \uD55C \uBC14\uD034 \uB3CC\uC544\uBD10."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315136
+    m_Localized: "\uADF8\uB7EC\uBA74\uC11C \uB2E4\uB978 \uC601\uD63C\uB4E4\uACFC\uB3C4
+      \uAC00\uBCCD\uAC8C \uC548\uBD80 \uB098\uB204\uB294\uAC83\uB3C4 \uC88B\uC544~"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315137
+    m_Localized: "\uAD81\uAE08\uD55C\uAC70 \uC788\uC744\uAE4C?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315138
+    m_Localized: "\uC5EC\uAE34 \uC5B4\uB5A4 \uACF3\uC774\uC5D0\uC694?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315139
+    m_Localized: "\uAD1C\uCC2E\uC544\uC694."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315140
+    m_Localized: "\uC774\uACF3\uC740 \uC0C1\uCC98 \uBC1B\uC740 \uC601\uD63C\uB4E4\uC774
+      \uC0B4\uC544\uAC00\uB294 \uB9C8\uC744\uC774\uC57C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315141
+    m_Localized: "\uC774 \uBD88\uC30D\uD55C \uC601\uD63C\uB4E4\uC744 \uCE58\uC720\uD558\uB294\uAC8C
+      \uB108\uC758 \uC77C\uC774\uC57C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315142
     m_Localized: "\uC5EC\uAE34 \uAC01\uC790 \uC0AC\uC5F0\uC774 \uB9CE\uC544."
     m_Metadata:
       m_Items: []
-  - m_Id: 750218291646473
+  - m_Id: 3211298276315143
     m_Localized: "\uC815\uB2F5\uC744 \uCC3E\uAE30\uBCF4\uB2E4, \uB9C8\uC74C\uC758
       \uC18C\uB9AC\uB97C \uBA3C\uC800 \uB4E4\uC5B4\uC8FC\uB294 \uAC8C \uC911\uC694\uD574."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3211298276315144
+    m_Localized: "\uADF8\uB7FC {playerName}. \uC55E\uC73C\uB85C \uD30C\uC774\uD305\uC774\uC57C~!!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3277461257654272
+    m_Localized: "\uC774\uC81C \uBB58 \uD558\uBA74 \uB420\uAE4C\uC694?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3277362787979264
+    m_Localized: "\uC544\uB2C8\uC5D0\uC694! \uC194\uC774\uB97C \uB9CC\uB098\uC11C
+      \uC88B\uC558\uC5B4\uC694."
     m_Metadata:
       m_Items: []
   references:

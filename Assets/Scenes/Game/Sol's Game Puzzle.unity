@@ -2411,6 +2411,8 @@ MonoBehaviour:
   - {fileID: 401364520, guid: 09b8188fa1336c74caf4bb223606bebd, type: 3}
   - {fileID: 141809768, guid: 09b8188fa1336c74caf4bb223606bebd, type: 3}
   - {fileID: 391302288, guid: 09b8188fa1336c74caf4bb223606bebd, type: 3}
+  minPreSolveCount: 14
+  maxPreSolveCount: 17
   containerImage: {fileID: 1206498881}
   spawnRegionMode: 1
   fixedSpawnRegionSize: {x: 1500, y: 1300}
@@ -2460,6 +2462,8 @@ MonoBehaviour:
   snapMaxCenterDistanceLocal: 80
   requirePieceCenterInsideTarget: 0
   snapWorldOffset: {x: 0, y: 0}
+  nextSceneName: Starest
+  sceneChangeDelay: 2
   logTargetIndexMapping: 1
   logPieceInitialState: 0
   onPuzzleCompleted:

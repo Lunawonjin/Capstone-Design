@@ -1,42 +1,17 @@
 // PuzzleManager.cs (Unity 6 LTS)
-// 퍼즐 데이터 관리 + UI 컨테이너(Image) 안에 퍼즐 조각 UI(Image)를 생성/배치.
-// 같은 파일 안에 드래그/선택/회전/스냅 고정 기능(PuzzlePieceDrag)까지 전부 포함.
-//
-// 핵심 규칙:
-//  - pieceSprites[i]   : i번째 퍼즐 조각 스프라이트
-//  - targetColliders[i]: i번째 퍼즐 슬롯(BoxCollider2D)
-//  => "인덱스가 같은 것끼리"만 자기 자리로 취급. 코드에서 순서를 자동으로 바꾸지 않는다.
-//
-// 기능 요약:
-// 1) 인스펙터에서 퍼즐 조각 개수(pieceCount)와 스프라이트 리스트(pieceSprites) 설정
-// 2) 컨테이너 UI(Image) 안에 조각 UI(Image)를 겹치지 않게 랜덤 배치
-// 3) 마우스로 조각 드래그(1920x1080 영역 밖 이동 불가)
-// 4) 마지막으로 클릭/드래그한 조각만 선택(백플레이트 표시)
-//    - 퍼즐이 아닌 빈 곳 클릭(버튼/Selectable 제외) 시 선택 해제
-//    - locked 조각은 선택/백플레이트 안 켜짐
-// 5) 생성 시 각 조각의 Z 회전 0/90/180/270 랜덤
-// 6) 회전 버튼
-//    - Clockwise_BT : 선택 조각 -90도
-//    - Counter_BT   : 선택 조각 +90도
-// 7) 스냅/고정
-//    - index 같은 BoxCollider2D와 겹치고, 회전이 0 근처이고,
-//      중심 거리가 snapMaxCenterDistanceLocal 이하일 때만 스냅 + 잠금
-//      스냅 기준 위치는 BoxCollider2D의 transform.position + snapWorldOffset
-// 8) Reset_BT
-//    - 시작 시 상태(랜덤 배치 + 프리솔브 상태)를 그대로 복원
-//    - 퍼즐 완성 상태에서는 Reset 비활성화
-// 9) 시작할 때 10~13개의 조각을 자기 슬롯(targetColliders[i])에 미리 붙여서 잠금(회전 0)
-// 10) logTargetIndexMapping 켜면 인덱스/스프라이트/콜라이더 매핑 로그 출력
-// 11) 맞춰서 고정된 퍼즐 조각은 항상 레이어를 가장 뒤로 보냄
-//     - 나중에 맞추는 조각들도 자동으로 뒤로 내려가서,
-//       아직 안 맞춘 조각들이 앞에서 잘 보이도록 함.
+// 수정사항:
+// 1. [Header("Pre-Solve Settings")] 추가: 시작 시 미리 맞출 조각 개수를 인스펙터에서 설정 가능
+// 2. [Header("Scene Navigation")] 추가: 퍼즐 완성 시 이동할 씬 이름과 딜레이 설정
+// 3. 퍼즐 완성 시 Coroutine을 통해 씬 이동
 
 using System;
+using System.Collections; // 코루틴용
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement; // 씬 이동용
 
 [DisallowMultipleComponent]
 public class PuzzleManager : MonoBehaviour
@@ -54,6 +29,17 @@ public class PuzzleManager : MonoBehaviour
     [Tooltip("퍼즐 조각 개수만큼 스프라이트를 넣어주세요. index=슬롯 index와 매칭됩니다.")]
     [SerializeField]
     private List<Sprite> pieceSprites = new List<Sprite>(25);
+
+    // --- [수정된 부분 1] 미리 맞출 조각 개수 설정 ---
+    [Header("Pre-Solve Settings")]
+    [Tooltip("시작 시 최소 몇 개의 조각을 미리 맞춰둘지 설정.")]
+    [SerializeField, Min(0)]
+    private int minPreSolveCount = 10;
+
+    [Tooltip("시작 시 최대 몇 개의 조각을 미리 맞춰둘지 설정.")]
+    [SerializeField, Min(0)]
+    private int maxPreSolveCount = 13;
+    // ---------------------------------------------
 
     [Header("UI Spawn Settings")]
     [Tooltip("퍼즐 조각들이 생성될 UI 컨테이너 Image.")]
@@ -150,6 +136,17 @@ public class PuzzleManager : MonoBehaviour
     [Tooltip("스냅 시 사용할 기준 위치 = target.transform.position + snapWorldOffset.")]
     [SerializeField]
     private Vector2 snapWorldOffset = Vector2.zero;
+
+    // --- [수정된 부분 2] 씬 이동 설정 ---
+    [Header("Scene Navigation")]
+    [Tooltip("퍼즐 완성 후 이동할 씬 이름 (예: StartScene).")]
+    [SerializeField]
+    private string nextSceneName = "StartScene";
+
+    [Tooltip("퍼즐 완성 후 씬 이동 전 대기 시간(초).")]
+    [SerializeField]
+    private float sceneChangeDelay = 2.0f;
+    // ----------------------------------
 
     [Header("Debug Logs")]
     [Tooltip("index별 sprite/slot/targetPos 매핑 로그 출력.")]
@@ -252,7 +249,6 @@ public class PuzzleManager : MonoBehaviour
         SetResetButtonInteractable(true);
     }
 
-    // 맞춰진 퍼즐 조각을 레이어 가장 뒤로 보내는 함수
     private void SendLockedPieceToBack(PuzzlePieceDrag piece)
     {
         if (piece == null) return;
@@ -261,11 +257,9 @@ public class PuzzleManager : MonoBehaviour
         Transform parent = rt.parent;
         if (parent == null) return;
 
-        // 컨테이너 안에서 가장 첫 번째(가장 뒤)로 보냄
         rt.SetSiblingIndex(0);
     }
 
-    // 빈 곳 클릭 시 선택 해제
     private void HandleClickOutsideToDeselect()
     {
         if (!Input.GetMouseButtonDown(0)) return;
@@ -405,7 +399,6 @@ public class PuzzleManager : MonoBehaviour
             {
                 placedFlags[i] = true;
                 placedCount++;
-                // 초기부터 맞춰져 있던 조각은 리셋 후에도 뒤로 보냄
                 SendLockedPieceToBack(piece);
             }
         }
@@ -572,7 +565,7 @@ public class PuzzleManager : MonoBehaviour
             );
         }
 
-        // 3) 일부 조각을 제자리로 스냅 + 잠금(회전 0)
+        // 3) 일부 조각을 제자리로 스냅 + 잠금 (인스펙터 설정값 사용)
         PreSolveSomePieces();
 
         // 4) 최종 상태(일부는 이미 잠금) 기준으로 초기값 기록
@@ -601,7 +594,6 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-    // index별 sprite/slot/targetPos 매핑 로그
     private void LogIndexMappingIfNeeded()
     {
         if (!logTargetIndexMapping) return;
@@ -628,7 +620,7 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-    // 시작 시 랜덤으로 10~13개의 조각을 자기 슬롯에 스냅 + 잠금(회전 0)
+    // --- [수정된 부분 3] PreSolve 로직에서 인스펙터 변수 사용 ---
     private void PreSolveSomePieces()
     {
         if (targetColliders == null || targetColliders.Count == 0)
@@ -638,8 +630,9 @@ public class PuzzleManager : MonoBehaviour
         if (upperBound <= 0)
             return;
 
-        int minPreSolve = 10;
-        int maxPreSolve = 13;
+        // 인스펙터에서 설정한 값을 사용
+        int minPreSolve = minPreSolveCount;
+        int maxPreSolve = maxPreSolveCount;
 
         int maxPossible = Mathf.Min(upperBound, maxPreSolve);
         if (maxPossible <= 0)
@@ -669,8 +662,8 @@ public class PuzzleManager : MonoBehaviour
                 initialLockedFlags[index] = true;
         }
     }
+    // -----------------------------------------------------
 
-    // index 조각을 index 슬롯 위치에 바로 스냅 + 잠금(회전 0)
     private void ForcePlaceAndLockAtTarget(int index)
     {
         if (index < 0 || index >= spawnedPieceDrags.Count) return;
@@ -694,7 +687,6 @@ public class PuzzleManager : MonoBehaviour
         ClampPieceToDragArea(pieceRT);
 
         piece.SetLocked(true);
-        // 프리솔브된 조각도 레이어를 가장 뒤로 보냄
         SendLockedPieceToBack(piece);
 
         RegisterPiecePlaced(index);
@@ -974,7 +966,6 @@ public class PuzzleManager : MonoBehaviour
         ClampPieceToDragArea(pieceRT);
 
         piece.SetLocked(true);
-        // 유저가 맞춰서 고정시킨 조각도 레이어를 가장 뒤로 보냄
         SendLockedPieceToBack(piece);
 
         if (currentSelected == piece)
@@ -1038,6 +1029,10 @@ public class PuzzleManager : MonoBehaviour
 
             MarkPuzzleCompleted();
             onPuzzleCompleted?.Invoke();
+
+            // --- [수정된 부분 4] 씬 이동 코루틴 시작 ---
+            StartCoroutine(LoadNextSceneRoutine());
+            // ----------------------------------------
         }
     }
 
@@ -1056,10 +1051,19 @@ public class PuzzleManager : MonoBehaviour
             ClearPuzzleCompleted();
         }
     }
+
+    // --- [수정된 부분 5] 씬 이동 코루틴 ---
+    private IEnumerator LoadNextSceneRoutine()
+    {
+        Debug.Log($"PuzzleManager: {sceneChangeDelay}초 후 '{nextSceneName}' 씬으로 이동합니다.");
+        yield return new WaitForSeconds(sceneChangeDelay);
+        SceneManager.LoadScene(nextSceneName);
+    }
+    // ----------------------------------
 }
 
 // ---------------------------------------------------------
-// PuzzlePieceDrag (same file)
+// PuzzlePieceDrag (동일, 변경 없음)
 // ---------------------------------------------------------
 
 [DisallowMultipleComponent]

@@ -118,12 +118,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ca89b228f96ac4843a75150943518302
-    m_Address: Boss_Starest_SeondMeet_Dialogue_ko
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ko
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cbdfa5655f720214c9cf3b2dd1e027ff
     m_Address: Chatting_Detail_Sero_ko
     m_ReadOnly: 1
