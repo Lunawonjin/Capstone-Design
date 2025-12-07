@@ -628,7 +628,7 @@ public class MapMenuController : MonoBehaviour
 #if UNITY_2023_1_OR_NEWER
         var allMono = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
 #else
-        var allMono = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+    var allMono = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
 #endif
         MonoBehaviour loader = null;
 
@@ -651,34 +651,38 @@ public class MapMenuController : MonoBehaviour
         }
 
         var type = loader.GetType();
-        string[] methodNames =
-        {
-            "StartNpcEventByKey",
-            "StartNpcEvent",
-            "StartByEventKey",
-            "PlayByEventKey",
-            "PlayEventByKey"
-        };
 
-        MethodInfo found = null;
-        for (int i = 0; i < methodNames.Length; i++)
-        {
-            found = type.GetMethod(
-                methodNames[i],
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-            );
-            if (found != null) break;
-        }
+        // ★ 수정: RunEventByName_External 직접 호출
+        MethodInfo found = type.GetMethod(
+            "RunEventByName_External",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        );
 
         if (found == null)
         {
-            Debug.LogWarning("[MapMenu] No suitable method on NpcEventDebugLoader. Event key: " + eventKey);
+            Debug.LogWarning("[MapMenu] RunEventByName_External method not found. Event key: " + eventKey);
             return;
         }
 
         try
         {
-            found.Invoke(loader, new object[] { eventKey });
+            // "Boss_Seconday_Busstop" → owner="Boss", event="Boss_Seconday_Busstop"
+            string ownerName = "Boss";
+            string eventName = eventKey;
+
+            // "/" 구분자가 있으면 분리
+            if (eventKey.Contains("/"))
+            {
+                var parts = eventKey.Split('/');
+                if (parts.Length >= 2)
+                {
+                    ownerName = parts[0].Trim();
+                    eventName = parts[1].Trim();
+                }
+            }
+
+            found.Invoke(loader, new object[] { ownerName, eventName, null });
+            Debug.Log($"[MapMenu] Successfully invoked: {ownerName}/{eventName}");
         }
         catch (Exception ex)
         {
@@ -1311,4 +1315,5 @@ public class ScreenFader : MonoBehaviour
         _group.alpha = targetAlpha;
         _group.blocksRaycasts = targetAlpha > 0.001f;
     }
+
 }

@@ -57,6 +57,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62424479a5555f84d86782957a8375e4
+    m_Address: Sol_Puzzle_Clear_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 669623bd4a51a3f41a06325620d2393d
     m_Address: Sol_Second_Meet_Dialogue_en
     m_ReadOnly: 1

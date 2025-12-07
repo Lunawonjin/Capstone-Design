@@ -45,6 +45,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35ea44422adeb1545beb7babe9238a0d
+    m_Address: Sol_Puzzle_Clear_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3c319d198b94ae9488b3730a8f74c5f1
     m_Address: Boss_SaltKey_Lost_Dialogue_ko
     m_ReadOnly: 1

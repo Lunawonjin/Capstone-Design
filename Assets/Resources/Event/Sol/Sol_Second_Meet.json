@@ -11,8 +11,8 @@
   "npcSpawns": [
     {
       "npcName": "Sol",
-      "x": 30.5,
-      "y": 18.76,
+      "x": 30.9,
+      "y": 19.1,
       "z": 0.0,
       "deactivateExisting": true,
       "relativeToPlayer": false
@@ -38,7 +38,7 @@
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_002",
+      "onKey": "Dialogue_001",
       "actions": [
         {
           "type": "cameraShake",

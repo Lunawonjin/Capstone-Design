@@ -74,7 +74,7 @@ MonoBehaviour:
       stringValue: 
       stringIgnoreCase: 0
     - varType: 0
-      key: Sol_Today_Talk
+      key: Sol_Puzzle_Clear
       boolValue: 1
       intOp: 0
       intValue: 0

@@ -64,7 +64,7 @@
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_004",
+      "onKey": "Dialogue_003",
       "actions": [
         {
           "type": "textPunch",

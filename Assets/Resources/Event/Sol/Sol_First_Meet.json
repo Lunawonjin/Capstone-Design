@@ -22,7 +22,7 @@
 
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_005",
+      "onKey": "Dialogue_004",
       "actions": [
         { "type": "dialoguePanelActive", "active": false },
         { "type": "npcMove", "npcName": "Boss", "dx": -0.6, "dy": 0.0 },

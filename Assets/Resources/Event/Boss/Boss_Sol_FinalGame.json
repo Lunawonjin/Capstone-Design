@@ -1,0 +1,57 @@
+{
+  "steps": [
+    {
+      "comment": "플레이어 Y값 19.5까지 상승, X값 -0.01로 이동",
+      "axis": "y",
+      "delta": -0.5,
+      "duration": 0.1
+    },
+    {
+      "axis": "x",
+      "delta": -0.01,
+      "duration": 0.1
+    }
+  ],
+  "defaultStepDuration": 0.5,
+  "useWorldSpace": false,
+  "useRigidbodyMove": true,
+  
+  "npcSpawns": [
+    {
+      "npcName": "Sol",
+      "x": 34.24,
+      "y": 21.1,
+      "z": 0,
+      "deactivateExisting": true,
+      "relativeToPlayer": false
+    },
+    {
+      "npcName": "Boss",
+      "x": 31.5,
+      "y": 20,
+      "z": 0,
+      "deactivateExisting": true,
+      "relativeToPlayer": false
+    }
+  ],
+  
+  "afterPlayerActions": [
+    {
+      "type": "dialogue",
+      "owner": "Boss",
+      "eventName": "Boss_Sol_FinalGame"
+    },
+    {
+      "type": "npcMove",
+      "npcName": "Sol_Npc",
+      "dx": 0,
+      "dy": 0,
+      "duration": 0.1,
+      "comment": "Sol을 원래 위치(34.24, 21.1)로 - 이미 그 위치에 있음"
+    },
+    {
+      "type": "log",
+      "message": "Boss_Sol_FinalGame 이벤트 완료, Sol_FinalGame_Trigger 활성화 대기"
+    }
+  ]
+}
