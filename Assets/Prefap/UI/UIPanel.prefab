@@ -3727,7 +3727,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundVolumeSlider
   volumeType: 0
-  updateOnStart: 1
 --- !u!1 &1917575374140436943
 GameObject:
   m_ObjectHideFlags: 0
@@ -4675,7 +4674,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundVolumeSlider
   volumeType: 1
-  updateOnStart: 1
 --- !u!1 &2397068261734426864
 GameObject:
   m_ObjectHideFlags: 0
@@ -10184,7 +10182,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2516922606135484738
 Transform:
   m_ObjectHideFlags: 0
@@ -10218,6 +10216,9 @@ MonoBehaviour:
   chattingPrefab: {fileID: 2616928022536387600, guid: a428ab4bea710c849ae0acf425e09e0d, type: 3}
   choicePrefab: {fileID: 3471381253965695899, guid: 6da302e61b57bd64ab5a5a84af5ba1db, type: 3}
   playerTalkPrefab: {fileID: 4121967397612839946, guid: 80ac9bdfedfc88143b6b28534d72d9da, type: 3}
+  choicePrefabOffsetY: 10
+  playerTalkPrefabOffsetY: -20
+  nextProfileSpacing: 30
   npcProfiles:
   - npcName: Sero
     profileSprite: {fileID: -42201740, guid: 922df97f48a23b44680211f1a87478df, type: 3}
@@ -10226,10 +10227,6 @@ MonoBehaviour:
     messengerPreview: sss
   useKeyboardAdd: 1
   addKey: 112
-  defaultNpcNameForKeyAdd: "\uD5E4\uC77C\uB9AC"
-  defaultProfileSpriteForKeyAdd: {fileID: -12431851, guid: 922df97f48a23b44680211f1a87478df, type: 3}
-  defaultConditionsForKeyAdd: []
-  defaultPreviewForKeyAdd: "\uB098 \uACB0\uD63C\uD574..."
   useLocalization: 1
   dialogueIntervalSeconds: 1.5
 --- !u!1 &5279269493257238860
@@ -13248,7 +13245,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1609183466851415095
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18744,6 +18741,10 @@ PrefabInstance:
     - target: {fileID: 6650652354063964175, guid: 33cdfaeca4a22bd4e9ca230f18e56ba0, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6727798822905869369, guid: 33cdfaeca4a22bd4e9ca230f18e56ba0, type: 3}
+      propertyPath: m_text
+      value: "\uBBF8 \uC158"
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

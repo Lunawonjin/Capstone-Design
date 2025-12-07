@@ -120,12 +120,6 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cb021a37b70eeed4fb43fb5775e39b6a
-    m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Starest_SeondMeet_Dialogue
-      Shared Data.asset
-    m_ReadOnly: 1
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cccee146a1b9d43408d41a5f3478c428
     m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Sol_FinalGame_Speaker
       Shared Data.asset

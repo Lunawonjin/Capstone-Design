@@ -142,12 +142,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c4d8c79f487655c41a1dd309138d225f
-    m_Address: Boss_Starest_SeondMeet_Dialogue_en
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-en
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c5254847e8f01b64da2f6f5a43a41d9f
     m_Address: Starest_First_Visit_Dialogue_en
     m_ReadOnly: 1

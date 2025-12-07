@@ -70,7 +70,13 @@ public class NpcEventDebugLoader : MonoBehaviour
         public bool value = true;
     }
 
-    [Serializable] public class DialogueReaction { public string onKey = ""; public EventPostAction[] actions = Array.Empty<EventPostAction>(); }
+    [Serializable]
+    public class DialogueReaction
+    {
+        public string onKey = "";
+        public EventPostAction[] actions = Array.Empty<EventPostAction>();
+        public bool executeImmediately = false;
+    }
 
     [Serializable]
     public class EventScript
@@ -276,6 +282,9 @@ public class NpcEventDebugLoader : MonoBehaviour
     private string _ctxEvent = "";
 
     private bool _special003Processed = false;
+
+    // 이벤트 중 플레이어 컨트롤 토글용
+    private readonly List<IPlayerControlToggle> _controlToggles = new();
     #endregion
 
     private void Reset() { if (!playerTransform) playerTransform = transform; }
@@ -291,6 +300,19 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (!mainCamera) mainCamera = Camera.main; // 카메라 자동 할당
 
         IndexNpcCatalog();
+
+        // IPlayerControlToggle 구현 컴포넌트 수집
+        if (playerTransform != null)
+        {
+            var monoBehaviours = playerTransform.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (var mb in monoBehaviours)
+            {
+                if (mb is IPlayerControlToggle toggle && !_controlToggles.Contains(toggle))
+                {
+                    _controlToggles.Add(toggle);
+                }
+            }
+        }
     }
 
     private void Start()
@@ -1070,7 +1092,19 @@ public class NpcEventDebugLoader : MonoBehaviour
                 if (_reactionsFired.Contains(r.onKey)) continue;
 
                 _reactionsFired.Add(r.onKey);
-                StartCoroutine(ExecutePostActions(r.actions));
+
+                // ===== 수정 부분 =====
+                if (r.executeImmediately)
+                {
+                    // 즉시 실행 (대화 진행 중)
+                    StartCoroutine(ExecutePostActions(r.actions));
+                }
+                else
+                {
+                    // 대화창 닫힌 뒤 실행 (기존 방식)
+                    StartCoroutine(WaitForDialogueClosedAndExecute(r));
+                }
+                // ====================
             }
         }
 
@@ -1139,7 +1173,27 @@ public class NpcEventDebugLoader : MonoBehaviour
         _dialoguePanelAutoReEnableArmed = false;
         if (verboseLog) Debug.Log("[NpcEventDebugLoader] Dialogue Panel 자동 복구");
     }
+    // 특정 대사 키에 대한 리액션을 "말풍선이 닫힌 뒤" 실행
+    private IEnumerator WaitForDialogueClosedAndExecute(DialogueReaction reaction)
+    {
+        if (reaction == null || reaction.actions == null || reaction.actions.Length == 0) yield break;
 
+        if (autoFindDialogueManager && dialogueManager == null)
+            dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+        if (!dialoguePanel && dialogueManager) dialoguePanel = dialogueManager.gameObject;
+
+        // 말풍선 패널이 완전히 꺼질 때까지 대기
+        if (dialoguePanel != null)
+        {
+            // 한 프레임 정도는 상태 업데이트 대기
+            yield return null;
+
+            while (dialoguePanel.activeInHierarchy)
+                yield return null;
+        }
+
+        yield return StartCoroutine(ExecutePostActions(reaction.actions));
+    }
     private void ForceActivateDialoguePanelNow()
     {
         if (autoFindDialogueManager && dialogueManager == null) dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
@@ -1845,6 +1899,15 @@ public class NpcEventDebugLoader : MonoBehaviour
             comp.enabled = false;
         }
 
+        // IPlayerControlToggle 구현 컴포넌트 모두 입력 비활성화
+        for (int i = 0; i < _controlToggles.Count; i++)
+        {
+            var t = _controlToggles[i];
+            if (t == null) continue;
+            try { t.SetControlEnabled(false); }
+            catch { }
+        }
+
         // 입력만 막고 PlayerMove.Freeze는 사용하지 않음
 
         _savedPlayerPosition = playerTransform.position;
@@ -1917,6 +1980,15 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         foreach (var bak in _inputBackup) if (bak.comp) bak.comp.enabled = bak.wasEnabled;
         foreach (var bak in _uiBackup) if (bak.go) bak.go.SetActive(bak.wasActive);
+
+        // IPlayerControlToggle 다시 활성화
+        for (int i = 0; i < _controlToggles.Count; i++)
+        {
+            var t = _controlToggles[i];
+            if (t == null) continue;
+            try { t.SetControlEnabled(true); }
+            catch { }
+        }
 
         for (int i = 0; i < _tempDeactivatedMapNpcs.Count; i++)
         {

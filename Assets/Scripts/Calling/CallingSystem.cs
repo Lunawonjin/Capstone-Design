@@ -1,9 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.Localization.Settings;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
 public class CallingSystem : MonoBehaviour
@@ -214,7 +219,7 @@ public class CallingSystem : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
     bool _autoBound;
     Coroutine _shakeLoop;
-    Coroutine _slideCoroutine; // ★★★ 슬라이드 전용 코루틴 변수 추가
+    Coroutine _slideCoroutine;
 
     RectTransform _iconRT;
     Vector2 _iconBasePos;
@@ -395,7 +400,7 @@ public class CallingSystem : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 패널 Show / Hide (수정된 부분)
+    // 패널 Show / Hide
     // ─────────────────────────────────────────────────────────────
     void ShowPhonePanel()
     {
@@ -404,7 +409,6 @@ public class CallingSystem : MonoBehaviour
         SetExtraObjectsActive(false);
         phonePanel.SetActive(true);
 
-        // ★★★ StopAllCoroutines() 삭제 -> 슬라이드 코루틴만 정지
         if (_slideCoroutine != null) StopCoroutine(_slideCoroutine);
         _slideCoroutine = StartCoroutine(CoSlide(phone, slideFromY, slideToY, slideDuration, keepActiveAtEnd: true));
     }
@@ -413,12 +417,11 @@ public class CallingSystem : MonoBehaviour
     {
         if (!phonePanel || !phone) return;
 
-        // ★★★ StopAllCoroutines() 삭제 -> CoEndAndDismissPhone이 끊기지 않도록 함
         if (_slideCoroutine != null) StopCoroutine(_slideCoroutine);
         _slideCoroutine = StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, keepActiveAtEnd: false));
     }
 
-    System.Collections.IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool keepActiveAtEnd)
+    IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool keepActiveAtEnd)
     {
         Vector2 a = rt.anchoredPosition; a.y = fromY; rt.anchoredPosition = a;
         float t = 0f;
@@ -438,7 +441,7 @@ public class CallingSystem : MonoBehaviour
             phonePanel.SetActive(false);
             SetExtraObjectsActive(true);
         }
-        _slideCoroutine = null; // 완료 후 초기화
+        _slideCoroutine = null;
     }
 
     void OnClickHangUp()
@@ -473,7 +476,7 @@ public class CallingSystem : MonoBehaviour
         _callingTimerOn = true;
 
         EnsureDialogueObjects();
-        if (!dialogueRunner) { LogE("DialogueRunnerStringTables를 찾지 못했습니다."); return; }
+        if (!dialogueRunner) { LogE("DialogueRunnerStringTables not found."); return; }
 
         ApplyPhoneFontOverrideIfNeeded();
 
@@ -498,18 +501,17 @@ public class CallingSystem : MonoBehaviour
 
         if (callingEndObject) callingEndObject.SetActive(true);
 
-        // ★★★ 전체 코루틴(Shake 등)은 여기서 정리해도 됨, 하지만 이제 CoEndAndDismissPhone은 안전함
         StopAllCoroutines();
         StartCoroutine(CoEndAndDismissPhone());
     }
 
-    System.Collections.IEnumerator CoEndAndDismissPhone()
+    IEnumerator CoEndAndDismissPhone()
     {
-        // 1초 대기 (다이얼로그 종료 직후 클릭 방지)
+        // 1초 대기
         yield return new WaitForSecondsRealtime(1f);
 
-        // 2초 동안 입력 대기
-        float timeout = 0.5f; // 필요시 늘리세요
+        // 입력 대기 (최대 0.5초)
+        float timeout = 0.5f;
         float elapsed = 0f;
 
         while (elapsed < timeout)
@@ -524,14 +526,13 @@ public class CallingSystem : MonoBehaviour
             yield return null;
         }
 
-        // 입력 혹은 타임아웃 후 슬라이드 다운 시작
-        // ★★★ 이 함수가 이제 StopAllCoroutines를 부르지 않으므로 아래 코드는 계속 실행됨
+        // 패널 내려가기
         HidePhonePanelAndDeactivate();
 
-        // 슬라이드가 끝날 때까지 대기
+        // 슬라이드 시간만큼 대기
         yield return new WaitForSecondsRealtime(slideDuration);
 
-        // 미션 패널 및 게임 로직 실행
+        // 미션 패널 및 후속 처리
         if (_currentCallIndex >= 0 && _currentCallIndex < calls.Count)
         {
             var endedCall = calls[_currentCallIndex];
@@ -563,6 +564,12 @@ public class CallingSystem : MonoBehaviour
                     map.PlayerGoStarest = true;
                     LogI("MapMenuController.PlayerGoStarest -> true");
                 }
+            }
+            // 3) Boss_Second_Calling 처리: 버스 도착 후 이벤트 예약
+            else if (endedCall != null && string.Equals(endedCall.callingName, "Boss_Second_Calling", StringComparison.Ordinal))
+            {
+                MapMenuController.PendingNpcEventKeyAfterArrival = "Boss_Seconday_Busstop";
+                LogI("Boss_Second_Calling ended -> schedule 'Boss_Seconday_Busstop' after bus arrival.");
             }
         }
 
@@ -636,7 +643,7 @@ public class CallingSystem : MonoBehaviour
         }
     }
 
-    System.Collections.IEnumerator CoShakeLoop()
+    IEnumerator CoShakeLoop()
     {
         while (HasAnyRinging())
         {
@@ -674,7 +681,7 @@ public class CallingSystem : MonoBehaviour
         return false;
     }
 
-    System.Collections.IEnumerator CoReenableIconWithShake(float delaySec)
+    IEnumerator CoReenableIconWithShake(float delaySec)
     {
         yield return new WaitForSecondsRealtime(Mathf.Max(0f, delaySec));
         if (phoneIconButton)
@@ -746,9 +753,15 @@ public class CallingSystem : MonoBehaviour
     {
         if (playerMove || !autoFindPlayerMove) return;
 
+#if UNITY_2023_1_OR_NEWER
         playerMove = includeInactiveOnFind
-            ? FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include)
-            : FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
+            ? UnityEngine.Object.FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include)
+            : UnityEngine.Object.FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Exclude);
+#else
+        playerMove = includeInactiveOnFind
+            ? UnityEngine.Object.FindObjectOfType<PlayerMove>()
+            : UnityEngine.Object.FindObjectOfType<PlayerMove>();
+#endif
 
         if (playerMove)
         {
@@ -801,7 +814,7 @@ public class CallingSystem : MonoBehaviour
     static string GetPath(Transform t)
     {
         if (!t) return "(null)";
-        var st = new System.Collections.Generic.Stack<string>();
+        var st = new Stack<string>();
         while (t) { st.Push(t.name); t = t.parent; }
         return string.Join("/", st);
     }

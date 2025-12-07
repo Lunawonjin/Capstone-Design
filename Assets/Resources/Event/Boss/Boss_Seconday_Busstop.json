@@ -1,0 +1,28 @@
+{
+  "defaultStepDuration": 1.0,
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+  "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
+
+  "npcSpawns": [
+    { "npcName": "Boss", "x": -12.5, "y": -18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
+  ],
+
+  "steps": [
+    
+  ],
+
+  "afterPlayerActions": [
+    { "type": "dialogue", "owner": "Boss", "eventName": "Boss_Secondary_Busstop_Start" }
+  ],
+
+  "dialogueReactions": [
+    {
+      "onKey": "Dialogue_Choice1_Same_002",
+      "actions": [
+        { "type": "dialoguePanelActive", "active": false },
+        { "type": "npcMove", "npcName": "Boss", "dx": 8.0, "dy": 0.0, "duration": 2.0 }
+      ]
+    }
+  ]
+}

@@ -2,12 +2,10 @@
   "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
-
   "player": {
     "forceUsePlayerMoveSpeed": true,
     "moveSpeed": 1.0
   },
-
   "npcSpawns": [
     {
       "npcName": "Salt",
@@ -18,15 +16,11 @@
       "relativeToPlayer": false
     }
   ],
-
-  "preActions": [
-  ],
-
+  "preActions": [],
   "steps": [
     { "axis": "y", "delta": 1.5 },
     { "axis": "x", "delta": -1.0 }
   ],
-
   "afterPlayerActions": [
     {
       "type": "npcMove",
@@ -42,7 +36,6 @@
       "dy": -0.7,
       "duration": 0.12
     },
-
     {
       "type": "npcMove",
       "npcName": "Salt",
@@ -64,45 +57,60 @@
       "dy": 1.8,
       "duration": 0.5
     },
-
     {
       "type": "npcShake",
       "npcName": "Salt",
-      "amplitude": 0.15,
-      "frequency": 18.0,
-      "loop": true
+      "amplitude": 0.03,
+      "frequency": 8.0,
+      "duration": 0.5,
+      "loop": false
     },
-
     {
       "type": "playerMove",
       "axis": "y",
       "delta": 2.5,
       "duration": 1.2
     },
-
     {
       "type": "dialogue",
       "owner": "Salt",
       "eventName": "Salt_First_Meet"
     }
   ],
-
   "dialogueReactions": [
     {
       "onKey": "Dialogue_001",
+      "executeImmediately": true,
       "actions": [
+        {
+          "type": "dialoguePanelActive",
+          "active": false
+        },
         {
           "type": "playerMove",
           "axis": "x",
           "delta": 2.9,
           "duration": 1.2
+        },
+        {
+          "type": "playerMove",
+          "axis": "y",
+          "delta": 0.1,
+          "duration": 0.2
+        },
+        {
+          "type": "dialoguePanelRestoreNow"
         }
       ]
     },
-
     {
       "onKey": "Dialogue_002",
+      "executeImmediately": true,
       "actions": [
+        {
+          "type": "dialoguePanelActive",
+          "active": false
+        },
         {
           "type": "npcShakeStop",
           "npcName": "Salt"
