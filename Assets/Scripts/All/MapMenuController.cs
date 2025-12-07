@@ -1,20 +1,21 @@
-// MapMenuController.cs
-// 핵심 요약
-//  - 도착 연출: 버스 카메라(busCameras) → 맵 카메라(mapCamera) 확실한 전환
-//    · SetCameraActive(cam, on/off)로 컴포넌트와 GO 동시 제어 + depth 보정
-//  - 버스 카메라 팔로우: Y 고정(lockY), 최소 X 경계(minX) 지원(SimpleCameraFollower)
-//  - 씬 페이드: 로드 직전 페이드 인(검은 화면), "씬 넘어가면 즉시 페이드 아웃(=FadeTo(0) 즉시)"
-//  - 출발 연출 시작 시 BusDoor 비활성화(상호작용/충돌 차단)
-//  - 다른 씬으로 이동할 때 현재 씬의 버스(GameObject) 비활성화(옵션)
-//  - 그 외: 출발 연출, 맵 토글, 화살표, 알림 등 기존 동작 유지
-
 using System;
-using System.Linq;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.Localization.Settings;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+// MapMenuController.cs
+// 핵심 요약
+//  - 도착 연출: 버스 카메라(busCameras) → 맵 카메라(mapCamera) 전환
+//  - 버스 카메라 팔로우: Y 고정(lockY), 최소 X 경계(minX) 지원
+//  - 씬 페이드: 로드 직전 페이드 인, 로드 후 즉시 페이드 아웃
+//  - 출발 연출 시작 시 BusDoor 비활성화
+//  - 다른 씬으로 이동할 때 현재 씬의 버스 비활성화(옵션)
 
 [DisallowMultipleComponent]
 public class MapMenuController : MonoBehaviour
@@ -54,7 +55,7 @@ public class MapMenuController : MonoBehaviour
     [Header("버튼")]
     [SerializeField] private Button exitButton;
 
-    // ===== 맵 열기/닫기 애니 (스케일 보존) =====
+    // 맵 열기/닫기 애니 (스케일 보존)
     [Header("맵 애니메이션 (Unscaled) - 스케일 보존")]
     [SerializeField] private bool keepOriginalScale = true;
     [SerializeField] private Vector3 openStartMul = new Vector3(1f, 1f, 1f);
@@ -93,13 +94,13 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool hideArrowWhenClosed = true;
     [SerializeField] private bool preferBuildIndexMatch = true;
 
-    // === 충돌로 맵 열기 ===
+    // 충돌로 맵 열기
     [Header("충돌로 맵 열기(F)")]
     [SerializeField] private KeyCode interactKey = KeyCode.F;
     [SerializeField] private Collider2D playerCollider;
     [SerializeField] private Collider2D[] openMapColliders = Array.Empty<Collider2D>();
 
-    // === 가이드 화살표 ===
+    // 가이드 화살표
     [Header("가이드 화살표(목표 유도)")]
     [SerializeField] private RectTransform guideArrow;
     [SerializeField] private Vector2 guideArrowOffset = new Vector2(0f, 72f);
@@ -117,7 +118,7 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private int guideIndexStarest = 1;
     [SerializeField] private int guideIndexShopping = 2;
 
-    // ===== 출발 연출(씬별 설정) =====
+    // 출발 연출(씬별 설정)
     [Serializable]
     public class DepartConfig
     {
@@ -148,7 +149,7 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private Transform busTransform;
     [SerializeField] private AnimationCurve playerRiseEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    // ===== 도착 연출(씬별 설정) =====
+    // 도착 연출(씬별 설정)
     [Serializable]
     public class ArrivalConfig
     {
@@ -199,8 +200,8 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool arrivalLockControls = true;
 
     [Header("도착 연출 - 카메라 제어")]
-    [SerializeField] private Camera[] busCameras = Array.Empty<Camera>(); // 버스 추적 카메라들
-    [SerializeField] private Camera mapCamera;                             // 정차 후 활성화할 맵 카메라
+    [SerializeField] private Camera[] busCameras = Array.Empty<Camera>();
+    [SerializeField] private Camera mapCamera;
 
     [Header("버스 카메라 팔로우 설정")]
     [SerializeField] private Vector3 arrivalCameraOffset = new Vector3(0f, 0f, 0f);
@@ -215,14 +216,14 @@ public class MapMenuController : MonoBehaviour
     [SerializeField] private bool useMinCameraX = true;
     [SerializeField] private float minCameraX = -20f;
 
-    // ===== 씬 페이드 옵션 =====
+    // 씬 페이드 옵션
     [Header("씬 페이드 옵션")]
     [SerializeField] private bool useSceneFade = true;
-    [SerializeField, Min(0.01f)] private float fadeInDuration = 0.35f;   // 로드 직전: 0→1
-    [SerializeField, Min(0.01f)] private float fadeOutDuration = 0.45f;  // 유지(즉시 모드에서는 의미 적음)
+    [SerializeField, Min(0.01f)] private float fadeInDuration = 0.35f;
+    [SerializeField, Min(0.01f)] private float fadeOutDuration = 0.45f;
     [SerializeField] private Color fadeColor = Color.black;
 
-    // ===== 출발 시 BusDoor/버스 비활성화 =====
+    // 출발 시 BusDoor/버스 비활성화
     [Header("버스 문(BusDoor) - 출발 시작 즉시 비활성화")]
     [SerializeField] private GameObject busDoor;
     [SerializeField] private bool disableDoorOnDepartStart = true;
@@ -230,7 +231,7 @@ public class MapMenuController : MonoBehaviour
     [Header("출발 시 버스 비활성화(다른 씬으로 이동할 때 현재 씬 버스 끄기)")]
     [SerializeField] private bool deactivateBusOnSceneChange = true;
 
-    // ===== 내부 상태 =====
+    // 내부 상태
     RectTransform _mapRT;
     CanvasGroup _mapCG;
     RectTransform _notifRT;
@@ -255,15 +256,17 @@ public class MapMenuController : MonoBehaviour
     private static ArrivalConfig s_pendingArrival;
     private static bool s_hasPendingArrival = false;
 
+    // Boss_Second_Calling 이후, 버스 도착 시 실행할 NPC 이벤트 키
+    public static string PendingNpcEventKeyAfterArrival;
+
     void Awake()
     {
         if (!map || !mapPanel)
         {
-            Debug.LogError("[MapMenuController] map / mapPanel 참조가 필요합니다.");
+            Debug.LogError("[MapMenuController] map / mapPanel reference is required.");
             enabled = false; return;
         }
 
-        // ScreenFader 준비
         if (useSceneFade) ScreenFader.Initialize(fadeColor);
 
         _mapRT = map.GetComponent<RectTransform>();
@@ -350,7 +353,7 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    // ===== 메뉴 클릭 =====
+    // 메뉴 클릭
     void OnMenuClick(int idx)
     {
         if (_notifOpen || _isDeparting) return;
@@ -361,11 +364,9 @@ public class MapMenuController : MonoBehaviour
             if (!weekend) { ShowNotification(); return; }
         }
 
-        // ★ 씬 이동 직전 현재 씬의 "켜진 오브젝트들"을 sub_save에 스냅샷 저장
         if (DataManager.instance != null)
             DataManager.instance.SubSaveCommitActivesForCurrentScene();
 
-        // 기존 임시 저장(이벤트용) 유지
         if (DataManager.instance != null) DataManager.instance.CommitDataToTempFile();
 
         var active = SceneManager.GetActiveScene();
@@ -389,7 +390,7 @@ public class MapMenuController : MonoBehaviour
             targetSceneName = (sceneNames != null && idx >= 0 && idx < sceneNames.Length) ? sceneNames[idx] : null;
             if (string.IsNullOrWhiteSpace(targetSceneName))
             {
-                Debug.LogWarning($"[MapMenu] 인덱스 {idx}에 씬 이름이 설정되지 않았습니다.");
+                Debug.LogWarning($"[MapMenu] index {idx} has no scene name.");
                 return;
             }
             if (SceneNameEqualsRobust(active.name, targetSceneName)) { CloseMap(); return; }
@@ -412,7 +413,7 @@ public class MapMenuController : MonoBehaviour
         if (TryGetDepartConfigForScene(active.name, out var depCfg) && depCfg.enabled)
             StartCoroutine(Co_DepartThenLoad(loadAction, depCfg));
         else
-            StartCoroutine(Co_LoadWithFadeOnly(loadAction)); // 출발 연출이 없어도 페이드는 적용
+            StartCoroutine(Co_LoadWithFadeOnly(loadAction));
     }
 
     bool TryGetDepartConfigForScene(string sceneName, out DepartConfig cfg)
@@ -435,7 +436,6 @@ public class MapMenuController : MonoBehaviour
     {
         _isDeparting = true;
 
-        // ★ 출발 연출 시작 즉시 BusDoor 비활성화 (F 아이콘/충돌 차단)
         if (disableDoorOnDepartStart) SetBusDoorEnabled(false);
 
         if (playerTransform)
@@ -479,7 +479,6 @@ public class MapMenuController : MonoBehaviour
 
         if (busTransform)
         {
-            // 출발 연출: 화면 밖으로 이동하는 연출 유지
             var b = busTransform;
             Vector3 target = new Vector3(cfg.busTargetX, b.position.y, b.position.z);
             float spd = Mathf.Max(0.01f, cfg.departBusSpeed);
@@ -491,12 +490,10 @@ public class MapMenuController : MonoBehaviour
             }
             b.position = target;
 
-            // ★ 다른 씬으로 넘어가기 직전, 현재 씬의 버스를 비활성화(옵션)
             if (deactivateBusOnSceneChange && b.gameObject.activeSelf)
                 b.gameObject.SetActive(false);
         }
 
-        // 로드 직전 페이드 인(검은 화면)
         if (useSceneFade)
             yield return ScreenFader.Instance.FadeTo(1f, Mathf.Max(0.01f, fadeInDuration), fadeColor);
 
@@ -514,11 +511,9 @@ public class MapMenuController : MonoBehaviour
 
     void OnSceneLoaded_Arrival(Scene scene, LoadSceneMode mode)
     {
-        // 요청: 씬 로드 직후 즉시 FadeTo(0)
         if (useSceneFade)
             StartCoroutine(ScreenFader.Instance.FadeTo(0f, 0.001f, fadeColor));
 
-        // 도착 연출이 있으면 그대로 진행(페이드는 이미 0이므로 추가 페이드 없음)
         if (s_hasPendingArrival && s_pendingArrival != null && SceneNameEqualsRobust(scene.name, s_pendingArrival.sceneName))
         {
             var cfg = s_pendingArrival;
@@ -540,16 +535,16 @@ public class MapMenuController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[MapMenu] Arrival: busPrefab이 비어 있습니다. 버스 연출을 건너뜁니다.");
+            Debug.LogWarning("[MapMenu] Arrival: busPrefab is null. Skip bus animation.");
         }
 
         // 0.5) 플레이어 찾기
         GameObject playerGO = FindPlayerGO(out PlayerMove pm);
 
-        // 0.7) ▶ 버스 카메라들을 버스에 붙이기 (플레이어 활성화 전까지)
+        // 0.7) 버스 카메라들을 버스에 붙이기
         if (bus) AttachCamerasFollow(bus.transform);
 
-        // 1) 시작X → 정지X — 상수 속도
+        // 1) 시작X → 정지X
         if (bus)
         {
             var b = bus.transform;
@@ -578,17 +573,21 @@ public class MapMenuController : MonoBehaviour
             playerGO.transform.position = new Vector3(cfg.playerDropPos.x, cfg.playerDropPos.y, pz);
         }
 
-        // 2.1) ▶ 카메라 전환: 맵 카메라 ON, 버스 카메라 OFF (확실하게)
+        // 2.1) 카메라 전환
         SwitchToMapCamera();
 
-        // 2.5) 정차 대기(연출 호흡)
+        // 2.5) 정차 대기
         if (cfg.stopWait > 0f)
         {
             float tw = 0f;
-            while (tw < cfg.stopWait) { tw += Time.unscaledDeltaTime; yield return null; }
+            while (tw < cfg.stopWait)
+            {
+                tw += Time.unscaledDeltaTime;
+                yield return null;
+            }
         }
 
-        // 3) 정지X → 최종X — 상수 속도
+        // 3) 정지X → 최종X
         if (bus)
         {
             var b = bus.transform;
@@ -604,6 +603,13 @@ public class MapMenuController : MonoBehaviour
             Destroy(bus);
         }
 
+        // 3.5) Boss_Second_Calling 이후 예약된 NPC 이벤트 실행
+        if (!string.IsNullOrEmpty(PendingNpcEventKeyAfterArrival))
+        {
+            TryInvokeNpcEvent(PendingNpcEventKeyAfterArrival);
+            PendingNpcEventKeyAfterArrival = null;
+        }
+
         // 4) 입력 해제
         if (arrivalLockControls)
         {
@@ -614,8 +620,78 @@ public class MapMenuController : MonoBehaviour
         yield break;
     }
 
-    // ───────── 카메라 온/오프 보조 유틸 ─────────
-    private void SetCameraActive(Camera cam, bool active, bool alsoToggleGameObject = true, float? overrideDepth = null)
+    // NpcEventDebugLoader 찾아서 이벤트 실행
+    void TryInvokeNpcEvent(string eventKey)
+    {
+        if (string.IsNullOrEmpty(eventKey)) return;
+
+#if UNITY_2023_1_OR_NEWER
+        var allMono = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+#else
+    var allMono = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+#endif
+        MonoBehaviour loader = null;
+
+        for (int i = 0; i < allMono.Length; i++)
+        {
+            var mb = allMono[i];
+            if (mb == null) continue;
+            var t = mb.GetType();
+            if (t.Name == "NpcEventDebugLoader")
+            {
+                loader = mb;
+                break;
+            }
+        }
+
+        if (loader == null)
+        {
+            Debug.LogWarning("[MapMenu] NpcEventDebugLoader not found. Event failed: " + eventKey);
+            return;
+        }
+
+        var type = loader.GetType();
+
+        // ★ 수정: RunEventByName_External 직접 호출
+        MethodInfo found = type.GetMethod(
+            "RunEventByName_External",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        );
+
+        if (found == null)
+        {
+            Debug.LogWarning("[MapMenu] RunEventByName_External method not found. Event key: " + eventKey);
+            return;
+        }
+
+        try
+        {
+            // "Boss_Seconday_Busstop" → owner="Boss", event="Boss_Seconday_Busstop"
+            string ownerName = "Boss";
+            string eventName = eventKey;
+
+            // "/" 구분자가 있으면 분리
+            if (eventKey.Contains("/"))
+            {
+                var parts = eventKey.Split('/');
+                if (parts.Length >= 2)
+                {
+                    ownerName = parts[0].Trim();
+                    eventName = parts[1].Trim();
+                }
+            }
+
+            found.Invoke(loader, new object[] { ownerName, eventName, null });
+            Debug.Log($"[MapMenu] Successfully invoked: {ownerName}/{eventName}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[MapMenu] Exception while invoking NpcEventDebugLoader: " + ex);
+        }
+    }
+
+    // 카메라 온/오프
+    void SetCameraActive(Camera cam, bool active, bool alsoToggleGameObject = true, float? overrideDepth = null)
     {
         if (!cam) return;
         if (alsoToggleGameObject && cam.gameObject.activeSelf != active)
@@ -627,8 +703,8 @@ public class MapMenuController : MonoBehaviour
             cam.depth = overrideDepth.Value;
     }
 
-    // ───────── 카메라 팔로우 유틸 ─────────
-    private void AttachCamerasFollow(Transform target)
+    // 카메라 팔로우
+    void AttachCamerasFollow(Transform target)
     {
         if (busCameras == null || busCameras.Length == 0 || target == null) return;
 
@@ -647,7 +723,6 @@ public class MapMenuController : MonoBehaviour
                 follower.offset = arrivalCameraOffset;
                 follower.smoothTime = Mathf.Max(0.01f, arrivalCameraSmoothTime);
 
-                // Y 고정 / 최소 X 경계 적용
                 follower.lockY = lockCameraY;
                 follower.fixedY = lockedCameraY;
 
@@ -657,17 +732,15 @@ public class MapMenuController : MonoBehaviour
                 follower.enabled = true;
             }
 
-            // 버스 카메라는 항상 보이도록(맵 카메라보다 뒤)
             cam.depth = 0f;
             SetCameraActive(cam, true, alsoToggleGameObject: true);
         }
 
-        // 버스 들어오는 동안 맵 카메라는 꺼둠(컴포넌트+GO)
         if (mapCamera) SetCameraActive(mapCamera, false, alsoToggleGameObject: true);
     }
 
-    // 맵 카메라로 전환(버스 카메라 끄고, 맵 카메라 확실히 켬)
-    private void SwitchToMapCamera()
+    // 맵 카메라로 전환
+    void SwitchToMapCamera()
     {
         if (busCameras != null)
         {
@@ -685,7 +758,6 @@ public class MapMenuController : MonoBehaviour
 
         if (mapCamera)
         {
-            // 버스 카메라보다 앞서도록 depth 보정
             float frontDepth = 10f;
             if (busCameras != null)
             {
@@ -696,12 +768,12 @@ public class MapMenuController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[MapMenu] mapCamera가 할당되지 않았습니다. 인스펙터에서 Map Camera를 지정하세요.");
+            Debug.LogWarning("[MapMenu] mapCamera is not assigned.");
         }
     }
 
-    // ───────── 플레이어 탐색 유틸 ─────────
-    private GameObject FindPlayerGO(out PlayerMove pm)
+    // 플레이어 탐색
+    GameObject FindPlayerGO(out PlayerMove pm)
     {
         pm = null;
         GameObject playerGO = null;
@@ -735,7 +807,7 @@ public class MapMenuController : MonoBehaviour
         return playerGO;
     }
 
-    // ===== 맵/알림 등 기존 =====
+    // 맵/알림 등
     void OnClickExit() { if (_notifOpen) return; CloseMap(); }
 
     bool IsShopping(int idx)
@@ -849,12 +921,14 @@ public class MapMenuController : MonoBehaviour
         if (_notifCG) { _notifCG.alpha = 0f; _notifCG.interactable = true; _notifCG.blocksRaycasts = notificationBlocksClicks; }
         _notifOpenCo = StartCoroutine(Co_ShowNotification());
     }
+
     void HideNotification()
     {
         if (!notificationRoot || _notifAnimating || !notificationRoot.activeSelf) return;
         if (_notifOpenCo != null) StopCoroutine(_notifOpenCo);
         _notifCloseCo = StartCoroutine(Co_HideNotification());
     }
+
     IEnumerator Co_ShowNotification()
     {
         _notifAnimating = true;
@@ -870,6 +944,7 @@ public class MapMenuController : MonoBehaviour
         if (_notifCG) _notifCG.alpha = 1f;
         _notifAnimating = false;
     }
+
     IEnumerator Co_HideNotification()
     {
         _notifAnimating = true;
@@ -959,7 +1034,7 @@ public class MapMenuController : MonoBehaviour
             sceneBuildIndices = Enumerable.Repeat(-1, menuItems.Length).ToArray();
 
         int count = SceneManager.sceneCountInBuildSettings;
-        var nameToIndex = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var nameToIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < count; i++)
         {
             string path = SceneUtility.GetScenePathByBuildIndex(i);
@@ -986,6 +1061,7 @@ public class MapMenuController : MonoBehaviour
         string na = Normalize(a), nb = Normalize(b);
         return string.Equals(na, nb, StringComparison.OrdinalIgnoreCase);
     }
+
     static string Normalize(string s)
     {
         if (string.IsNullOrEmpty(s)) return string.Empty;
@@ -1004,7 +1080,7 @@ public class MapMenuController : MonoBehaviour
         return false;
     }
 
-    private static void EnsureHierarchyActive(GameObject leaf)
+    static void EnsureHierarchyActive(GameObject leaf)
     {
         if (leaf == null) return;
         Transform t = leaf.transform;
@@ -1015,11 +1091,7 @@ public class MapMenuController : MonoBehaviour
         }
     }
 
-    // ───────── BusDoor 제어 유틸 ─────────
-    /// <summary>
-    /// BusDoor를 활성/비활성화한다. 출발 시작 시 꺼서 상호작용(F) 및 충돌 유도 방지.
-    /// </summary>
-    private void SetBusDoorEnabled(bool on)
+    void SetBusDoorEnabled(bool on)
     {
         if (!busDoor) return;
         if (busDoor.activeSelf != on) busDoor.SetActive(on);
@@ -1029,7 +1101,7 @@ public class MapMenuController : MonoBehaviour
 [RequireComponent(typeof(RectTransform))]
 public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-    public System.Action onClick;
+    public Action onClick;
 
     [SerializeField] private float _normalScale = 1f;
     [SerializeField] private float _hoverScale = 1.08f;
@@ -1042,7 +1114,7 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
     private Color _baseColor;
     private bool _hasBaseColor;
 
-    private void Reset()
+    void Reset()
     {
         _normalScale = 1f;
         _hoverScale = 1.08f;
@@ -1050,7 +1122,7 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         _revertToOriginalColor = true;
     }
 
-    private void Awake()
+    void Awake()
     {
         _rect = GetComponent<RectTransform>();
         _graphic = GetComponent<Graphic>();
@@ -1058,12 +1130,12 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         if (_graphic != null)
         { _baseColor = _graphic.color; _hasBaseColor = true; }
         else
-        { Debug.LogWarning($"[HoverableMenuItem] '{name}'에 Graphic이 없어 색상 연출 비활성화", this); }
+        { Debug.LogWarning($"[HoverableMenuItem] '{name}' has no Graphic. Color effect disabled.", this); }
 
         SetScale(_normalScale);
     }
 
-    private void OnEnable()
+    void OnEnable()
     {
         if (_graphic != null && _hasBaseColor) _graphic.color = _baseColor;
         SetScale(_normalScale);
@@ -1097,23 +1169,21 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         onClick?.Invoke();
     }
 
-    private void SetScale(float s)
+    void SetScale(float s)
     {
         if (_rect != null) _rect.localScale = new Vector3(s, s, 1f);
         else transform.localScale = new Vector3(s, s, 1f);
     }
 
-    private static Color MultiplyColor(Color baseColor, Color mul)
+    static Color MultiplyColor(Color baseColor, Color mul)
     {
         return new Color(baseColor.r * mul.r, baseColor.g * mul.g, baseColor.b * mul.b, baseColor.a * mul.a);
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // SimpleCameraFollower
 //  - Y 고정(lockY), 최소 X 경계(minX) 지원
 //  - SmoothDamp 추적, 카메라 Z는 현 위치 유지
-// ─────────────────────────────────────────────────────────────────────────────
 [DisallowMultipleComponent]
 public class SimpleCameraFollower : MonoBehaviour
 {
@@ -1137,13 +1207,10 @@ public class SimpleCameraFollower : MonoBehaviour
 
         var p = target.position + offset;
 
-        // 카메라의 기존 Z 유지
         p.z = transform.position.z;
 
-        // Y 고정
         if (lockY) p.y = fixedY;
 
-        // 최소 X 경계 적용
         if (useMinX && p.x < minX)
             p.x = minX;
 
@@ -1151,11 +1218,9 @@ public class SimpleCameraFollower : MonoBehaviour
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ScreenFader
-//  - 전역(씬 간 유지) 풀스크린 페이드. 별도 프리팹 없이 자동 생성.
-//  - FadeTo(알파, 시간, 색) 코루틴 제공. DontDestroyOnLoad.
-// ─────────────────────────────────────────────────────────────────────────────
+//  - 전역(씬 간 유지) 풀스크린 페이드
+//  - FadeTo(알파, 시간, 색) 코루틴 제공
 [DisallowMultipleComponent]
 public class ScreenFader : MonoBehaviour
 {
@@ -1186,7 +1251,7 @@ public class ScreenFader : MonoBehaviour
         _instance.Build(color);
     }
 
-    private void Build(Color color)
+    void Build(Color color)
     {
         _canvas = gameObject.AddComponent<Canvas>();
         _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -1195,7 +1260,7 @@ public class ScreenFader : MonoBehaviour
         _group = gameObject.AddComponent<CanvasGroup>();
         _group.alpha = 0f;
         _group.interactable = false;
-        _group.blocksRaycasts = true; // 페이드 중 입력 차단
+        _group.blocksRaycasts = true;
 
         var imgGO = new GameObject("Overlay");
         imgGO.transform.SetParent(transform, false);
@@ -1211,7 +1276,7 @@ public class ScreenFader : MonoBehaviour
         _image.color = new Color(color.r, color.g, color.b, 1f);
     }
 
-    private void SetColorKeepAlpha(Color c)
+    void SetColorKeepAlpha(Color c)
     {
         if (_image == null) return;
         var a = _image.color.a;
@@ -1250,4 +1315,5 @@ public class ScreenFader : MonoBehaviour
         _group.alpha = targetAlpha;
         _group.blocksRaycasts = targetAlpha > 0.001f;
     }
+
 }

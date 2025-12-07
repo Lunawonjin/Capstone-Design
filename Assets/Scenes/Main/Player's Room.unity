@@ -119,6 +119,59 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &8904884
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8904886}
+  - component: {fileID: 8904885}
+  m_Layer: 0
+  m_Name: Mission
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &8904885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8904884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03f4becf35b833f40a95cd5513284608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MissionPanel
+  targetPanelImageName: MissionPanel
+  targetDetailTextName: MissionDetail
+  missionPanelImage: {fileID: 0}
+  missionDetailText: {fileID: 0}
+  missionRoot: {fileID: 0}
+  hideOnAwake: 1
+  missions:
+  - key: Boss_First_Calling
+    detailText: "\uBC16\uC73C\uB85C \uB098\uAC00\uC11C \n\uBC84\uC2A4\uB97C \uD0C0\uC790"
+--- !u!4 &8904886
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8904884}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -16.71506, y: -19.15472, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &66026595
 GameObject:
   m_ObjectHideFlags: 0
@@ -274,7 +327,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 2
   m_Sprite: {fileID: -1069860751996309369, guid: 8805e94ac95963c4cbeba0d1151cf3a3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -8487,7 +8540,7 @@ GameObject:
   - component: {fileID: 813181090}
   - component: {fileID: 813181092}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: PlayerData
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8530,11 +8583,15 @@ MonoBehaviour:
     Ryu_First_Meet: 0
     White_First_Meet: 0
     Sol_Second_Meet: 0
+    Boss_SaltKey_Lost: 0
+    Boss_Seconday_Busstop: 0
     Sol_FriendShip: 0
     Salt_FriendShip: 0
     Ryu_FriendShip: 0
     White_FriendShip: 0
     DiaryOpen: 0
+    Salt_House_Key: 0
+    Sol_Puzzle_Clear: 0
     MessengerDelivered: []
     MessengerReadList: []
     ActiveSceneName: 
@@ -12739,6 +12796,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3471381253965695899, guid: 6da302e61b57bd64ab5a5a84af5ba1db, type: 3}
     - target: {fileID: 4483050173916089162, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: choicePrefabOffsetY
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4483050173916089162, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: enableSpawnProfileByPKey
       value: 1
       objectReference: {fileID: 0}
@@ -12924,6 +12985,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5898765620428417160, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5979335648219102375, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6065586249727096225, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
@@ -13192,6 +13257,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 492136516}
     m_Modifications:
+    - target: {fileID: 492672658364188179, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.47
+      objectReference: {fileID: 0}
+    - target: {fileID: 492672658364188179, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.84
+      objectReference: {fileID: 0}
     - target: {fileID: 2580775444156510101, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_Name
       value: Player's Room
@@ -13199,6 +13272,10 @@ PrefabInstance:
     - target: {fileID: 2580775444156510101, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3633436558851038695, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.2
       objectReference: {fileID: 0}
     - target: {fileID: 4178506660657732914, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: dayText
@@ -27938,6 +28015,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1186580114}
     m_Modifications:
+    - target: {fileID: 3377513914089235619, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
+      propertyPath: m_SortingOrder
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 4163446674544961289, guid: bbe6c7f4479398f469f8e7d7cccc7eda, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12.18
@@ -28230,7 +28311,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: calls.Array.data[1].conditions.Array.data[1].key
-      value: Sol_Today_Talk
+      value: Sol_Puzzle_Clear
       objectReference: {fileID: 0}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: calls.Array.data[1].conditions.Array.data[2].key
@@ -28418,3 +28499,4 @@ SceneRoots:
   - {fileID: 492136516}
   - {fileID: 813181091}
   - {fileID: 756181619}
+  - {fileID: 8904886}

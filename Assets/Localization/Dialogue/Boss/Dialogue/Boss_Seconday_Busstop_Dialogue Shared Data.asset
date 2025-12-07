@@ -14,7 +14,87 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
   m_TableCollectionName: Boss_Seconday_Busstop_Dialogue
   m_TableCollectionNameGuidString: 94edb753ccd5da14eae9f71068863694
-  m_Entries: []
+  m_Entries:
+  - m_Id: 1344358981242880
+    m_Key: Dialogue_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359039963136
+    m_Key: Dialogue_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359039963137
+    m_Key: Dialogue_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359039963138
+    m_Key: Dialogue_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157440
+    m_Key: Dialogue_005
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157441
+    m_Key: Dialogue_006
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157442
+    m_Key: Dialogue_007
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157443
+    m_Key: Dialogue_008
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157444
+    m_Key: Dialogue_009
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157445
+    m_Key: Dialogue_010
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157446
+    m_Key: Dialogue_011
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157447
+    m_Key: Dialogue_012
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157448
+    m_Key: Dialogue_Choice1_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157449
+    m_Key: Dialogue_Choice1_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157450
+    m_Key: diaDialogue_Choice1_A2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157451
+    m_Key: diaDialogue_Choice1_A2_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157452
+    m_Key: diaDialogue_Choice1_A2_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157453
+    m_Key: diaDialogue_Choice1_A2_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157454
+    m_Key: Dialogue_Choice1_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1344359044157455
+    m_Key: Dialogue_Choice1_Same_002
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

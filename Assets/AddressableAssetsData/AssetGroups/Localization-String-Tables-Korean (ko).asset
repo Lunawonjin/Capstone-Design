@@ -39,6 +39,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34907aa3fea5adc4587ee7c4475a2330
+    m_Address: Salt_First_Meet_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35ea44422adeb1545beb7babe9238a0d
+    m_Address: Sol_Puzzle_Clear_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3c319d198b94ae9488b3730a8f74c5f1
     m_Address: Boss_SaltKey_Lost_Dialogue_ko
     m_ReadOnly: 1
@@ -63,6 +75,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     - Preload
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 790d28d1214a5b445ba32dad5f50bc6f
+    m_Address: Salt_First_Meet_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 793b04aae2fba574988cbbdc66fcd22b
     m_Address: Messenger_Content_ko
@@ -102,12 +120,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c5ae947734d189147aac50c26071cd28
     m_Address: Sol_First_Meet_Speaker_ko
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ko
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ca89b228f96ac4843a75150943518302
-    m_Address: Boss_Starest_SeondMeet_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko

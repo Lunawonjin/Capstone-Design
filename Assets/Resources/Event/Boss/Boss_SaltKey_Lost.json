@@ -1,0 +1,78 @@
+{
+  "defaultStepDuration": 1.0,
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+
+  "player": {
+    "forceUsePlayerMoveSpeed": true,
+    "moveSpeed": 1.0
+  },
+
+  "npcSpawns": [
+    {
+      "npcName": "Boss",
+      "x": -6.5,
+      "y": 11.0,
+      "z": 0.0,
+      "deactivateExisting": false,
+      "relativeToPlayer": false
+    }
+  ],
+
+  "preActions": [
+    {
+      "type": "snapPlayer",
+      "x": -7.85,
+      "y": 15.0,
+      "z": 0.0
+    }
+  ],
+
+  "steps": [
+    {
+      "axis": "y",
+      "delta": -1.0
+    }
+  ],
+
+  "afterPlayerActions": [
+    { 
+      "type": "npcMove", 
+      "npcName": "Boss", 
+      "dx": -0.981, 
+      "dy": 0.0, 
+      "duration": 1.0 
+    },
+    { 
+      "type": "npcMove", 
+      "npcName": "Boss", 
+      "dx": 0.0, 
+      "dy": 1.0, 
+      "duration": 1.0 
+    },
+    {
+      "type": "dialogue",
+      "owner": "Boss",
+      "eventName": "Boss_SaltKey_Lost"
+    },
+    {
+      "type": "npcSetActive",
+      "npcName": "Key",
+      "active": true
+    }
+  ],
+
+  "dialogueReactions": [
+    {
+      "onKey": "Dialogue_003",
+      "actions": [
+        {
+          "type": "textPunch",
+          "scale": 1.5,
+          "duration": 0.5,
+          "vibrate": true
+        }
+      ]
+    }
+  ]
+}

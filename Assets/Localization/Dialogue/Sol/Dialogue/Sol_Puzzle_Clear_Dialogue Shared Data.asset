@@ -35,8 +35,80 @@ MonoBehaviour:
     m_Key: Dialogue_Choice1_S1_001
     m_Metadata:
       m_Items: []
-  - m_Id: 1843936344084480
-    m_Key: Dialogue_Choice1_A1_001
+  - m_Id: 3626573773606912
+    m_Key: Dialogue_Choice1_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938560
+    m_Key: Dialogue_Choice1_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938561
+    m_Key: Dialogue_Choice1_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938562
+    m_Key: Dialogue_Choice1_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938563
+    m_Key: Dialogue_Choice1_Same_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938564
+    m_Key: Dialogue_Choice2_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938565
+    m_Key: Dialogue_Choice2_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938566
+    m_Key: Dialogue_Choice2_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938567
+    m_Key: Dialogue_Choice2_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938568
+    m_Key: Dialogue_Choice2_Same_003
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938569
+    m_Key: Dialogue_Choice2_Same_004
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938570
+    m_Key: Dialogue_Choice2_Same_005
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938571
+    m_Key: Dialogue_Choice2_Same_006
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938572
+    m_Key: Dialogue_Choice2_Same_007
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938573
+    m_Key: Dialogue_Choice3_S1_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938574
+    m_Key: Dialogue_Choice3_S2_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938575
+    m_Key: Dialogue_Choice3_Same_001
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938576
+    m_Key: Dialogue_Choice3_Same_002
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3626573823938577
+    m_Key: Dialogue_Choice3_Same_003
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -799,7 +799,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy7_(28.00, -0.81, 0.00)
 --- !u!1 &220807398 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
@@ -837,7 +836,7 @@ MonoBehaviour:
   playerCollider: {fileID: 0}
   playerAnimator: {fileID: 0}
   movementComponent: {fileID: 0}
-  fallingSprite: {fileID: -422639775, guid: 482ab2907755447468cfc7e208eb0ccc, type: 3}
+  fallingSprite: {fileID: -6966776371465089997, guid: 9130a6695446aaa479b134a3ca6a0a97, type: 3}
   rightIdleStateName: Right_Walk
   groundTag: Ground
   groundCheckHeight: 0.08
@@ -888,7 +887,8 @@ MonoBehaviour:
   currentHp: 0
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitDuration: 0.1
-  fireCooldown: 1
+  fireCooldown: 0.8
+  projectileLaunchDelay: 0.5
   fireKey: 323
   firePoint: {fileID: 220807422}
   projectilePrefab: {fileID: 8855737722752510577, guid: 50e5368ad9a7e054fbf6a7708d6992a7, type: 3}
@@ -908,7 +908,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Player_(0.00, 7.00, 0.00)
 --- !u!1 &320561432
 GameObject:
   m_ObjectHideFlags: 0
@@ -1779,7 +1778,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy3_(19.00, -0.60, 0.00)
 --- !u!1 &756739856
 GameObject:
   m_ObjectHideFlags: 0
@@ -2005,7 +2003,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy4_(21.50, -0.10, 0.00)
 --- !u!1 &863229006
 GameObject:
   m_ObjectHideFlags: 0
@@ -2231,7 +2228,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy8_(30.50, 0.20, 0.00)
 --- !u!1 &982063253
 GameObject:
   m_ObjectHideFlags: 0
@@ -2457,7 +2453,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy2_(16.50, 0.00, 0.00)
 --- !u!1 &1005625708
 GameObject:
   m_ObjectHideFlags: 0
@@ -2872,7 +2867,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Injection_(1.08, -2.01, 0.00)
 --- !u!1 &1536428190
 GameObject:
   m_ObjectHideFlags: 0
@@ -3174,7 +3168,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy5_(23.50, -1.40, 0.00)
 --- !u!1 &1600751661
 GameObject:
   m_ObjectHideFlags: 0
@@ -3711,7 +3704,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
-  objectID: Enemy6_(25.50, 0.20, 0.00)
 --- !u!1001 &2108940976
 PrefabInstance:
   m_ObjectHideFlags: 0

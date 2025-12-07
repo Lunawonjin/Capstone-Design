@@ -1,8 +1,3 @@
-// SoundVolumeSlider.cs
-// 슬라이더 하나당 BGM 또는 SFX 한 종류를 제어
-// - UnityEngine.UI.Slider 필요
-// - OnValueChanged 이벤트 없이 자동 적용( Awake에서 Slider 값 → SoundManager 적용, 슬라이더 조작 시마다 갱신 )
-
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,31 +11,33 @@ public class SoundVolumeSlider : MonoBehaviour
         SFX
     }
 
-    [Header("이 슬라이더가 제어할 볼륨 종류")]
+    [Header("설정")]
     public VolumeType volumeType = VolumeType.BGM;
-
-    [Header("0~1로 매핑(슬라이더 Min/Max도 0~1로 맞추는게 편함)")]
-    public bool updateOnStart = true; // 씬 열릴 때 슬라이더 현재값을 적용할지
 
     private Slider _slider;
 
-    private void Awake()
+    private void Start() // Awake 대신 Start 권장 (SoundManager Instance 확실히 로드 후 실행)
     {
         _slider = GetComponent<Slider>();
-        _slider.onValueChanged.AddListener(OnSliderValueChanged);
 
-        if (updateOnStart && SoundManager.Instance != null)
+        if (SoundManager.Instance == null) return;
+
+        // 1. 현재 매니저의 실제 볼륨 값을 가져와서 슬라이더 위치를 갱신 (동기화)
+        switch (volumeType)
         {
-            ApplyVolume(_slider.value);
+            case VolumeType.BGM:
+                _slider.value = SoundManager.Instance.bgmVolume;
+                break;
+            case VolumeType.SFX:
+                _slider.value = SoundManager.Instance.sfxVolume;
+                break;
         }
+
+        // 2. 값 변경 이벤트 연결 (초기화 이후에 연결해야 불필요한 호출 방지)
+        _slider.onValueChanged.AddListener(OnSliderValueChanged);
     }
 
     private void OnSliderValueChanged(float v)
-    {
-        ApplyVolume(v);
-    }
-
-    private void ApplyVolume(float v)
     {
         if (SoundManager.Instance == null) return;
 
