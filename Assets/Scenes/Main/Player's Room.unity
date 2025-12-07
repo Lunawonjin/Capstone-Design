@@ -13255,6 +13255,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 492136516}
     m_Modifications:
+    - target: {fileID: 492672658364188179, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.47
+      objectReference: {fileID: 0}
+    - target: {fileID: 492672658364188179, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.84
+      objectReference: {fileID: 0}
     - target: {fileID: 2580775444156510101, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_Name
       value: Player's Room
@@ -13262,6 +13270,10 @@ PrefabInstance:
     - target: {fileID: 2580775444156510101, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3633436558851038695, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.2
       objectReference: {fileID: 0}
     - target: {fileID: 4178506660657732914, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: dayText
