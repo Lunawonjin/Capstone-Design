@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Japanese (ja)
   m_GUID: cbd97113c59d0294985385b69ee4d844
   m_SerializeEntries:
+  - m_GUID: 02311829732d9c14fa46675bf393a9ae
+    m_Address: Sol_Puzzle_Clear_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 08f45ef4a1f1c3a46960876295292813
     m_Address: Sol_First_Meet_Dialogue_ja
     m_ReadOnly: 1

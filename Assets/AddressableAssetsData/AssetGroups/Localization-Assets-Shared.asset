@@ -115,6 +115,12 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab8632a33a366e44e91b3c46f1cf67bd
+    m_Address: Assets/Localization/Dialogue/Sol/Speaker/Sol_Puzzle_Clear_Speaker
+      Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c868df77452a8594a9914e1419457157
     m_Address: Assets/Localization/Dialogue/Salt/Salt's_Talk_Dialogue Shared Data.asset
     m_ReadOnly: 1

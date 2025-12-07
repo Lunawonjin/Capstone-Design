@@ -44,6 +44,12 @@
       "duration": 0.5
     },
     {
+      "type": "playerMove",
+      "axis": "y",
+      "delta": 0.01,
+      "duration": 0.1
+    },
+    {
       "type": "npcMove",
       "npcName": "Salt",
       "dx": 5.2,
@@ -80,37 +86,30 @@
   "dialogueReactions": [
     {
       "onKey": "Dialogue_001",
-      "executeImmediately": true,
       "actions": [
         {
-          "type": "dialoguePanelActive",
-          "active": false
+          "type": "npcShakeStop",
+          "npcName": "Salt"
         },
-        {
-          "type": "playerMove",
-          "axis": "x",
-          "delta": 2.9,
-          "duration": 1.2
-        },
-        {
-          "type": "playerMove",
-          "axis": "y",
-          "delta": 0.1,
-          "duration": 0.2
-        },
-        {
-          "type": "dialoguePanelRestoreNow"
-        }
+        { "type": "dialoguePanelActive", "active": false },
+    {
+      "type": "playerMove",
+      "axis": "x",
+      "delta": 2.9,
+      "duration": 1.2
+    },
+    {
+      "type": "playerMove",
+      "axis": "y",
+      "delta": 0.1,
+      "duration": 0.2
+    }
       ]
     },
     {
-      "onKey": "Dialogue_002",
-      "executeImmediately": true,
+      "onKey": "Dialogue_003",
       "actions": [
-        {
-          "type": "dialoguePanelActive",
-          "active": false
-        },
+        { "type": "dialoguePanelActive", "active": false },
         {
           "type": "npcShakeStop",
           "npcName": "Salt"
@@ -129,11 +128,29 @@
           "dy": 0.0,
           "duration": 0.5
         },
+    {
+      "type": "playerMove",
+      "axis": "x",
+      "delta": -0.01,
+      "duration": 0.1
+    },
         {
           "type": "npcMove",
           "npcName": "Salt",
           "dx": 0.0,
-          "dy": -4.8,
+          "dy": -1.0,
+          "duration": 0.7
+        },
+    {
+      "type": "playerMove",
+      "axis": "y",
+      "delta": -0.01,
+      "duration": 0.1
+    },        {
+          "type": "npcMove",
+          "npcName": "Salt",
+          "dx": 0.0,
+          "dy": -3.8,
           "duration": 0.7
         },
         {

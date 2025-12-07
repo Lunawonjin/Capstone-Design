@@ -77,7 +77,7 @@ public class PlayerData
     // 두 번째 만남 플래그 예시 (Sol_Second_Meet 이벤트용)
     public bool Sol_Second_Meet;
     public bool Boss_SaltKey_Lost;
-
+    public bool Boss_Seconday_Busstop;
     public int Sol_FriendShip;
     public int Salt_FriendShip;
     public int Ryu_FriendShip;
@@ -88,6 +88,8 @@ public class PlayerData
 
     //소금이 집 해금
     public bool Salt_House_Key;
+    public bool Boss_Sol_FinalGame;
+    public bool Sol_Puzzle_Clear;
 
     //메신저 상태
     public List<string> MessengerDelivered = new List<string>();
@@ -135,8 +137,11 @@ public class PlayerData
         Ryu_FriendShip = 0;
         White_FriendShip = 0;
 
+        Boss_Sol_FinalGame = false;
         DiaryOpen = false;
         Salt_House_Key = false;
+        Sol_Puzzle_Clear = false;
+        Boss_Seconday_Busstop=false;
 
         ActiveSceneName = "";
         ActiveObjects = Array.Empty<ActiveObjectInfo>();

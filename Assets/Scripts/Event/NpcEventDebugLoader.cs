@@ -75,6 +75,9 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         public string onKey = "";
         public EventPostAction[] actions = Array.Empty<EventPostAction>();
+
+        // true : 해당 키가 화면에 뜨는 순간(OnKeyShown) 바로 실행
+        // false: 그 키에서 "다음으로 넘어갈 때" 실행
         public bool executeImmediately = false;
     }
 
@@ -164,7 +167,16 @@ public class NpcEventDebugLoader : MonoBehaviour
     [SerializeField] private bool logWhenSkip = true;
     [SerializeField] private bool verboseLog = true;
     [SerializeField] private bool logSanitizedJsonOnError = true;
+    [Header("Sol 퍼즐 클리어 이벤트")]
+    [SerializeField] private string puzzleSceneName = "Sol's Game Puzzle";
+    [SerializeField] private string returnSceneName = "Starest";
+    [SerializeField] private string puzzleClearOwner = "Sol";
+    [SerializeField] private string puzzleClearEvent = "Sol_Puzzle_Clear";
+    [Tooltip("퍼즐 완료 플래그 (PlayerData에 자동 추가됨)")]
+    [SerializeField] private string puzzleClearFlag = "Sol_Puzzle_Clear";
 
+    private string _lastSceneName = "";
+    private bool _puzzleClearTriggered = false;
     [Serializable]
     public class FirstVisitEvent
     {
@@ -333,6 +345,7 @@ public class NpcEventDebugLoader : MonoBehaviour
                 StartCoroutine(RunFirstVisitsForSceneOnce("Starest"));
             }
         }
+        _lastSceneName = SceneManager.GetActiveScene().name;
     }
 
     private void Update()
@@ -381,6 +394,7 @@ public class NpcEventDebugLoader : MonoBehaviour
                 _starestCenterPrevActive = nowActive;
             }
         }
+        CheckPuzzleClearEvent();
     }
 
     private IEnumerator TryRunFirstVisitsOnStart()
@@ -439,7 +453,84 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
     }
+    private void CheckPuzzleClearEvent()
+    {
+        string currentScene = SceneManager.GetActiveScene().name;
 
+        // 씬이 변경되지 않았으면 리턴
+        if (string.Equals(_lastSceneName, currentScene, StringComparison.Ordinal))
+            return;
+
+        // Sol's Game Puzzle → Starest 복귀 체크
+        bool returnedFromPuzzle =
+            string.Equals(_lastSceneName, puzzleSceneName, StringComparison.Ordinal) &&
+            string.Equals(currentScene, returnSceneName, StringComparison.Ordinal);
+
+        _lastSceneName = currentScene;
+
+        if (!returnedFromPuzzle) return;
+        if (_puzzleClearTriggered) return; // 이미 실행됨
+
+        var pd = ResolvePlayerData();
+        if (pd == null) return;
+
+        // Sol_Second_Meet 체크
+        if (!TryBindBool(pd, "Sol_Second_Meet", out var getMeet, out var _))
+        {
+            if (verboseLog)
+                Debug.LogWarning("[NpcEventDebugLoader] Sol_Second_Meet 플래그를 찾을 수 없습니다.");
+            return;
+        }
+
+        if (!getMeet())
+        {
+            if (verboseLog)
+                Debug.Log("[NpcEventDebugLoader] Sol_Second_Meet가 false이므로 퍼즐 클리어 이벤트를 실행하지 않습니다.");
+            return;
+        }
+
+        // 이미 클리어 플래그가 true면 실행하지 않음
+        if (!TryBindBool(pd, puzzleClearFlag, out var getClear, out var setClear))
+        {
+            if (verboseLog)
+                Debug.LogWarning($"[NpcEventDebugLoader] PlayerData에 '{puzzleClearFlag}' 플래그를 찾을 수 없습니다.");
+            return;
+        }
+
+        if (getClear())
+        {
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] {puzzleClearFlag}가 이미 true이므로 스킵합니다.");
+            return;
+        }
+
+        // 이벤트 실행
+        _puzzleClearTriggered = true;
+        StartCoroutine(RunPuzzleClearEventOnce(setClear));
+    }
+
+    private IEnumerator RunPuzzleClearEventOnce(Action<bool> setClearFlag)
+    {
+        // 이벤트가 실행 중이면 대기
+        while (_eventRunning) yield return null;
+
+        if (TryLoadSingle(puzzleClearOwner, puzzleClearEvent, out var le))
+        {
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] 퍼즐 클리어 이벤트 실행: {puzzleClearOwner}/{puzzleClearEvent}");
+
+            yield return StartCoroutine(RunEventCoroutine(puzzleClearOwner, puzzleClearEvent, le.json, () =>
+            {
+                setClearFlag(true);
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] {puzzleClearFlag} 플래그를 true로 설정했습니다.");
+            }));
+        }
+        else
+        {
+            Debug.LogWarning($"[NpcEventDebugLoader] 퍼즐 클리어 이벤트를 로드하지 못했습니다: {puzzleClearOwner}/{puzzleClearEvent}");
+        }
+    }
     private IEnumerator RunFirstVisitsForSceneOnce(string sceneName)
     {
         if (_firstVisitTriggeredByCenter) yield break;
@@ -570,7 +661,51 @@ public class NpcEventDebugLoader : MonoBehaviour
         _ctxEvent = eventForIO;
         _spawnedDuringEvent.Clear();
         _special003Processed = false;
+        if (string.Equals(eventForIO, "Boss_Sol_FinalGame", StringComparison.OrdinalIgnoreCase))
+        {
+            // 1. Boss NPC는 제거하지 않도록 _spawnedDuringEvent에서 제외
+            var bossNpc = ResolveNpc("Boss_Npc");
+            if (bossNpc != null && _spawnedDuringEvent.Contains(bossNpc))
+            {
+                _spawnedDuringEvent.Remove(bossNpc);
+                if (verboseLog)
+                    Debug.Log("[NpcEventDebugLoader] Boss_Sol_FinalGame: Boss_Npc를 유지합니다.");
+            }
 
+            // 2. Sol NPC를 (34.24, 21.1)로 이동
+            var solNpc = ResolveNpc("Sol_Npc");
+            if (solNpc != null)
+            {
+                Vector3 solFinalPos = new Vector3(34.24f, 21.1f, solNpc.transform.position.z);
+                solNpc.transform.position = solFinalPos;
+
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] Boss_Sol_FinalGame: Sol_Npc를 {solFinalPos}로 이동했습니다.");
+            }
+
+            // 3. Sol_FinalGame_Trigger 활성화
+            yield return new WaitForSeconds(0.3f); // 잠깐 대기
+
+            var trigger = GameObject.Find("Sol_FinalGame_Trigger");
+            if (trigger == null)
+            {
+                // 씬 전체에서 SolFinalGameTrigger 컴포넌트 찾기
+                var triggerComponent = FindFirstObjectByType<SolFinalGameTrigger>();
+                if (triggerComponent != null)
+                    trigger = triggerComponent.gameObject;
+            }
+
+            if (trigger != null)
+            {
+                trigger.SetActive(true);
+                if (verboseLog)
+                    Debug.Log("[NpcEventDebugLoader] Boss_Sol_FinalGame: Sol_FinalGame_Trigger를 활성화했습니다.");
+            }
+            else
+            {
+                Debug.LogWarning("[NpcEventDebugLoader] Boss_Sol_FinalGame: Sol_FinalGame_Trigger를 찾을 수 없습니다.");
+            }
+        }
         EnterEventGuard();
 
         if (!TryParseEventScript(rawJson, out EventScript script, logSanitizedJsonOnError))
@@ -667,11 +802,37 @@ public class NpcEventDebugLoader : MonoBehaviour
                     string targetScene = act.sceneName;
                     if (!string.IsNullOrEmpty(targetScene))
                     {
-                        Debug.Log($"[NpcEventDebugLoader] 씬 이동 요청: {targetScene}");
+                        Debug.Log($"[NpcEventDebugLoader] 씬 이동 요청: {targetScene}, useSubSave={act.useSubSave}");
 
                         yield return FadeTo(1f, 0.5f);
 
                         onComplete?.Invoke();
+
+                        // ★ useSubSave가 true이면 DataManager의 SubSave 기능 사용
+                        if (act.useSubSave && DataManager.instance != null)
+                        {
+                            if (verboseLog)
+                                Debug.Log($"[NpcEventDebugLoader] SubSave를 사용하여 '{targetScene}' 씬으로 전환합니다.");
+
+                            // 특별 처리: Sol's Game Puzzle로 이동 시 복귀 위치를 32.2, 18로 고정
+                            if (string.Equals(targetScene, "Sol's Game Puzzle", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Vector3 returnPosition = new Vector3(32.2f, 18f, 0f);
+                                DataManager.instance.SetPlayerPosition(returnPosition);
+
+                                if (verboseLog)
+                                    Debug.Log($"[NpcEventDebugLoader] 퍼즐 씬 이동: 복귀 위치를 {returnPosition}로 저장");
+                            }
+
+                            // 1. 현재 씬의 오브젝트 상태 저장 (활성/비활성 모두)
+                            DataManager.instance.SubSaveCommitSceneSnapshotAllObjects();
+
+                            // 2. nowPlayer 전체 데이터 저장
+                            DataManager.instance.SubSaveCommit();
+
+                            // 3. 저장 완료 대기
+                            yield return new WaitForSeconds(0.3f);
+                        }
 
                         SceneManager.LoadScene(targetScene);
 
@@ -940,7 +1101,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             else if (actionType == "affinitydown")
             {
                 string dn = ResolveAffinityDataName(act.dataName);
-                if (!AffinityDown(dn, (int)act.delta, act.clamp, act.min, int.MaxValue)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
+                if (!AffinityDown(dn, (int)act.delta, act.clamp, int.MaxValue)) Debug.LogWarning($"[NpcEventDebugLoader] (reaction) affinityDown 실패 — dataName='{act.dataName}' (resolved='{dn}')");
             }
             else if (actionType == "datadelta")
             {
@@ -1059,7 +1220,8 @@ public class NpcEventDebugLoader : MonoBehaviour
 
     private IEnumerator RunDialogueSequence(string ownerForIO, string eventForIO)
     {
-        if (autoFindDialogueManager && dialogueManager == null) dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+        if (autoFindDialogueManager && dialogueManager == null)
+            dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
         if (dialogueManager == null)
         {
             Debug.LogWarning("[NpcEventDebugLoader] DialogueManager(StringTables)를 찾지 못해 스킵합니다.");
@@ -1070,10 +1232,43 @@ public class NpcEventDebugLoader : MonoBehaviour
 
         if (dialoguePanel) dialoguePanel.SetActive(true);
 
+        bool ended = false;
+        bool waitingForKey = true;
+        string currentKey = null;
+
+        List<EventPostAction> pendingFromPreviousKey = null;
+
         void OnKeyShownHandler(string key)
         {
+            currentKey = key;
+            waitingForKey = false;
+        }
+
+        void OnEndedHandler()
+        {
+            ended = true;
+            waitingForKey = false;
+        }
+
+        dialogueManager.OnKeyShown += OnKeyShownHandler;
+        dialogueManager.OnDialogueEnded += OnEndedHandler;
+
+        dialogueManager.BeginWithEventName(eventForIO);
+
+        // 키별로 순차적으로 처리
+        while (!ended)
+        {
+            // 다음 키가 뜰 때까지 대기
+            while (!ended && waitingForKey)
+                yield return null;
+            if (ended) break;
+
+            string keyNow = currentKey;
+            waitingForKey = true;
+
+            // Starest_First_Visit / Dialogue_003 특수 처리
             if (string.Equals(_ctxEvent, "Starest_First_Visit", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(key, "Dialogue_003", StringComparison.OrdinalIgnoreCase))
+                string.Equals(keyNow, "Dialogue_003", StringComparison.OrdinalIgnoreCase))
             {
                 if (!_special003Processed)
                 {
@@ -1082,41 +1277,76 @@ public class NpcEventDebugLoader : MonoBehaviour
                 }
             }
 
-            if (_currentDialogueReactions == null || _currentDialogueReactions.Length == 0) return;
-
-            for (int i = 0; i < _currentDialogueReactions.Length; i++)
+            // 이전 키의 지연 리액션 먼저 실행
+            if (pendingFromPreviousKey != null && pendingFromPreviousKey.Count > 0)
             {
-                var r = _currentDialogueReactions[i];
-                if (r == null || string.IsNullOrEmpty(r.onKey)) continue;
-                if (!string.Equals(r.onKey, key, StringComparison.OrdinalIgnoreCase)) continue;
-                if (_reactionsFired.Contains(r.onKey)) continue;
+                var batch = pendingFromPreviousKey.ToArray();
+                pendingFromPreviousKey.Clear();
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] DialogueReaction 실행 (이전 키 종료 시점) — actions={batch.Length}");
+                yield return StartCoroutine(ExecutePostActions(batch));
+            }
 
-                _reactionsFired.Add(r.onKey);
+            // 현재 키에 대한 리액션 계산
+            if (_currentDialogueReactions != null && _currentDialogueReactions.Length > 0)
+            {
+                List<EventPostAction> immediateBatch = null;
+                List<EventPostAction> deferredBatch = null;
 
-                // ===== 수정 부분 =====
-                if (r.executeImmediately)
+                for (int i = 0; i < _currentDialogueReactions.Length; i++)
                 {
-                    // 즉시 실행 (대화 진행 중)
-                    StartCoroutine(ExecutePostActions(r.actions));
+                    var r = _currentDialogueReactions[i];
+                    if (r == null || string.IsNullOrEmpty(r.onKey)) continue;
+                    if (!string.Equals(r.onKey, keyNow, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (_reactionsFired.Contains(r.onKey)) continue;
+
+                    _reactionsFired.Add(r.onKey);
+
+                    if (r.actions == null || r.actions.Length == 0) continue;
+
+                    if (r.executeImmediately)
+                    {
+                        if (immediateBatch == null) immediateBatch = new List<EventPostAction>();
+                        immediateBatch.AddRange(r.actions);
+                        if (verboseLog)
+                            Debug.Log($"[NpcEventDebugLoader] DialogueReaction 즉시 실행 예약 — key={r.onKey}, actions={r.actions.Length}");
+                    }
+                    else
+                    {
+                        if (deferredBatch == null) deferredBatch = new List<EventPostAction>();
+                        deferredBatch.AddRange(r.actions);
+                        if (verboseLog)
+                            Debug.Log($"[NpcEventDebugLoader] DialogueReaction 지연 예약 — key={r.onKey}, actions={r.actions.Length}");
+                    }
                 }
-                else
+
+                // 즉시 실행 리액션 먼저 처리 (현재 키가 화면에 떠 있는 동안 실행)
+                if (immediateBatch != null && immediateBatch.Count > 0)
                 {
-                    // 대화창 닫힌 뒤 실행 (기존 방식)
-                    StartCoroutine(WaitForDialogueClosedAndExecute(r));
+                    var batch = immediateBatch.ToArray();
+                    if (verboseLog)
+                        Debug.Log($"[NpcEventDebugLoader] DialogueReaction 즉시 실행 — actions={batch.Length}, key={keyNow}");
+                    yield return StartCoroutine(ExecutePostActions(batch));
                 }
-                // ====================
+
+                // 지연 실행 리액션은 "다음 키로 넘어갈 때" 실행하도록 보관
+                if (deferredBatch != null && deferredBatch.Count > 0)
+                {
+                    if (pendingFromPreviousKey == null) pendingFromPreviousKey = new List<EventPostAction>();
+                    pendingFromPreviousKey.AddRange(deferredBatch);
+                }
             }
         }
 
-        bool ended = false;
-        void OnEndedHandler() { ended = true; }
-
-        dialogueManager.OnKeyShown += OnKeyShownHandler;
-        dialogueManager.OnDialogueEnded += OnEndedHandler;
-
-        dialogueManager.BeginWithEventName(eventForIO);
-
-        while (!ended && dialogueManager != null) yield return null;
+        // 대화 전체가 끝난 뒤, 마지막 키의 지연 리액션이 남아 있으면 여기서 실행
+        if (pendingFromPreviousKey != null && pendingFromPreviousKey.Count > 0)
+        {
+            var batch = pendingFromPreviousKey.ToArray();
+            pendingFromPreviousKey.Clear();
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] DialogueReaction 실행 (마지막 키 종료 시점) — actions={batch.Length}");
+            yield return StartCoroutine(ExecutePostActions(batch));
+        }
 
         if (dialogueManager != null)
         {
@@ -2285,7 +2515,33 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
         try { var go = (dialogueManager as Component)?.gameObject; if (go) go.SendMessage("OnClickNext", SendMessageOptions.DontRequireReceiver); } catch { }
     }
+    public bool StartNpcEventByKey(string eventKey)
+    {
+        if (string.IsNullOrEmpty(eventKey))
+        {
+            Debug.LogWarning("[NpcEventDebugLoader] StartNpcEventByKey: eventKey가 비어 있습니다.");
+            return false;
+        }
 
+        // "Owner/EventName" 형식 파싱
+        string ownerName = "Boss";  // 기본값
+        string eventName = eventKey;
+
+        if (eventKey.Contains("/"))
+        {
+            var parts = eventKey.Split('/');
+            if (parts.Length >= 2)
+            {
+                ownerName = parts[0].Trim();
+                eventName = parts[1].Trim();
+            }
+        }
+
+        if (verboseLog)
+            Debug.Log($"[NpcEventDebugLoader] StartNpcEventByKey 호출: owner='{ownerName}', event='{eventName}'");
+
+        return RunEventByName_External(ownerName, eventName);
+    }
     private IEnumerator HandleSpecial_Dialogue003()
     {
         HandleDialoguePanelActive(false);
@@ -2302,6 +2558,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             yield return StartCoroutine(TryAdvanceDialogueOneStepCo(0.0f));
         }
     }
+
 }
 
 public class NpcIdentity : MonoBehaviour

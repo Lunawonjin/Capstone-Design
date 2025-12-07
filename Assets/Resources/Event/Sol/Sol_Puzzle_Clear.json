@@ -1,0 +1,46 @@
+{
+  "useWorldSpace": true,
+  "useRigidbodyMove": true,
+  "defaultStepDuration": 0.5,
+  "player": {
+    "forceUsePlayerMoveSpeed": true,
+    "moveSpeed": 0.1
+  },
+  "npcSpawns": [
+    {
+      "npcName": "Sol",
+      "x": 30.9,
+      "y": 19.1,
+      "z": 0,
+      "deactivateExisting": true,
+      "relativeToPlayer": false
+    }
+  ],
+  "preActions": [
+    {
+      "type": "snapPlayer",
+      "x": 32.2,
+      "y": 18.0,
+      "z": 0
+    },
+    {
+      "type": "delay",
+      "duration": 0.1
+    }
+  ],
+  "steps": [
+    {
+      "axis": "x",
+      "delta": -0.01,
+      "duration": -1
+    }
+  ],
+  "afterPlayerActions": [
+    {
+      "type": "dialogue",
+      "owner": "Sol",
+      "eventName": "Sol_Puzzle_Clear"
+    }
+  ],
+  "dialogueReactions": []
+}

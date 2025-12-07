@@ -8331,11 +8331,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -14.5
+      value: -12.39
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -18.5
+      value: -3.47
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.z
@@ -8375,7 +8375,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8561908332669060240, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_Sprite
@@ -8733,7 +8733,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &358234012
 Transform:
   m_ObjectHideFlags: 0
@@ -19267,11 +19267,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -12.503
+      value: 32.2
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -18.5
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_LocalPosition.z
@@ -19307,23 +19307,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_Name
-      value: Player (1)
+      value: Test
       objectReference: {fileID: 0}
     - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 8561908332669060240, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: -8734312146448482076, guid: 89f9ae17ec24f8c4f8a998196cd79ca0, type: 3}
-    m_RemovedComponents: []
+      objectReference: {fileID: -7188234497937794180, guid: 89f9ae17ec24f8c4f8a998196cd79ca0, type: 3}
+    m_RemovedComponents:
+    - {fileID: 7922428163170844219, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+    - {fileID: 4435779816680132771, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+    - {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
-      insertIndex: 7
-      addedObject: {fileID: 1190131934}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
 --- !u!1 &424056536
 GameObject:
@@ -21556,6 +21560,7 @@ MonoBehaviour:
     eventNames:
     - Sol_First_Meet
     - Sol_Second_Meet
+    - Sol_Puzzle_Clear
   - ownerName: Salt
     eventNames:
     - Salt_First_Meet
@@ -21570,6 +21575,7 @@ MonoBehaviour:
     - Starest_First_Visit
     - Boss_SaltKey_Lost
     - Boss_Seconday_Busstop
+    - Boss_Sol_FinalGame
   autoRunOnHouseEnter: 1
   playerTransform: {fileID: 889705227}
   playerMove: {fileID: 889705222}
@@ -21679,6 +21685,11 @@ MonoBehaviour:
   logWhenSkip: 1
   verboseLog: 1
   logSanitizedJsonOnError: 1
+  puzzleSceneName: Sol's Game Puzzle
+  returnSceneName: Starest
+  puzzleClearOwner: Sol
+  puzzleClearEvent: Sol_Puzzle_Clear
+  puzzleClearFlag: Sol_Puzzle_Clear
   firstVisitEvents:
   - sceneName: Starest
     ownerName: Boss
@@ -21919,6 +21930,10 @@ PrefabInstance:
       propertyPath: m_LocalScale.y
       value: 12
       objectReference: {fileID: 0}
+    - target: {fileID: 2851251968670020965, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3247807206644763578, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
       propertyPath: m_LocalPosition.x
       value: 30
@@ -22066,6 +22081,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2472548193043960671, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1878790464}
+    - targetCorrespondingSourceObject: {fileID: 2472548193043960671, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 948774123}
+    - targetCorrespondingSourceObject: {fileID: 2472548193043960671, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 855332037}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 3337797603424427554, guid: e05b878b615a8de47b272e5d56a49cce, type: 3}
       insertIndex: -1
@@ -22675,6 +22696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 726983049}
   - component: {fileID: 726983048}
+  - component: {fileID: 726983050}
   m_Layer: 0
   m_Name: PlayerData
   m_TagString: Untagged
@@ -22709,7 +22731,7 @@ MonoBehaviour:
     Language: ko
     StartGame: 1
     CanFirstSleep: 0
-    Starest_First_Visit: 0
+    Starest_First_Visit: 1
     Sol_Today_Talk: 0
     Salt_Today_Talk: 0
     Ryu_Today_Talk: 0
@@ -22720,12 +22742,15 @@ MonoBehaviour:
     White_First_Meet: 0
     Sol_Second_Meet: 0
     Boss_SaltKey_Lost: 0
+    Boss_Seconday_Busstop: 0
     Sol_FriendShip: 0
     Salt_FriendShip: 0
     Ryu_FriendShip: 0
     White_FriendShip: 0
     DiaryOpen: 0
-    Salt_House_Key: 0
+    Salt_House_Key: 1
+    Boss_Sol_FinalGame: 0
+    Sol_Puzzle_Clear: 0
     MessengerDelivered: []
     MessengerReadList: []
     ActiveSceneName: 
@@ -22819,6 +22844,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &726983050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726983047}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28f572c4931b55646835c16c348604ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PuzzleSceneManager
+  puzzleSceneName: Sol's Game Puzzle
+  starestSceneName: Starest
+  puzzleClearOwner: Sol
+  puzzleClearEvent: Sol_Puzzle_Clear
+  secondMeetFlag: Sol_Second_Meet
+  puzzleClearFlag: Sol_Puzzle_Clear
+  verboseLog: 1
 --- !u!1 &735952349
 GameObject:
   m_ObjectHideFlags: 0
@@ -23074,6 +23118,165 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 814653145}
   m_CullTransparentMesh: 1
+--- !u!1 &855332036
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 855332037}
+  - component: {fileID: 855332040}
+  - component: {fileID: 855332039}
+  - component: {fileID: 855332038}
+  m_Layer: 0
+  m_Name: Sol_FinalGame_Trigger
+  m_TagString: Door
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &855332037
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855332036}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 3.748001, y: 0.29500008, z: 9.893078}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 24240574}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &855332038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855332036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbcc89e4867f94d47a95b41bce502824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SolFinalGameTrigger
+  interactKey: 102
+  solsHouse: {fileID: 1119160129}
+  solsLivingRoom: {fileID: 1061184803}
+  autoFindSolsHouse: 1
+  autoFindLivingRoom: 1
+  playerFadeColor: {r: 0.49, g: 0.49, b: 0.49, a: 1}
+  playerTag: Player
+  bossNpcName: Boss_Npc
+  verboseLog: 1
+--- !u!61 &855332039
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855332036}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
+--- !u!212 &855332040
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 855332036}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
 --- !u!1 &866303493
 GameObject:
   m_ObjectHideFlags: 0
@@ -23598,6 +23801,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1479014804}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &948774122
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 948774123}
+  - component: {fileID: 948774124}
+  m_Layer: 0
+  m_Name: "\uC194\uC774 \uCE68\uB300 \uC774\uBD88\uB9CC_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &948774123
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 948774122}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.4090004, y: 0.28469086, z: 9.893078}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 24240574}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &948774124
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 948774122}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 2
+  m_Sprite: {fileID: -2165820677165285729, guid: 81dd7b151fde24d4ca516169e22b305a, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1.8875, y: 0.7}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
 --- !u!1 &971416812
 GameObject:
   m_ObjectHideFlags: 0
@@ -25901,98 +26194,6 @@ Transform:
   - {fileID: 1927245013}
   m_Father: {fileID: 866303494}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1190131932 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
-  m_PrefabInstance: {fileID: 420347881}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1190131934
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1190131932}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e157d793541eb044f90da997bf376478, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HouseDoorTeleporter
-  playerTransform: {fileID: 1190131941}
-  playerMove: {fileID: 0}
-  houses:
-  - {fileID: 1402272197}
-  - {fileID: 417964755}
-  - {fileID: 1807376344}
-  - {fileID: 1518603143}
-  doors:
-  - {fileID: 1933457835}
-  - {fileID: 1646781961}
-  - {fileID: 2140886824}
-  - {fileID: 1301742009}
-  characterHouses:
-  - {fileID: 1119160129}
-  - {fileID: 1324872546}
-  - {fileID: 972573749}
-  - {fileID: 1557195447}
-  mapToDisable:
-  - {fileID: 1190056252}
-  ownerNames:
-  - Sol
-  - Salt
-  - Ryu
-  - White
-  doorOffsets:
-  - {x: 0, y: 0.7}
-  - {x: 0, y: 0.7}
-  - {x: 0, y: 0.7}
-  - {x: 0, y: 0.7}
-  houseReturnOffsets:
-  - {x: 0, y: -0.5}
-  - {x: 0, y: -1.5}
-  - {x: 0, y: -0.5}
-  - {x: 0, y: -0.5}
-  cameraToDisable: {fileID: 0}
-  deactivateOtherCharacterHousesFirst: 0
-  houseActivationKey: 102
-  doorReturnKey: 115
-  useRigidbodySnap: 0
-  verboseLog: 1
-  hideMissionOnOwnerName: Sol
-  saltOwnerName: Salt
-  saltDoorLockedPanel: {fileID: 61904102}
-  saltDoorLockedText: {fileID: 427889967}
-  saltDoorLockedMessage: "\uBB38\uC774 \uC7A0\uACA8 \uC788\uB2E4. \uC5F4\uC1E0\uB97C
-    \uCC3E\uC73C\uB7EC \uAC00\uC790."
-  roadRoot: {fileID: 1751717581}
-  starestRoadRoot: {fileID: 2044017009}
-  busObject: {fileID: 170945631}
-  roadCamera: {fileID: 358234011}
-  starestCamera: {fileID: 1673023785}
-  doorName_RoadToStarest: Road to Starest
-  doorName_BackToRoad: Back to Road
-  starestSpawnPos: {x: 0.5, y: -13}
-  roadReturnPos: {x: 0.5, y: -15.5}
-  starestCenterRoot: {fileID: 1190056252}
-  playerCameraRoot: {fileID: 0}
-  doorName_ArriveToStarest: Arrive to Starest
-  doorName_BackToStarest: Back to Starest
-  starestCenterPos: {x: 0.5, y: 0}
-  starestRoadPosFromCenter: {x: 0.5, y: -5.5}
-  useDoorFade: 1
-  fadeInDuration: 0.25
-  fadeOutDuration: 0.001
-  fadeColor: {r: 0, g: 0, b: 0, a: 1}
-  fadeOverlay: {fileID: 0}
-  starestCenterBgmKey: Starest
-  starestCenterBgmFadeSeconds: 0.6
-  stopBgmWhenLeavingCenter: 1
-  starestSceneName: Starest
-  starestOnly: 1
-  IsVillage: 0
-  ownerFlagsList: []
-  npcEventLoader: {fileID: 645547099}
-  runBossSaltKeyLostOnExitFromSol: 1
 --- !u!4 &1190131941 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
@@ -32543,7 +32744,7 @@ GameObject:
   - component: {fileID: 1388461866}
   m_Layer: 5
   m_Name: Image
-  m_TagString: Untagged
+  m_TagString: HUD
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -40231,7 +40432,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5147872967208569000, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5150179744051547750, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchoredPosition.y

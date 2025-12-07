@@ -26,6 +26,10 @@ MonoBehaviour:
     m_Localized: "\uC18C\uAE08"
     m_Metadata:
       m_Items: []
+  - m_Id: 791898852102144
+    m_Localized: "\uC18C\uAE08"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -23,6 +23,10 @@ MonoBehaviour:
     m_Key: Dialogue_002
     m_Metadata:
       m_Items: []
+  - m_Id: 792101613146112
+    m_Key: Dialogue_003
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
