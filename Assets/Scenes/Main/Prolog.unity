@@ -135,7 +135,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!212 &132198678
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1384,7 +1384,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2580775444156510101, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4178506660657732914, guid: c99cf281692537e41b21e721ac8c4641, type: 3}
       propertyPath: goodNightQA
