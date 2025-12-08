@@ -4,10 +4,10 @@ using UnityEngine;
 public class SyringeProjectile : MonoBehaviour
 {
     [Header("기본 이동 설정")]
-    [SerializeField] private float defaultSpeed = 12f;      // 기본 속도
-    [SerializeField] private float defaultGravity = 9.8f;   // 기본 중력(포물선)
-    [SerializeField] private int defaultDamage = 1;         // 기본 데미지
-    [SerializeField] private float lifeTime = 4f;           // 유지 시간(조금 더 길게)
+    [SerializeField] private float defaultSpeed = 12f;
+    [SerializeField] private float defaultGravity = 9.8f;
+    [SerializeField] private int defaultDamage = 1;
+    [SerializeField] private float lifeTime = 4f;
 
     [Header("포물선 샷 설정")]
     [Tooltip("포물선 샷일 때 위로 줄 초기 속도(점프력 느낌)")]
@@ -20,6 +20,9 @@ public class SyringeProjectile : MonoBehaviour
     [Tooltip("피격 판정에 사용할 적 태그")]
     [SerializeField] private string enemyTag = "Enemy";
 
+    [Tooltip("보스 태그")]
+    [SerializeField] private string bossTag = "Boss";
+
     [Header("스프라이트 회전")]
     [Tooltip("이동 방향에 더해줄 추가 회전각(도 단위). 세로 스프라이트를 가로로 눕히고 싶으면 90 또는 -90")]
     [SerializeField] private float spriteAngleOffset = 90f;
@@ -31,17 +34,48 @@ public class SyringeProjectile : MonoBehaviour
     [SerializeField] private int maxPierceHits = 0;
 
     private float lifeTimer;
-    private Vector2 velocity;   // 현재 속도 벡터
-    private float gravity;      // 현재 적용 중인 중력 값
-    private int damage = 1;     // 현재 탄의 데미지
-
+    private Vector2 velocity;
+    private float gravity;
+    private int damage = 1;
     private int currentPierceHits = 0;
     private SyringePoolShooter owner;
+
+    // ========================================
+    // 🔹 Public 메서드
+    // ========================================
 
     public void Init(SyringePoolShooter pool)
     {
         owner = pool;
     }
+
+    /// <summary>
+    /// ⭐ 데미지 값 반환 (보스가 호출)
+    /// </summary>
+    public int GetDamage()
+    {
+        return damage;
+    }
+
+    /// <summary>
+    /// 차지샷 여부 확인 (데미지가 3 이상이면 차지샷)
+    /// </summary>
+    public bool IsCharged()
+    {
+        return damage >= 3;
+    }
+
+    /// <summary>
+    /// 현재 관통 횟수 반환
+    /// </summary>
+    public int GetCurrentPierceHits()
+    {
+        return currentPierceHits;
+    }
+
+    // ========================================
+    // 🔹 Unity 생명주기
+    // ========================================
 
     private void OnEnable()
     {
@@ -54,7 +88,35 @@ public class SyringeProjectile : MonoBehaviour
         currentPierceHits = 0;
     }
 
-    // 예전 버전과의 호환용
+    private void Update()
+    {
+        // 중력 적용
+        if (gravity > 0f)
+        {
+            velocity.y -= gravity * Time.deltaTime;
+        }
+
+        // 이동
+        transform.position += (Vector3)(velocity * Time.deltaTime);
+
+        // 스프라이트 방향 보정
+        UpdateRotationByVelocity();
+
+        // 수명 체크
+        lifeTimer += Time.deltaTime;
+        if (lifeTimer >= lifeTime)
+        {
+            ReturnToPool();
+        }
+    }
+
+    // ========================================
+    // 🔹 발사 시스템
+    // ========================================
+
+    /// <summary>
+    /// 예전 버전과의 호환용
+    /// </summary>
     public void Launch(Vector2 dir)
     {
         Launch(dir, defaultSpeed, defaultGravity, defaultDamage, false, 0);
@@ -91,33 +153,11 @@ public class SyringeProjectile : MonoBehaviour
         }
         else
         {
-            // 직선 샷
+            // 직선 샷 (차지샷)
             velocity = dir * speed;
         }
 
         UpdateRotationByVelocity();
-    }
-
-    private void Update()
-    {
-        // 중력 적용
-        if (gravity > 0f)
-        {
-            velocity.y -= gravity * Time.deltaTime;
-        }
-
-        // 이동
-        transform.position += (Vector3)(velocity * Time.deltaTime);
-
-        // 스프라이트 방향 보정
-        UpdateRotationByVelocity();
-
-        // 수명 체크
-        lifeTimer += Time.deltaTime;
-        if (lifeTimer >= lifeTime)
-        {
-            ReturnToPool();
-        }
     }
 
     private void UpdateRotationByVelocity()
@@ -128,6 +168,10 @@ public class SyringeProjectile : MonoBehaviour
         float finalAngle = baseAngle + spriteAngleOffset;
         transform.rotation = Quaternion.Euler(0f, 0f, finalAngle);
     }
+
+    // ========================================
+    // 🔹 충돌 처리
+    // ========================================
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -153,11 +197,41 @@ public class SyringeProjectile : MonoBehaviour
 
     private void HandleHit(GameObject hitObject, Vector2 hitPoint)
     {
-        bool hitEnemy = false;
+        bool hitTarget = false;
 
+        // ========================================
+        // ⭐ 보스 충돌 처리 (최우선)
+        // ========================================
+        if (!string.IsNullOrEmpty(bossTag) && hitObject.CompareTag(bossTag))
+        {
+            SolsFinalGameBoss boss = hitObject.GetComponent<SolsFinalGameBoss>();
+            if (boss == null)
+                boss = hitObject.GetComponentInParent<SolsFinalGameBoss>();
+
+            if (boss != null)
+            {
+                boss.TakeHit(damage);
+                Debug.Log($"[SyringeProjectile] 보스 피격! 데미지: {damage}, 차지샷: {IsCharged()}");
+                hitTarget = true;
+
+                // 관통 처리
+                if (canPierce && currentPierceHits < maxPierceHits)
+                {
+                    currentPierceHits++;
+                    Debug.Log($"[SyringeProjectile] 보스 관통! 남은 횟수: {maxPierceHits - currentPierceHits}");
+                    return; // 발사체 유지
+                }
+
+                ReturnToPool();
+                return;
+            }
+        }
+
+        // ========================================
+        // 일반 적 충돌 처리
+        // ========================================
         if (!string.IsNullOrEmpty(enemyTag) && hitObject.CompareTag(enemyTag))
         {
-            // 적 스크립트 찾기
             SolsFinalGameEnemy enemy = hitObject.GetComponent<SolsFinalGameEnemy>();
             if (enemy == null)
                 enemy = hitObject.GetComponentInParent<SolsFinalGameEnemy>();
@@ -169,20 +243,42 @@ public class SyringeProjectile : MonoBehaviour
                 {
                     enemy.TakeHit(hitPoint);
                 }
-                hitEnemy = true;
+                Debug.Log($"[SyringeProjectile] 적 피격! 데미지: {damage}");
+                hitTarget = true;
+
+                // 관통 처리
+                if (canPierce && currentPierceHits < maxPierceHits)
+                {
+                    currentPierceHits++;
+                    Debug.Log($"[SyringeProjectile] 적 관통! 남은 횟수: {maxPierceHits - currentPierceHits}");
+                    return; // 발사체 유지
+                }
+
+                ReturnToPool();
+                return;
             }
         }
 
-        if (hitEnemy && canPierce && currentPierceHits < maxPierceHits - 1)
+        // ========================================
+        // 벽/장애물 충돌 처리
+        // ========================================
+        if (hitObject.CompareTag("Ground") || hitObject.CompareTag("Wall"))
         {
-            // 관통 중: 카운트 올리고 그대로 진행
-            currentPierceHits++;
+            Debug.Log($"[SyringeProjectile] 벽 충돌! 발사체 회수");
+            ReturnToPool();
             return;
         }
 
-        // 그 외에는 회수
-        ReturnToPool();
+        // 아무것도 맞지 않았으면 그냥 회수
+        if (!hitTarget)
+        {
+            ReturnToPool();
+        }
     }
+
+    // ========================================
+    // 🔹 오브젝트 풀 반환
+    // ========================================
 
     private void ReturnToPool()
     {
