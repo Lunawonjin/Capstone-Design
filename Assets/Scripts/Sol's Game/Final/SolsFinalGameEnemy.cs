@@ -214,48 +214,61 @@ public class BossSpawnSequence : MonoBehaviour
 
     private IEnumerator SpawnBossRoutine(float delay)
     {
-        Debug.Log("[BossSpawnSequence] 시퀀스 시작!");
+        Debug.Log("[BossSpawnSequence] 보스 소환 시퀀스 시작!");
 
         // 지연 시간
         yield return new WaitForSeconds(delay);
 
-        // 보스 소환
-        if (BossSpawnManager.Instance != null)
+        // ✅ SolsFinalGame에서 보스 관련 필드 직접 접근
+        if (SolsFinalGame.Instance != null)
         {
-            BossSpawnManager.Instance.TriggerBossSpawn();
-            Debug.Log("[BossSpawnSequence] 보스 소환 완료");
+            // bossUIObject 활성화
+            if (SolsFinalGame.Instance.bossUIObject != null)
+            {
+                SolsFinalGame.Instance.bossUIObject.SetActive(true);
+                Debug.Log("[BossSpawnSequence] ✅ BossUI 활성화!");
+            }
+            else
+            {
+                Debug.LogWarning("[BossSpawnSequence] ⚠️ bossUIObject가 null!");
+            }
 
-            yield return new WaitForSeconds(0.3f);
+            // bossObject 활성화
+            if (SolsFinalGame.Instance.bossObject != null)
+            {
+                SolsFinalGame.Instance.bossObject.SetActive(true);
+                Debug.Log("[BossSpawnSequence] ✅ Boss 활성화!");
+            }
+            else
+            {
+                Debug.LogWarning("[BossSpawnSequence] ⚠️ bossObject가 null!");
+            }
+
+            // cameraFollow 활성화
+            if (SolsFinalGame.Instance.cameraFollow != null)
+            {
+                SolsFinalGame.Instance.cameraFollow.enabled = true;
+                Debug.Log("[BossSpawnSequence] ✅ 카메라 추적 활성화!");
+            }
+            else
+            {
+                Debug.LogWarning("[BossSpawnSequence] ⚠️ cameraFollow가 null!");
+            }
+
+            // 플레이어 제어 복구
+            PlayerMover playerMover = FindFirstObjectByType<PlayerMover>();
+            if (playerMover != null)
+            {
+                playerMover.SetControlEnabled(true);
+                Debug.Log("[BossSpawnSequence] ✅ 플레이어 제어 복구!");
+            }
         }
         else
         {
-            Debug.LogWarning("[BossSpawnSequence] BossSpawnManager.Instance를 찾을 수 없음!");
+            Debug.LogError("[BossSpawnSequence] ❌ SolsFinalGame.Instance를 찾을 수 없음!");
         }
 
-        // 보스 인트로 대사 시작
-        if (SolsFinalGame.Instance != null)
-        {
-            SolsFinalGame.Instance.StartBossIntroDialogue();
-            Debug.Log("[BossSpawnSequence] 보스 인트로 대사 시작");
-
-            // 대사가 완전히 끝날 때까지 대기
-            while (SolsFinalGame.Instance.IsPlayingBossDialogue())
-            {
-                yield return null;
-            }
-
-            Debug.Log("[BossSpawnSequence] 보스 인트로 대사 완전 종료!");
-        }
-
-        // 플레이어 제어 복구
-        PlayerMover playerMover = FindFirstObjectByType<PlayerMover>();
-        if (playerMover != null)
-        {
-            playerMover.SetControlEnabled(true);
-            Debug.Log("[BossSpawnSequence] ★★★ 플레이어 제어 복구 완료! ★★★");
-        }
-
-        Debug.Log("[BossSpawnSequence] 시퀀스 완료!");
+        Debug.Log("[BossSpawnSequence] ✅ 시퀀스 완료!");
 
         // 자기 자신 파괴
         Destroy(gameObject);

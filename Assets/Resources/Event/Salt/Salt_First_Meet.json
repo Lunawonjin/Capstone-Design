@@ -81,6 +81,11 @@
       "type": "dialogue",
       "owner": "Salt",
       "eventName": "Salt_First_Meet"
+    },
+    {
+      "type": "setPlayerBool",
+      "flag": "CanFirstSleep",
+      "value": true
     }
   ],
   "dialogueReactions": [
@@ -92,18 +97,18 @@
           "npcName": "Salt"
         },
         { "type": "dialoguePanelActive", "active": false },
-    {
-      "type": "playerMove",
-      "axis": "x",
-      "delta": 2.9,
-      "duration": 1.2
-    },
-    {
-      "type": "playerMove",
-      "axis": "y",
-      "delta": 0.1,
-      "duration": 0.2
-    }
+        {
+          "type": "playerMove",
+          "axis": "x",
+          "delta": 2.9,
+          "duration": 1.2
+        },
+        {
+          "type": "playerMove",
+          "axis": "y",
+          "delta": 0.1,
+          "duration": 0.2
+        }
       ]
     },
     {
@@ -128,12 +133,12 @@
           "dy": 0.0,
           "duration": 0.5
         },
-    {
-      "type": "playerMove",
-      "axis": "x",
-      "delta": -0.01,
-      "duration": 0.1
-    },
+        {
+          "type": "playerMove",
+          "axis": "x",
+          "delta": -0.01,
+          "duration": 0.1
+        },
         {
           "type": "npcMove",
           "npcName": "Salt",
@@ -141,12 +146,13 @@
           "dy": -1.0,
           "duration": 0.7
         },
-    {
-      "type": "playerMove",
-      "axis": "y",
-      "delta": -0.01,
-      "duration": 0.1
-    },        {
+        {
+          "type": "playerMove",
+          "axis": "y",
+          "delta": -0.01,
+          "duration": 0.1
+        },
+        {
           "type": "npcMove",
           "npcName": "Salt",
           "dx": 0.0,

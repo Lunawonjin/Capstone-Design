@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1ac97951ea7c7034f8faf29c0fceb7af
+    m_Address: Boss_Sol_FinalGame_Second_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 25a392d61674dba4e968a04e64370664
     m_Address: Messenger_Content_en
     m_ReadOnly: 1
@@ -53,6 +59,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4ef9d2c9fece75d4aaa46e5b9b37f408
     m_Address: Sol's_Talk_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a2fd7b9203cc854c8e6252bb985ed83
+    m_Address: Boss_Sol_FinalGame_First_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
@@ -112,6 +124,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a77498e9fd363e347915173ca7b3f61a
+    m_Address: Boss_Sol_FinalGame_First_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: adf5dd2f638f0254caaea39b20fc2f31
+    m_Address: Boss_Sol_FinalGame_Second_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: af1e5a71e3c3a0346ba2be40d5dd8721
     m_Address: Salt's_Talk_Dialogue_en
     m_ReadOnly: 1
@@ -126,6 +150,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b3fef5af0d1b2b945ab629f94c6a28ef
     m_Address: Boss_Seconday_Busstop_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b9caa072bb20ece4ea96f2ca61620121
+    m_Address: Boss_Sol_FinalGame_Third_Dialogue_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
@@ -156,6 +186,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ca77824813c8c19418da18036ffaa92c
     m_Address: Sol_FinalGame_Speaker_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1ea4cf13cf75c24cbd37c8b430609ba
+    m_Address: Boss_Sol_FinalGame_Third_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

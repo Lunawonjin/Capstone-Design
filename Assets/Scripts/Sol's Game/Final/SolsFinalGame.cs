@@ -59,13 +59,13 @@ public class SolsFinalGame : MonoBehaviour
 
     [Header("보스 오브젝트 설정")]
     [Tooltip("보스 UI (HP 바 등)")]
-    [SerializeField] private GameObject bossUIObject;
+    [SerializeField] public GameObject bossUIObject;
     [Tooltip("보스 오브젝트")]
-    [SerializeField] private GameObject bossObject;
+    [SerializeField] public GameObject bossObject;
 
     [Header("카메라 추적 설정")]
     [Tooltip("보스전 후 활성화할 카메라 추적 스크립트")]
-    [SerializeField] private SimpleCameraFollow cameraFollow;
+    [SerializeField] public SimpleCameraFollow cameraFollow;
 
     private bool moveWasEnabledBeforeAir = true;
     private bool animatorWasEnabledBeforeAir = true;
