@@ -4,6 +4,19 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SolsFinalGame : MonoBehaviour
 {
+    [Header("시작 설정")]
+    [Tooltip("게임 시작 시 플레이어가 위치할 좌표")]
+    [SerializeField] private Vector3 startPosition = new Vector3(0, 7, 0);
+
+    [Header("대사 설정 (착지 시)")]
+    [Tooltip("활성화할 Dialogue UI 오브젝트")]
+    [SerializeField] private GameObject dialogueUIObject;
+    [SerializeField] private DialogueRunnerStringTables dialogueRunner;
+    [Tooltip("착지 후 출력할 대사 이벤트 키")]
+    [SerializeField] private string landingDialogueEvent = "Boss_Sol_FinalGame_Second";
+    [Tooltip("착지 후 대사 시작 전 대기 시간")]
+    [SerializeField] private float landingDialogueDelay = 0.1f; // [추가] 0.1초 딜레이
+
     [Header("플레이어 참조(비우면 자동 탐색)")]
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
     [SerializeField] private Rigidbody2D playerRb;
@@ -66,6 +79,12 @@ public class SolsFinalGame : MonoBehaviour
     private bool lastCanMoveX = true;
     private bool hasPickedUpSyringe = false;
 
+    // [추가] 대사 관련 상호작용(F키) 차단 플래그
+    private bool isInteractionBlocked = false;
+
+    // 착지 이벤트 발생 여부 체크용
+    private bool _hasLandedOnce = false;
+
     void Awake()
     {
         if (playerSpriteRenderer == null) playerSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -90,6 +109,16 @@ public class SolsFinalGame : MonoBehaviour
 
         if (syringeShooter != null) syringeShooter.SetShootingEnabled(false);
 
+        // 대사 실행기 자동 탐색
+        if (dialogueRunner == null)
+            dialogueRunner = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+
+        // [추가] 대사 종료 이벤트 구독
+        if (dialogueRunner != null)
+        {
+            dialogueRunner.OnDialogueEnded += OnLandingDialogueEnded;
+        }
+
         if (playerRb != null)
         {
             originalConstraints = playerRb.constraints;
@@ -98,12 +127,35 @@ public class SolsFinalGame : MonoBehaviour
         }
     }
 
+    // [추가] 이벤트 구독 해제 (안전장치)
+    void OnDestroy()
+    {
+        if (dialogueRunner != null)
+        {
+            dialogueRunner.OnDialogueEnded -= OnLandingDialogueEnded;
+        }
+    }
+
+    void Start()
+    {
+        if (playerRb != null)
+        {
+            playerRb.position = startPosition;
+            playerRb.transform.position = startPosition;
+            playerRb.linearVelocity = Vector2.zero;
+        }
+        else
+        {
+            transform.position = startPosition;
+        }
+    }
+
     void Update()
     {
         bool syringeOverlapped = CheckSyringeOverlap();
 
-        // [주사기 획득 시점]
-        if (!cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
+        // [변경] isInteractionBlocked가 false일 때만 F키 상호작용 허용
+        if (!isInteractionBlocked && !cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
         {
             syringeObject.SetActive(false);
             hasPickedUpSyringe = true;
@@ -116,7 +168,6 @@ public class SolsFinalGame : MonoBehaviour
             if (wallObject != null)
                 wallObject.SetActive(false);
 
-            // 주의: 여기서 적을 활성화하지 않고 카메라 이동 코루틴 시작만 함
             MoveCameraToX(cameraTargetX);
         }
 
@@ -153,6 +204,7 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (!grounded)
         {
+            // --- 공중에 있을 때 ---
             if (playerSpriteRenderer != null && fallingSprite != null)
                 playerSpriteRenderer.sprite = fallingSprite;
 
@@ -170,6 +222,32 @@ public class SolsFinalGame : MonoBehaviour
         }
         else
         {
+            // --- 바닥에 닿았을 때 ---
+
+            // [변경] 첫 착지 로직 수정
+            if (!_hasLandedOnce)
+            {
+                _hasLandedOnce = true;
+
+                // 1. 강제 컨트롤 잠금 & F키 상호작용 차단
+                forceControlLocked = true;
+                isInteractionBlocked = true;
+
+                // 2. 물리 속도 정지 및 이동 컴포넌트 비활성
+                if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
+                if (movementComponent != null) movementComponent.enabled = false;
+
+                // 애니메이터 복구 (착지 모션 등을 위해)
+                if (playerAnimator != null)
+                    playerAnimator.enabled = animatorWasEnabledBeforeAir;
+
+                // 3. [변경] 0.1초 딜레이 후 대사 시작 코루틴 호출
+                StartCoroutine(Co_StartLandingDialogue());
+
+                return;
+            }
+
+            // --- 일반적인 착지 처리 ---
             if (!hasPickedUpSyringe)
             {
                 if (playerAnimator != null)
@@ -189,6 +267,53 @@ public class SolsFinalGame : MonoBehaviour
             }
         }
 
+        if (playerRb != null)
+        {
+            lastCanMoveX = CanMoveX();
+            ApplyRigidbodyXConstraint(lastCanMoveX);
+        }
+    }
+
+    // [추가] 0.1초 대기 후 UI를 켜고 대사 시작
+    private IEnumerator Co_StartLandingDialogue()
+    {
+        yield return new WaitForSeconds(landingDialogueDelay); // 0.1초 대기
+
+        // UI 활성화
+        if (dialogueUIObject != null)
+        {
+            dialogueUIObject.SetActive(true);
+        }
+
+        // 대사 시작
+        if (dialogueRunner != null && !string.IsNullOrEmpty(landingDialogueEvent))
+        {
+            dialogueRunner.BeginWithEventName(landingDialogueEvent);
+        }
+    }
+
+    // [추가] 대사가 끝났을 때 호출되는 콜백 (잠금 해제)
+    private void OnLandingDialogueEnded()
+    {
+        // 1. Dialogue UI 비활성화
+        if (dialogueUIObject != null)
+        {
+            dialogueUIObject.SetActive(false);
+        }
+
+        // 2. F키 상호작용 잠금 해제
+        isInteractionBlocked = false;
+
+        // 3. 플레이어 이동 컨트롤 잠금 해제
+        forceControlLocked = false;
+
+        // 4. 이동 컴포넌트 다시 켜기 (공중에서 꺼진 것 복구)
+        if (movementComponent != null)
+        {
+            movementComponent.enabled = true;
+        }
+
+        // 물리 제약 업데이트
         if (playerRb != null)
         {
             lastCanMoveX = CanMoveX();
@@ -289,14 +414,14 @@ public class SolsFinalGame : MonoBehaviour
         }
         targetCamera.position = endPos;
 
-        // 2. 대기 (임팩트 전 긴장감)
+        // 2. 대기
         float delay = Mathf.Max(0f, impactDelay);
         if (delay > 0f) yield return new WaitForSeconds(delay);
 
-        // 3. 쾅! (펀치)
+        // 3. 쾅!
         yield return StartCoroutine(CameraPunchRoutine(endPos, impactPunchDuration, impactPunchMagnitude));
 
-        // 4. 덜덜덜 (쉐이크)
+        // 4. 쉐이크
         yield return StartCoroutine(CameraShakeRoutine(endPos, impactShakeDuration, impactShakeMagnitude));
 
         targetCamera.position = endPos;
@@ -306,7 +431,6 @@ public class SolsFinalGame : MonoBehaviour
 
         ApplyGroundState(isGrounded);
 
-        // [변경] 모든 카메라 연출이 끝난 "지금" 적들을 활성화!
         ActivateEnemies();
 
         cameraMoving = false;

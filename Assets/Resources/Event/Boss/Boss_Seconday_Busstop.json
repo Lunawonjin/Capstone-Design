@@ -3,19 +3,24 @@
   "useWorldSpace": true,
   "useRigidbodyMove": true,
   "player": { "forceUsePlayerMoveSpeed": true, "moveSpeed": 1.0 },
-
   "npcSpawns": [
     { "npcName": "Boss", "x": -12.5, "y": -18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
   ],
-
   "steps": [
     
   ],
-
   "afterPlayerActions": [
-    { "type": "dialogue", "owner": "Boss", "eventName": "Boss_Seconday_Busstop" }
+    { "type": "dialogue", "owner": "Boss", "eventName": "Boss_Seconday_Busstop" },
+    {
+      "type": "setPlayerBool",
+      "flag": "Boss_Seconday_Busstop",
+      "value": true
+    },
+    {
+      "type": "log",
+      "message": "Boss_Seconday_Busstop 플래그를 true로 설정했습니다."
+    }
   ],
-
   "dialogueReactions": [
     {
       "onKey": "Dialogue_Choice1_Same_002",
