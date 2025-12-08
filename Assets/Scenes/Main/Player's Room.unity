@@ -8591,6 +8591,7 @@ MonoBehaviour:
     White_FriendShip: 0
     DiaryOpen: 0
     Salt_House_Key: 0
+    Boss_Sol_FinalGame: 0
     Sol_Puzzle_Clear: 0
     MessengerDelivered: []
     MessengerReadList: []
@@ -28291,7 +28292,7 @@ PrefabInstance:
       objectReference: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: disableWhilePhoneActive.Array.size
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: 'disableWhilePhoneActive.Array.data[0]'
