@@ -152,16 +152,10 @@ public class HouseDoorTeleporter : MonoBehaviour
     [SerializeField, Min(0f)] private float starestCenterBgmFadeSeconds = 0.6f;
     [Tooltip("Center에서 나갈 때 현재 BGM을 정지할지 여부")]
     [SerializeField] private bool stopBgmWhenLeavingCenter = true;
-    // ====== 집 입장/퇴장 시 Starest BGM 제어 ======
-    [Header("집 입장/퇴장 시 Starest BGM 제어")]
-    [Tooltip("집에 들어갈 때 Starest BGM 정지 여부")]
-    [SerializeField] private bool stopStarestBgmOnEnterHouse = true;
-    [Tooltip("집에서 나올 때 Starest BGM 재생 여부")]
-    [SerializeField] private bool playStarestBgmOnExitHouse = true;
-    [Tooltip("집 입/퇴장 시 BGM 페이드 시간")]
-    [SerializeField, Min(0f)] private float houseBgmFadeSeconds = 0.6f;
+
     // 전환 중복 방지
     private bool _isSwitchingByDoor = false;
+
     // ==========================
     // Starest 상태 플래그
     // ==========================
@@ -488,10 +482,7 @@ public class HouseDoorTeleporter : MonoBehaviour
         if (map && map.activeSelf) map.SetActive(false);
 
         SetCurrentOwner(index);
-        if (stopStarestBgmOnEnterHouse)
-        {
-            StopStarestBgm();
-        }
+
         // ★ [핵심 수정] 미션 패널 강제 종료 (싱글톤 무시, 전체 검색)
         // Sol 집(또는 지정된 집)에 들어갈 때 실행
         if (!string.IsNullOrEmpty(CurrentOwnerName) &&
@@ -583,35 +574,8 @@ public class HouseDoorTeleporter : MonoBehaviour
 
             OnExitHouseToVillage(owner);
         }
-        if (playStarestBgmOnExitHouse)
-        {
-            PlayStarestBgm();
-        }
-    }
-    // SetCenterBgmActive 메서드 바로 아래에 추가:
-
-    private void PlayStarestBgm()
-    {
-        if (SoundManager.Instance == null) return;
-
-        if (!string.IsNullOrEmpty(starestCenterBgmKey))
-        {
-            SoundManager.Instance.PlayBGM(starestCenterBgmKey, houseBgmFadeSeconds, 0f);
-
-            if (verboseLog)
-                Debug.Log($"[Teleporter] Starest BGM 재생: {starestCenterBgmKey}");
-        }
     }
 
-    private void StopStarestBgm()
-    {
-        if (SoundManager.Instance == null) return;
-
-        SoundManager.Instance.StopBGM(houseBgmFadeSeconds);
-
-        if (verboseLog)
-            Debug.Log("[Teleporter] Starest BGM 정지");
-    }
     // ───────── Sol 집 → 마을 나올 때 이벤트 트리거 ─────────
     private void OnExitHouseToVillage(string ownerName)
     {

@@ -4,147 +4,116 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SolsFinalGame : MonoBehaviour
 {
-    [Header("핵심 연결 (PlayerMover 확인 필수)")]
-    [Tooltip("플레이어 이동 스크립트")]
-    [SerializeField] private PlayerMover targetMover;
-
     [Header("시작 설정")]
+    [Tooltip("게임 시작 시 플레이어가 위치할 좌표")]
     [SerializeField] private Vector3 startPosition = new Vector3(0, 7, 0);
 
     [Header("대사 설정 (착지 시)")]
+    [Tooltip("활성화할 Dialogue UI 오브젝트")]
     [SerializeField] private GameObject dialogueUIObject;
     [SerializeField] private DialogueRunnerStringTables dialogueRunner;
+    [Tooltip("착지 후 출력할 대사 이벤트 키")]
     [SerializeField] private string landingDialogueEvent = "Boss_Sol_FinalGame_Second";
-    [SerializeField] private float landingDialogueDelay = 0.1f;
+    [Tooltip("착지 후 대사 시작 전 대기 시간")]
+    [SerializeField] private float landingDialogueDelay = 0.1f; // [추가] 0.1초 딜레이
 
-    [Header("플레이어 참조")]
+    [Header("플레이어 참조(비우면 자동 탐색)")]
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
     [SerializeField] private Rigidbody2D playerRb;
     [SerializeField] private Collider2D playerCollider;
     [SerializeField] private Animator playerAnimator;
 
-    [Header("낙하/착지 설정")]
+    [Header("이동 스크립트(둘 중 하나 자동 탐색)")]
+    [SerializeField] private MonoBehaviour movementComponent;
+
+    [Header("낙하 상태 스프라이트")]
     [SerializeField] private Sprite fallingSprite;
+
+    [Header("주사기 줍고 나서 모습(애니메이터용)")]
     [SerializeField] private string rightIdleStateName = "Right_Walk";
+
+    [Header("바닥 판정")]
     [SerializeField] private string groundTag = "Ground";
     [SerializeField] private float groundCheckHeight = 0.08f;
     [SerializeField] private float groundCheckPadding = 0.02f;
 
-    [Header("주사기 및 연출")]
+    [Header("주사기 상호작용(Trigger여야 함)")]
     [SerializeField] private GameObject syringeObject;
     [SerializeField] private Collider2D syringeCollider;
     [SerializeField] private KeyCode interactKey = KeyCode.F;
+
+    [Header("주사기 발사 컨트롤")]
     [SerializeField] private SyringePoolShooter syringeShooter;
+
+    [Header("Wall 비활성화")]
     [SerializeField] private GameObject wallObject;
+
+    [Header("카메라 이동")]
     [SerializeField] private Transform targetCamera;
     [SerializeField] private float cameraTargetX = 13f;
     [SerializeField] private float cameraMoveDuration = 1.0f;
+
+    [Header("카메라 임팩트(더 콰과광)")]
     [SerializeField] private float impactDelay = 1.0f;
     [SerializeField] private float impactPunchMagnitude = 0.35f;
     [SerializeField] private float impactPunchDuration = 0.08f;
     [SerializeField] private float impactShakeMagnitude = 0.22f;
     [SerializeField] private float impactShakeDuration = 0.28f;
+
+    [Header("컨트롤 잠금 유지")]
+    [Tooltip("카메라 연출 후에도 이동 컨트롤 잠금을 유지할지 여부")]
     [SerializeField] private bool keepControlLockedAfterCamera = true;
+
+    [Header("카메라 연출 후 적 활성화")]
     [SerializeField] private SolsFinalGameEnemy[] enemiesToActivate;
-
-    [Header("보스 인트로 대사 설정")]
-    [SerializeField] private string bossIntroDialogueKey = "Boss_Sol_FinalGame_Third";
-
-    [Header("보스 엔딩 대사 설정")]
-    [SerializeField] private string bossEndingDialogueKey = "Boss_Sol_FinalGame_Ending";
-
-    [Header("보스 카메라 이동 설정")]
-    [SerializeField] private float bossCameraTargetX = 30f;
-    [SerializeField] private float bossCameraMoveDuration = 1.5f;
-
-    [Header("보스 오브젝트 설정")]
-    [Tooltip("보스 UI (HP 바 등)")]
-    [SerializeField] private GameObject bossUIObject;
-    [Tooltip("보스 오브젝트")]
-    [SerializeField] private GameObject bossObject;
-
-    [Header("카메라 추적 설정")]
-    [Tooltip("보스전 후 활성화할 카메라 추적 스크립트")]
-    [SerializeField] private SimpleCameraFollow cameraFollow;
 
     private bool moveWasEnabledBeforeAir = true;
     private bool animatorWasEnabledBeforeAir = true;
+
     private bool isGrounded = true;
     private readonly Collider2D[] groundHits = new Collider2D[16];
+
     private bool cameraMoving = false;
     private bool forceControlLocked = false;
     private RigidbodyConstraints2D originalConstraints;
     private bool lastCanMoveX = true;
     private bool hasPickedUpSyringe = false;
+
+    // [추가] 대사 관련 상호작용(F키) 차단 플래그
     private bool isInteractionBlocked = false;
+
+    // 착지 이벤트 발생 여부 체크용
     private bool _hasLandedOnce = false;
-
-    private bool hasPlayedBossIntroDialogue = false;
-    private bool hasPlayedBossEndingDialogue = false;
-    private bool isPlayingBossDialogue = false;
-
-    private bool isLandingDialogueActive = false;
-
-    public static SolsFinalGame Instance { get; private set; }
-
-    // ========================================
-    // 🔹 Public 메서드 (외부에서 호출)
-    // ========================================
-
-    public bool IsPlayingBossDialogue()
-    {
-        return isPlayingBossDialogue;
-    }
-
-    public bool IsDialogueUIActive()
-    {
-        if (dialogueUIObject == null) return false;
-        if (!dialogueUIObject.activeSelf) return false;
-
-        bool anyChildActive = false;
-        foreach (Transform child in dialogueUIObject.transform)
-        {
-            if (child.gameObject.activeSelf)
-            {
-                anyChildActive = true;
-                break;
-            }
-        }
-
-        return anyChildActive;
-    }
-
-    // ========================================
-    // 🔹 Unity 생명주기
-    // ========================================
 
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else if (Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         if (playerSpriteRenderer == null) playerSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
         if (playerRb == null) playerRb = GetComponentInChildren<Rigidbody2D>();
         if (playerCollider == null) playerCollider = GetComponentInChildren<Collider2D>();
         if (playerAnimator == null) playerAnimator = GetComponentInChildren<Animator>();
 
-        if (targetMover == null) targetMover = GetComponentInChildren<PlayerMover>();
+        if (movementComponent == null)
+        {
+            var pm1 = GetComponentInChildren<PlayerMover>();
+            if (pm1 != null) movementComponent = pm1;
+            else
+            {
+                var pm2 = GetComponentInChildren<PlayerMove>();
+                if (pm2 != null) movementComponent = pm2;
+            }
+        }
 
         if (targetCamera == null && Camera.main != null) targetCamera = Camera.main.transform;
         if (syringeCollider == null && syringeObject != null) syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
         if (syringeShooter == null) syringeShooter = GetComponentInChildren<SyringePoolShooter>();
+
         if (syringeShooter != null) syringeShooter.SetShootingEnabled(false);
 
+        // 대사 실행기 자동 탐색
         if (dialogueRunner == null)
             dialogueRunner = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
 
+        // [추가] 대사 종료 이벤트 구독
         if (dialogueRunner != null)
         {
             dialogueRunner.OnDialogueEnded += OnLandingDialogueEnded;
@@ -156,40 +125,14 @@ public class SolsFinalGame : MonoBehaviour
             lastCanMoveX = CanMoveX();
             ApplyRigidbodyXConstraint(lastCanMoveX);
         }
-
-        if (bossUIObject != null) bossUIObject.SetActive(false);
-        if (bossObject != null) bossObject.SetActive(false);
-
-        if (cameraFollow == null && targetCamera != null)
-        {
-            cameraFollow = targetCamera.GetComponent<SimpleCameraFollow>();
-        }
-
-        if (cameraFollow != null)
-        {
-            cameraFollow.enabled = false;
-            Debug.Log("[SolsFinalGame] SimpleCameraFollow 초기 비활성화");
-        }
-        else
-        {
-            Debug.LogWarning("[SolsFinalGame] SimpleCameraFollow를 찾을 수 없습니다!");
-        }
-
-        Debug.Log($"[SolsFinalGame] bossUIObject: {(bossUIObject != null ? bossUIObject.name : "NULL!")}");
-        Debug.Log($"[SolsFinalGame] bossObject: {(bossObject != null ? bossObject.name : "NULL!")}");
-        Debug.Log($"[SolsFinalGame] cameraFollow: {(cameraFollow != null ? "있음" : "NULL!")}");
     }
 
+    // [추가] 이벤트 구독 해제 (안전장치)
     void OnDestroy()
     {
         if (dialogueRunner != null)
         {
             dialogueRunner.OnDialogueEnded -= OnLandingDialogueEnded;
-        }
-
-        if (Instance == this)
-        {
-            Instance = null;
         }
     }
 
@@ -211,13 +154,20 @@ public class SolsFinalGame : MonoBehaviour
     {
         bool syringeOverlapped = CheckSyringeOverlap();
 
+        // [변경] isInteractionBlocked가 false일 때만 F키 상호작용 허용
         if (!isInteractionBlocked && !cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
         {
             syringeObject.SetActive(false);
             hasPickedUpSyringe = true;
-            if (syringeShooter != null) syringeShooter.SetShootingEnabled(true);
+
+            if (syringeShooter != null)
+                syringeShooter.SetShootingEnabled(true);
+
             SetLookRightStatic();
-            if (wallObject != null) wallObject.SetActive(false);
+
+            if (wallObject != null)
+                wallObject.SetActive(false);
+
             MoveCameraToX(cameraTargetX);
         }
 
@@ -230,32 +180,12 @@ public class SolsFinalGame : MonoBehaviour
                 ApplyRigidbodyXConstraint(lastCanMoveX);
             }
         }
-
-        // ⭐ 테스트용: T키로 강제 보스 활성화
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            Debug.Log("[TEST] T키 입력! 강제 보스 활성화 테스트");
-            if (bossUIObject != null)
-            {
-                bossUIObject.SetActive(true);
-                Debug.Log("[TEST] BossUI 강제 활성화!");
-            }
-            if (bossObject != null)
-            {
-                bossObject.SetActive(true);
-                Debug.Log("[TEST] Boss 강제 활성화!");
-            }
-            if (cameraFollow != null)
-            {
-                cameraFollow.enabled = true;
-                Debug.Log("[TEST] 카메라 추적 활성화!");
-            }
-        }
     }
 
     void FixedUpdate()
     {
         bool nowGrounded = CheckGroundedUnderFeetByTag();
+
         if (nowGrounded != isGrounded)
         {
             isGrounded = nowGrounded;
@@ -270,14 +200,11 @@ public class SolsFinalGame : MonoBehaviour
         }
     }
 
-    // ========================================
-    // 🔹 착지 및 제어 시스템
-    // ========================================
-
     private void ApplyGroundState(bool grounded)
     {
         if (!grounded)
         {
+            // --- 공중에 있을 때 ---
             if (playerSpriteRenderer != null && fallingSprite != null)
                 playerSpriteRenderer.sprite = fallingSprite;
 
@@ -286,45 +213,52 @@ public class SolsFinalGame : MonoBehaviour
                 animatorWasEnabledBeforeAir = playerAnimator.enabled;
                 playerAnimator.enabled = false;
             }
+
+            if (movementComponent != null)
+            {
+                moveWasEnabledBeforeAir = movementComponent.enabled;
+                movementComponent.enabled = false;
+            }
         }
         else
         {
+            // --- 바닥에 닿았을 때 ---
+
+            // [변경] 첫 착지 로직 수정
             if (!_hasLandedOnce)
             {
                 _hasLandedOnce = true;
+
+                // 1. 강제 컨트롤 잠금 & F키 상호작용 차단
                 forceControlLocked = true;
                 isInteractionBlocked = true;
 
-                if (targetMover != null)
-                {
-                    targetMover.enabled = true;
-                    targetMover.SetControlEnabled(false);
-                    Debug.Log("★ [SolsFinalGame] 착지 확인! PlayerMover 조작(ControlEnabled) 비활성화 완료.");
-                }
-
+                // 2. 물리 속도 정지 및 이동 컴포넌트 비활성
                 if (playerRb != null) playerRb.linearVelocity = Vector2.zero;
-                if (playerAnimator != null) playerAnimator.enabled = animatorWasEnabledBeforeAir;
+                if (movementComponent != null) movementComponent.enabled = false;
 
+                // 애니메이터 복구 (착지 모션 등을 위해)
+                if (playerAnimator != null)
+                    playerAnimator.enabled = animatorWasEnabledBeforeAir;
+
+                // 3. [변경] 0.1초 딜레이 후 대사 시작 코루틴 호출
                 StartCoroutine(Co_StartLandingDialogue());
+
                 return;
             }
 
+            // --- 일반적인 착지 처리 ---
             if (!hasPickedUpSyringe)
             {
-                if (playerAnimator != null) playerAnimator.enabled = animatorWasEnabledBeforeAir;
+                if (playerAnimator != null)
+                    playerAnimator.enabled = animatorWasEnabledBeforeAir;
 
-                if (targetMover != null)
+                if (movementComponent != null)
                 {
-                    targetMover.enabled = true;
-
                     if (forceControlLocked)
-                    {
-                        targetMover.SetControlEnabled(false);
-                    }
+                        movementComponent.enabled = false;
                     else
-                    {
-                        if (moveWasEnabledBeforeAir) targetMover.SetControlEnabled(true);
-                    }
+                        movementComponent.enabled = moveWasEnabledBeforeAir;
                 }
             }
             else
@@ -340,54 +274,46 @@ public class SolsFinalGame : MonoBehaviour
         }
     }
 
+    // [추가] 0.1초 대기 후 UI를 켜고 대사 시작
     private IEnumerator Co_StartLandingDialogue()
     {
-        yield return new WaitForSeconds(landingDialogueDelay);
+        yield return new WaitForSeconds(landingDialogueDelay); // 0.1초 대기
 
-        isLandingDialogueActive = true;
-
-        if (syringeShooter != null)
+        // UI 활성화
+        if (dialogueUIObject != null)
         {
-            syringeShooter.SetShootingEnabled(false);
-            Debug.Log("[SolsFinalGame] 착지 대사 중 공격 비활성화");
+            dialogueUIObject.SetActive(true);
         }
 
-        if (dialogueUIObject != null) dialogueUIObject.SetActive(true);
+        // 대사 시작
         if (dialogueRunner != null && !string.IsNullOrEmpty(landingDialogueEvent))
         {
             dialogueRunner.BeginWithEventName(landingDialogueEvent);
         }
     }
 
+    // [추가] 대사가 끝났을 때 호출되는 콜백 (잠금 해제)
     private void OnLandingDialogueEnded()
     {
-        if (!isLandingDialogueActive)
+        // 1. Dialogue UI 비활성화
+        if (dialogueUIObject != null)
         {
-            Debug.Log("[SolsFinalGame] 착지 대사가 아니므로 OnLandingDialogueEnded 무시");
-            return;
+            dialogueUIObject.SetActive(false);
         }
 
-        isLandingDialogueActive = false;
-
-        Debug.Log("[SolsFinalGame] 착지 대사 종료 처리");
-
-        if (dialogueUIObject != null) dialogueUIObject.SetActive(false);
-
+        // 2. F키 상호작용 잠금 해제
         isInteractionBlocked = false;
+
+        // 3. 플레이어 이동 컨트롤 잠금 해제
         forceControlLocked = false;
 
-        if (targetMover != null)
+        // 4. 이동 컴포넌트 다시 켜기 (공중에서 꺼진 것 복구)
+        if (movementComponent != null)
         {
-            targetMover.enabled = true;
-            targetMover.SetControlEnabled(true);
+            movementComponent.enabled = true;
         }
 
-        if (hasPickedUpSyringe && syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(true);
-            Debug.Log("[SolsFinalGame] 착지 대사 종료 후 공격 활성화");
-        }
-
+        // 물리 제약 업데이트
         if (playerRb != null)
         {
             lastCanMoveX = CanMoveX();
@@ -397,34 +323,34 @@ public class SolsFinalGame : MonoBehaviour
 
     private bool CanMoveX()
     {
-        if (forceControlLocked) return false;
-        if (targetMover != null && !targetMover.controlEnabled) return false;
-        return targetMover != null && targetMover.enabled;
+        return movementComponent != null && movementComponent.enabled && !forceControlLocked;
     }
 
     private void ApplyRigidbodyXConstraint(bool canMoveX)
     {
         if (playerRb == null) return;
-        if (canMoveX) playerRb.constraints = originalConstraints & ~RigidbodyConstraints2D.FreezePositionX;
-        else playerRb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionX;
-    }
 
-    // ========================================
-    // 🔹 충돌 및 상호작용
-    // ========================================
+        if (canMoveX)
+            playerRb.constraints = originalConstraints & ~RigidbodyConstraints2D.FreezePositionX;
+        else
+            playerRb.constraints = originalConstraints | RigidbodyConstraints2D.FreezePositionX;
+    }
 
     private bool CheckGroundedUnderFeetByTag()
     {
         if (playerCollider == null) return false;
+
         Bounds b = playerCollider.bounds;
         Vector2 boxCenter = new Vector2(b.center.x, b.min.y - groundCheckHeight * 0.5f - groundCheckPadding);
         Vector2 boxSize = new Vector2(b.size.x * 0.9f, groundCheckHeight);
+
         int count = Physics2D.OverlapBoxNonAlloc(boxCenter, boxSize, 0f, groundHits);
 
         for (int i = 0; i < count; i++)
         {
             Collider2D col = groundHits[i];
-            if (col == null || col == playerCollider || col.transform.IsChildOf(transform)) continue;
+            if (col == null) continue;
+            if (col == playerCollider || col.transform.IsChildOf(transform)) continue;
             if (HasGroundTagUpwards(col.transform)) return true;
         }
         return false;
@@ -434,7 +360,8 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (t == null) return false;
         if (t.CompareTag(groundTag)) return true;
-        if (t.parent != null) return HasGroundTagUpwards(t.parent);
+        if (t.parent != null && t.parent.CompareTag(groundTag)) return true;
+        if (t.root != null && t.root.CompareTag(groundTag)) return true;
         return false;
     }
 
@@ -442,17 +369,18 @@ public class SolsFinalGame : MonoBehaviour
     {
         if (syringeObject == null || !syringeObject.activeInHierarchy) return false;
         if (playerCollider == null || !playerCollider.enabled) return false;
+        if (syringeCollider == null) syringeCollider = syringeObject.GetComponentInChildren<Collider2D>();
         if (syringeCollider == null || !syringeCollider.enabled) return false;
-        return Physics2D.Distance(playerCollider, syringeCollider).isOverlapped;
-    }
 
-    // ========================================
-    // 🔹 카메라 이동 및 적 활성화
-    // ========================================
+        ColliderDistance2D dist = Physics2D.Distance(playerCollider, syringeCollider);
+        return dist.isOverlapped;
+    }
 
     private void MoveCameraToX(float x)
     {
-        if (targetCamera == null || cameraMoving) return;
+        if (targetCamera == null) return;
+        if (cameraMoving) return;
+
         StartCoroutine(CameraMoveRoutine(x));
     }
 
@@ -460,17 +388,8 @@ public class SolsFinalGame : MonoBehaviour
     {
         cameraMoving = true;
 
-        if (targetMover != null)
-        {
-            targetMover.enabled = true;
-            targetMover.SetControlEnabled(false);
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(false);
-            Debug.Log("[SolsFinalGame] 카메라 연출 중 공격 비활성화");
-        }
+        if (movementComponent != null)
+            movementComponent.enabled = false;
 
         if (playerRb != null)
         {
@@ -483,29 +402,36 @@ public class SolsFinalGame : MonoBehaviour
         Vector3 startPos = targetCamera.position;
         Vector3 endPos = new Vector3(x, startPos.y, startPos.z);
 
+        // 1. 카메라 이동
+        float duration = Mathf.Max(0.01f, cameraMoveDuration);
         float t = 0f;
         while (t < 1f)
         {
-            t += Time.deltaTime / Mathf.Max(0.01f, cameraMoveDuration);
-            targetCamera.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, t));
+            t += Time.deltaTime / duration;
+            float eased = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+            targetCamera.position = Vector3.Lerp(startPos, endPos, eased);
             yield return null;
         }
         targetCamera.position = endPos;
 
-        yield return new WaitForSeconds(Mathf.Max(0f, impactDelay));
+        // 2. 대기
+        float delay = Mathf.Max(0f, impactDelay);
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+
+        // 3. 쾅!
         yield return StartCoroutine(CameraPunchRoutine(endPos, impactPunchDuration, impactPunchMagnitude));
+
+        // 4. 쉐이크
         yield return StartCoroutine(CameraShakeRoutine(endPos, impactShakeDuration, impactShakeMagnitude));
 
         targetCamera.position = endPos;
 
-        if (keepControlLockedAfterCamera) forceControlLocked = true;
-        ActivateEnemies();
+        if (keepControlLockedAfterCamera)
+            forceControlLocked = true;
 
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(true);
-            Debug.Log("[SolsFinalGame] 카메라 연출 후 공격 활성화");
-        }
+        ApplyGroundState(isGrounded);
+
+        ActivateEnemies();
 
         cameraMoving = false;
     }
@@ -513,312 +439,75 @@ public class SolsFinalGame : MonoBehaviour
     private void ActivateEnemies()
     {
         if (enemiesToActivate == null) return;
+
         for (int i = 0; i < enemiesToActivate.Length; i++)
-            if (enemiesToActivate[i] != null) enemiesToActivate[i].Activate();
+        {
+            if (enemiesToActivate[i] != null)
+                enemiesToActivate[i].Activate();
+        }
     }
 
     private IEnumerator CameraPunchRoutine(Vector3 basePos, float duration, float magnitude)
     {
         float d = Mathf.Max(0.01f, duration);
-        Vector3 downPos = basePos + new Vector3(0f, -Mathf.Max(0f, magnitude), 0f);
+        float m = Mathf.Max(0f, magnitude);
+        Vector3 downPos = basePos + new Vector3(0f, -m, 0f);
+        float half = d * 0.5f;
         float t = 0f;
-        while (t < 1f) { t += Time.deltaTime / (d * 0.5f); targetCamera.position = Vector3.Lerp(basePos, downPos, t); yield return null; }
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / half;
+            float eased = Mathf.Clamp01(t);
+            targetCamera.position = Vector3.Lerp(basePos, downPos, eased);
+            yield return null;
+        }
+
         t = 0f;
-        while (t < 1f) { t += Time.deltaTime / (d * 0.5f); targetCamera.position = Vector3.Lerp(downPos, basePos, t); yield return null; }
+        while (t < 1f)
+        {
+            t += Time.deltaTime / half;
+            float eased = Mathf.Clamp01(t);
+            targetCamera.position = Vector3.Lerp(downPos, basePos, eased);
+            yield return null;
+        }
     }
 
     private IEnumerator CameraShakeRoutine(Vector3 basePos, float duration, float magnitude)
     {
+        float d = Mathf.Max(0.01f, duration);
+        float m = Mathf.Max(0f, magnitude);
         float elapsed = 0f;
-        while (elapsed < duration)
+        while (elapsed < d)
         {
             elapsed += Time.deltaTime;
-            float damper = 1f - (elapsed / duration);
-            targetCamera.position = basePos + new Vector3((Random.value * 2f - 1f) * magnitude * damper, (Random.value * 2f - 1f) * magnitude * damper, 0f);
+            float p = Mathf.Clamp01(elapsed / d);
+            float damper = 1f - (p * p);
+            float ox = (Random.value * 2f - 1f) * m * damper;
+            float oy = (Random.value * 2f - 1f) * m * damper;
+            targetCamera.position = basePos + new Vector3(ox, oy, 0f);
             yield return null;
         }
     }
 
     private void SetLookRightStatic()
     {
-        if (playerAnimator == null || string.IsNullOrEmpty(rightIdleStateName)) return;
+        if (playerAnimator == null) return;
+        if (string.IsNullOrEmpty(rightIdleStateName)) return;
+
         playerAnimator.enabled = true;
         playerAnimator.Play(rightIdleStateName, 0, 0f);
         playerAnimator.speed = 0f;
     }
 
-    // ==========================================
-    // ★★★ 보스 인트로 대사 시스템 (간소화) ★★★
-    // ==========================================
-
-    public void StartBossIntroDialogue()
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
     {
-        if (!hasPlayedBossIntroDialogue && !isPlayingBossDialogue)
-        {
-            StartCoroutine(PlayBossIntroDialogue());
-        }
-        else
-        {
-            Debug.Log("[SolsFinalGame] 보스 인트로 대사는 이미 재생되었습니다.");
-        }
+        if (playerCollider == null) return;
+        Bounds b = playerCollider.bounds;
+        Vector2 boxCenter = new Vector2(b.center.x, b.min.y - groundCheckHeight * 0.5f - groundCheckPadding);
+        Vector2 boxSize = new Vector2(b.size.x * 0.9f, groundCheckHeight);
+        Gizmos.DrawWireCube(boxCenter, boxSize);
     }
-
-    private IEnumerator PlayBossIntroDialogue()
-    {
-        isPlayingBossDialogue = true;
-        hasPlayedBossIntroDialogue = true;
-
-        Debug.Log("[SolsFinalGame] ========== 보스 인트로 대사 시작 ==========");
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(false);
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(false);
-            Debug.Log("[SolsFinalGame] 보스 인트로 대사 중 공격 비활성화");
-        }
-
-        if (dialogueUIObject != null)
-        {
-            Transform current = dialogueUIObject.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-        }
-
-        if (dialogueRunner != null)
-        {
-            Transform current = dialogueRunner.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-
-            yield return null;
-
-            dialogueRunner.BeginWithEventName(bossIntroDialogueKey);
-            Debug.Log("[SolsFinalGame] 보스 인트로 대사 실행 중");
-
-            bool dialogueEnded = false;
-            System.Action onDialogueEnd = () =>
-            {
-                dialogueEnded = true;
-                Debug.Log("[SolsFinalGame] 보스 인트로 대사 종료 감지");
-            };
-
-            dialogueRunner.OnDialogueEnded += onDialogueEnd;
-
-            while (!dialogueEnded)
-            {
-                yield return null;
-            }
-
-            dialogueRunner.OnDialogueEnded -= onDialogueEnd;
-
-            if (dialogueUIObject != null)
-            {
-                dialogueUIObject.SetActive(false);
-                Debug.Log("[SolsFinalGame] DialogueUI 비활성화");
-            }
-        }
-
-        // ⭐⭐⭐ 대사 종료 후 즉시 보스 활성화
-        Debug.Log("[SolsFinalGame] ========== 보스 활성화 시작 ==========");
-
-        if (bossUIObject != null)
-        {
-            bossUIObject.SetActive(true);
-            Debug.Log("[SolsFinalGame] ✅ BossUI 활성화!");
-        }
-        else
-        {
-            Debug.LogError("[SolsFinalGame] ❌ bossUIObject가 null!");
-        }
-
-        if (bossObject != null)
-        {
-            bossObject.SetActive(true);
-            Debug.Log("[SolsFinalGame] ✅ Boss 활성화!");
-        }
-        else
-        {
-            Debug.LogError("[SolsFinalGame] ❌ bossObject가 null!");
-        }
-
-        if (cameraFollow != null)
-        {
-            cameraFollow.enabled = true;
-            Debug.Log("[SolsFinalGame] ✅ 카메라 추적 활성화!");
-        }
-        else
-        {
-            Debug.LogWarning("[SolsFinalGame] ❌ cameraFollow가 null!");
-        }
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(true);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 복구");
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(true);
-            Debug.Log("[SolsFinalGame] 공격 활성화");
-        }
-
-        Debug.Log("[SolsFinalGame] ========== 보스 활성화 완료 ==========");
-
-        isPlayingBossDialogue = false;
-    }
-
-    // ==========================================
-    // ★★★ 보스 엔딩 대사 & 카메라 시스템 ★★★
-    // ==========================================
-
-    public void StartBossEndingSequence()
-    {
-        if (hasPlayedBossEndingDialogue)
-        {
-            Debug.Log("[SolsFinalGame] 보스 엔딩은 이미 재생되었습니다.");
-            return;
-        }
-
-        StartCoroutine(BossEndingSequence());
-    }
-
-    private IEnumerator BossEndingSequence()
-    {
-        hasPlayedBossEndingDialogue = true;
-        isPlayingBossDialogue = true;
-
-        Debug.Log("[SolsFinalGame] 보스 엔딩 시퀀스 시작");
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(false);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 비활성화");
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(false);
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대사 중 공격 비활성화");
-        }
-
-        if (playerRb != null)
-        {
-            playerRb.linearVelocity = Vector2.zero;
-            playerRb.angularVelocity = 0f;
-        }
-
-        if (cameraFollow != null)
-        {
-            cameraFollow.enabled = false;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 중 SimpleCameraFollow 비활성화");
-        }
-
-        if (targetCamera != null)
-        {
-            Vector3 startPos = targetCamera.position;
-            Vector3 endPos = new Vector3(bossCameraTargetX, startPos.y, startPos.z);
-
-            float t = 0f;
-            while (t < 1f)
-            {
-                t += Time.deltaTime / Mathf.Max(0.01f, bossCameraMoveDuration);
-                targetCamera.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, t));
-                yield return null;
-            }
-            targetCamera.position = endPos;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 카메라 이동 완료");
-        }
-
-        if (dialogueUIObject != null)
-        {
-            Transform current = dialogueUIObject.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-            Debug.Log("[SolsFinalGame] DialogueUI 활성화");
-        }
-
-        if (dialogueRunner != null)
-        {
-            Transform current = dialogueRunner.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-
-            yield return null;
-
-            PlayerMove originalPlayerMove = dialogueRunner.playerMove;
-            dialogueRunner.playerMove = null;
-
-            dialogueRunner.BeginWithEventName(bossEndingDialogueKey);
-            Debug.Log($"[SolsFinalGame] 보스 엔딩 대화 시작: {bossEndingDialogueKey}");
-
-            bool dialogueEnded = false;
-            System.Action onDialogueEnd = () =>
-            {
-                dialogueEnded = true;
-                Debug.Log("[SolsFinalGame] 보스 엔딩 대화 종료 감지");
-            };
-
-            dialogueRunner.OnDialogueEnded += onDialogueEnd;
-
-            while (!dialogueEnded)
-            {
-                yield return null;
-            }
-
-            dialogueRunner.OnDialogueEnded -= onDialogueEnd;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대화 완전 종료");
-
-            dialogueRunner.playerMove = originalPlayerMove;
-        }
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(true);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 복구");
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(true);
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대사 종료 후 공격 활성화");
-        }
-
-        yield return null;
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(true);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 재확인 및 복구");
-        }
-
-        isPlayingBossDialogue = false;
-    }
+#endif
 }

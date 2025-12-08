@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8674342059093732785}
   - component: {fileID: 7164056706017132377}
   - component: {fileID: 5420998691811691792}
+  - component: {fileID: 2297528177651143343}
   m_Layer: 0
   m_Name: Boss
   m_TagString: Boss
@@ -150,3 +151,36 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2297528177651143343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1416545699075436577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6e825dbbbe8fe24cb0e23e5ef4ed66d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
+  activateOnStart: 1
+  isBoss: 1
+  bossFallSpeed: 13
+  bossRiseSpeed: 20
+  bossStompWaitTime: 3
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 1851471699730641872, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
+  canMove: 1
+  xSpeed: 1
+  ySpeed: 5
+  yMax: 1
+  yMin: -1.8
+  hitsToDie: 2
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  hitColorDuration: 0.1

@@ -10,6 +10,24 @@ public class SolsFinalGameEnemy : MonoBehaviour
     [Header("Active Settings")]
     [SerializeField] private bool activateOnStart = true;
 
+    [Header("Enemy Type")]
+    [SerializeField] private bool isBoss = false;
+
+    [Header("Boss Settings")]
+    [SerializeField] private float bossFallSpeed = 5.0f;
+    [SerializeField] private float bossTargetY = 1.2f;
+
+    [Header("Boss: Phase 2")]
+    [SerializeField] private int phase2HpThreshold = 20;
+    [SerializeField] private GameObject minionPrefab;
+    [SerializeField] private float summonInterval = 5.0f;
+    [SerializeField] private int summonCount = 2;
+
+    [Header("Boss: Landing Effect")]
+    [SerializeField] private float landShakeMagnitude = 0.5f;
+    [SerializeField] private float landShakeDuration = 0.2f;
+    [SerializeField] private AudioClip landSound;
+
     [Header("Move Settings")]
     [SerializeField] private bool canMove = true;
     [SerializeField] private float xSpeed = 1.0f;
@@ -18,12 +36,19 @@ public class SolsFinalGameEnemy : MonoBehaviour
     [SerializeField] private float yMin = -1.8f;
 
     [Header("Health & Hit")]
-    [SerializeField] private int hitsToDie = 5;
+    [SerializeField] private int hitsToDie = 30;
     [SerializeField] private Color hitColor = Color.red;
     [SerializeField] private float hitColorDuration = 0.1f;
 
-    [Header("Boss Spawn Settings")]
-    [SerializeField] private float bossSpawnDelay = 1f;
+    [Header("Boss Jump Settings")]
+    [SerializeField] private float bossRiseSpeed = 15.0f;
+    [SerializeField] private float bossStompWaitTime = 3.0f;
+
+    private enum BossState { Falling, Landed, Rising }
+    private BossState bossState = BossState.Falling;
+    private float stompTimer = 0f;
+    private float initialSpawnY;
+    private bool isPhase2Active = false;
 
     private Rigidbody2D rb;
     private Animator anim;
@@ -31,15 +56,19 @@ public class SolsFinalGameEnemy : MonoBehaviour
     private bool isActive = false;
     private int currentHits = 0;
     private bool isQuitting = false;
+    private bool hasLanded = false;
 
     private SpriteRenderer[] spriteRenderers;
     private Color[] originalColors;
     private Coroutine hitColorRoutine;
+    private AudioSource audioSource;
+    private Transform playerTransform;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
         yDir = (Random.value < 0.5f) ? 1 : -1;
 
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
@@ -55,6 +84,17 @@ public class SolsFinalGameEnemy : MonoBehaviour
     {
         isActive = activateOnStart;
         currentHits = 0;
+        isPhase2Active = false;
+        bossState = BossState.Falling;
+        hasLanded = false;
+        stompTimer = 0f;
+        initialSpawnY = transform.position.y;
+
+        if (isBoss)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null) playerTransform = playerObj.transform;
+        }
 
         if (CompareTag("Enemy")) enemyCount++;
 
@@ -92,29 +132,95 @@ public class SolsFinalGameEnemy : MonoBehaviour
     {
         if (enemyCount <= 0)
         {
-            Debug.Log("[CheckAllEnemiesDead] 모든 적 처치! 보스 소환 시작");
+            if (BossSpawnManager.Instance != null) BossSpawnManager.Instance.TriggerBossSpawn();
 
-            // 간단한 시퀀스 실행
-            GameObject sequenceRunner = new GameObject("BossSpawnSequenceRunner");
-            BossSpawnSequence sequence = sequenceRunner.AddComponent<BossSpawnSequence>();
-            sequence.StartSequence(bossSpawnDelay);
+            PlayerMover playerMover = FindFirstObjectByType<PlayerMover>();
+            if (playerMover != null)
+            {
+                playerMover.enabled = true;
+                playerMover.SetControlEnabled(true);
+            }
         }
     }
 
     void Update()
     {
         if (!isActive) return;
+        MoveTransform(Time.deltaTime);
     }
 
     void FixedUpdate()
     {
         if (!isActive) return;
-        if (rb != null) MoveRigidbody(Time.fixedDeltaTime);
+        if (!isBoss && rb != null) MoveRigidbody(Time.fixedDeltaTime);
+    }
+
+    private void MoveTransform(float dt)
+    {
+        if (isBoss)
+        {
+            Vector3 p = transform.position;
+            switch (bossState)
+            {
+                case BossState.Falling:
+                    if (p.y > bossTargetY)
+                    {
+                        p.y -= bossFallSpeed * dt;
+                        if (p.y <= bossTargetY)
+                        {
+                            p.y = bossTargetY;
+                            bossState = BossState.Landed;
+                            stompTimer = 0f;
+                            PlayLandingEffect();
+                        }
+                    }
+                    break;
+                case BossState.Landed:
+                    stompTimer += dt;
+                    if (stompTimer >= bossStompWaitTime)
+                    {
+                        bossState = BossState.Rising;
+                        hasLanded = false;
+                        if (playerTransform == null)
+                        {
+                            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                            if (playerObj != null) playerTransform = playerObj.transform;
+                        }
+                    }
+                    break;
+                case BossState.Rising:
+                    if (p.y < initialSpawnY)
+                    {
+                        p.y += bossRiseSpeed * dt;
+                        if (p.y >= initialSpawnY)
+                        {
+                            p.y = initialSpawnY;
+                            if (playerTransform != null)
+                            {
+                                float targetX = playerTransform.position.x;
+                                p.x = Mathf.Clamp(targetX, -8f, 8f);
+                            }
+                            bossState = BossState.Falling;
+                        }
+                    }
+                    break;
+            }
+            transform.position = p;
+            return;
+        }
+
+        if (!canMove || rb != null) return;
+        Vector3 pos = transform.position;
+        pos.x -= xSpeed * dt;
+        pos.y += ySpeed * yDir * dt;
+        if (yDir > 0 && pos.y >= yMax) { pos.y = yMax; yDir = -1; }
+        else if (yDir < 0 && pos.y <= yMin) { pos.y = yMin; yDir = 1; }
+        transform.position = pos;
     }
 
     private void MoveRigidbody(float dt)
     {
-        if (!canMove)
+        if (isBoss || !canMove)
         {
 #if UNITY_2022_2_OR_NEWER
             rb.linearVelocity = Vector2.zero;
@@ -132,6 +238,28 @@ public class SolsFinalGameEnemy : MonoBehaviour
         rb.MovePosition(p);
     }
 
+    private void PlayLandingEffect()
+    {
+        Debug.Log("보스 착지 연출");
+        if (audioSource != null && landSound != null) audioSource.PlayOneShot(landSound);
+        if (Camera.main != null) StartCoroutine(CameraShakeRoutine(Camera.main.transform, landShakeDuration, landShakeMagnitude));
+    }
+
+    private IEnumerator CameraShakeRoutine(Transform camTransform, float duration, float magnitude)
+    {
+        Vector3 originalPos = camTransform.position;
+        float elapsed = 0.0f;
+        while (elapsed < duration)
+        {
+            float x = Random.Range(-1f, 1f) * magnitude;
+            float y = Random.Range(-1f, 1f) * magnitude;
+            camTransform.position = new Vector3(originalPos.x + x, originalPos.y + y, originalPos.z);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        camTransform.position = originalPos;
+    }
+
     public void Activate() { isActive = true; }
 
     public void Deactivate()
@@ -147,30 +275,58 @@ public class SolsFinalGameEnemy : MonoBehaviour
         }
     }
 
+    // 기존 호출용: 데미지 1 고정
     public void TakeHit(Vector2 hitPosition)
     {
         TakeHit(hitPosition, 1);
     }
 
+    // 새 버전: 데미지 가중치 적용
     public void TakeHit(Vector2 hitPosition, int damage)
     {
-        if (!isActive) return;
-
-        int add = Mathf.Max(1, damage);
+        int add = Mathf.Max(1, damage); // 최소 1
         currentHits += add;
+
+        int currentHp = hitsToDie - currentHits;
+        Debug.Log($"보스 피격! 남은 체력: {currentHp} / {hitsToDie} (이번 피해량: {add})");
 
         if (anim != null) anim.SetTrigger("Hit");
 
         if (hitColorRoutine != null) StopCoroutine(hitColorRoutine);
         hitColorRoutine = StartCoroutine(HitColorFlashRoutine());
 
+        if (isBoss && currentHp <= phase2HpThreshold && !isPhase2Active)
+        {
+            StartCoroutine(Phase2SummonRoutine());
+        }
+
         if (currentHits >= hitsToDie)
-            gameObject.SetActive(false);
+            StartCoroutine(DieWithDelay());
+    }
+
+    private IEnumerator Phase2SummonRoutine()
+    {
+        isPhase2Active = true;
+        Debug.Log("보스 페이즈 2 시작, 소환 패턴 발동");
+        while (isActive && currentHits < hitsToDie)
+        {
+            if (minionPrefab != null)
+            {
+                for (int i = 0; i < summonCount; i++)
+                {
+                    float randomX = Random.Range(-8f, 8f);
+                    float spawnY = 5.5f;
+                    Vector3 spawnPos = new Vector3(randomX, spawnY, 0);
+                    Instantiate(minionPrefab, spawnPos, Quaternion.identity);
+                }
+                Debug.Log($"쫄병 {summonCount}마리 소환됨");
+            }
+            yield return new WaitForSeconds(summonInterval);
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!isActive) return;
         if (collision.gameObject.CompareTag("Player"))
         {
             SyringePoolShooter player = collision.gameObject.GetComponent<SyringePoolShooter>();
@@ -180,12 +336,11 @@ public class SolsFinalGameEnemy : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!isActive) return;
         if (collision.CompareTag("Player"))
         {
             SyringePoolShooter player = collision.GetComponent<SyringePoolShooter>();
             if (player != null) player.OnDamage(1, gameObject.tag);
-            gameObject.SetActive(false);
+            if (!isBoss) gameObject.SetActive(false);
         }
     }
 
@@ -200,64 +355,19 @@ public class SolsFinalGameEnemy : MonoBehaviour
                 spriteRenderers[i].color = originalColors[i];
         }
     }
-}
 
-// ========================================
-// ⭐ 간단한 보스 소환 시퀀스
-// ========================================
-public class BossSpawnSequence : MonoBehaviour
-{
-    public void StartSequence(float delay)
+    private IEnumerator DieWithDelay()
     {
-        StartCoroutine(SpawnBossRoutine(delay));
-    }
-
-    private IEnumerator SpawnBossRoutine(float delay)
-    {
-        Debug.Log("[BossSpawnSequence] 시퀀스 시작!");
-
-        // 지연 시간
-        yield return new WaitForSeconds(delay);
-
-        // 보스 소환
-        if (BossSpawnManager.Instance != null)
+        isActive = false;
+        if (rb != null)
         {
-            BossSpawnManager.Instance.TriggerBossSpawn();
-            Debug.Log("[BossSpawnSequence] 보스 소환 완료");
-
-            yield return new WaitForSeconds(0.3f);
+#if UNITY_2022_2_OR_NEWER
+            rb.linearVelocity = Vector2.zero;
+#else
+            rb.velocity = Vector2.zero;
+#endif
         }
-        else
-        {
-            Debug.LogWarning("[BossSpawnSequence] BossSpawnManager.Instance를 찾을 수 없음!");
-        }
-
-        // 보스 인트로 대사 시작
-        if (SolsFinalGame.Instance != null)
-        {
-            SolsFinalGame.Instance.StartBossIntroDialogue();
-            Debug.Log("[BossSpawnSequence] 보스 인트로 대사 시작");
-
-            // 대사가 완전히 끝날 때까지 대기
-            while (SolsFinalGame.Instance.IsPlayingBossDialogue())
-            {
-                yield return null;
-            }
-
-            Debug.Log("[BossSpawnSequence] 보스 인트로 대사 완전 종료!");
-        }
-
-        // 플레이어 제어 복구
-        PlayerMover playerMover = FindFirstObjectByType<PlayerMover>();
-        if (playerMover != null)
-        {
-            playerMover.SetControlEnabled(true);
-            Debug.Log("[BossSpawnSequence] ★★★ 플레이어 제어 복구 완료! ★★★");
-        }
-
-        Debug.Log("[BossSpawnSequence] 시퀀스 완료!");
-
-        // 자기 자신 파괴
-        Destroy(gameObject);
+        yield return new WaitForSeconds(0.5f);
+        gameObject.SetActive(false);
     }
 }

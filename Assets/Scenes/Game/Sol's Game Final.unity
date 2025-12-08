@@ -119,6 +119,56 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &8040581
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8040583}
+  - component: {fileID: 8040582}
+  m_Layer: 0
+  m_Name: Gamemanger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &8040582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8040581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f0b453a4b417e54f90770d647fe2919, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossSpawnManager
+  bossPrefab: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
+  shadowPrefab: {fileID: 6078352371104115824, guid: 4f0ee2eda4d046546b52242239032a62, type: 3}
+  shadowFixedY: -2.18
+  spawnHeightOffset: 10
+  blinkCount: 3
+  blinkInterval: 0.2
+--- !u!4 &8040583
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8040581}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 9.61421, y: 1.63688, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &31196242
 GameObject:
   m_ObjectHideFlags: 0
@@ -574,6 +624,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -582,7 +642,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &117612420
 Rigidbody2D:
   serializedVersion: 5
@@ -770,7 +831,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb0d60fa16a5d154caab16e681cb1e3b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGame
-  targetMover: {fileID: 0}
   startPosition: {x: 0, y: 7, z: 0}
   dialogueUIObject: {fileID: 1092185891}
   dialogueRunner: {fileID: 720109176}
@@ -780,6 +840,7 @@ MonoBehaviour:
   playerRb: {fileID: 0}
   playerCollider: {fileID: 0}
   playerAnimator: {fileID: 0}
+  movementComponent: {fileID: 220807430}
   fallingSprite: {fileID: -6966776371465089997, guid: 9130a6695446aaa479b134a3ca6a0a97, type: 3}
   rightIdleStateName: Right_Walk
   groundTag: Ground
@@ -808,13 +869,6 @@ MonoBehaviour:
   - {fileID: 1938882240}
   - {fileID: 117612418}
   - {fileID: 863229008}
-  bossIntroDialogueKey: Boss_Sol_FinalGame_Third
-  bossEndingDialogueKey: Boss_Sol_FinalGame_Ending
-  bossCameraTargetX: 30
-  bossCameraMoveDuration: 1.5
-  bossUIObject: {fileID: 1884204091}
-  bossObject: {fileID: 513345183}
-  cameraFollow: {fileID: 1100042416}
 --- !u!4 &220807422 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5185804515491520706, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
@@ -835,10 +889,9 @@ MonoBehaviour:
   playerMover: {fileID: 0}
   gameOverManager: {fileID: 334859632}
   maxHp: 5
+  currentHp: 0
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitDuration: 0.1
-  invincibleOnHit: 0
-  invincibleDuration: 1
   fireCooldown: 0.8
   projectileLaunchDelay: 0.5
   fireKey: 323
@@ -853,13 +906,9 @@ MonoBehaviour:
   chargedGravity: 0
   chargedDamage: 3
   chargedPierceCount: 2
-  showChargeEffect: 1
-  chargeColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  chargeBlinkSpeed: 5
   attackAnimator: {fileID: 0}
   attackStateName: Attack
-  attackDuration: 1
-  uiExclusiveManager: {fileID: 0}
+  attackDuration: 0.4
 --- !u!114 &220807429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -872,6 +921,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
+--- !u!114 &220807430 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3345494131320606271, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+  m_PrefabInstance: {fileID: 2108940976}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220807398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bc033439d9908f428c74f7d45888874, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProximityIndicatorSpawner
 --- !u!1 &320561432
 GameObject:
   m_ObjectHideFlags: 0
@@ -1329,61 +1389,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!1 &513345183 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-  m_PrefabInstance: {fileID: 990492073}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &513345189
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 513345183}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7be4f975886f4cf41a6c42cd413b6acd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameBoss
-  maxHp: 50
-  contactDamage: 5
-  moveSpeed: 8
-  floatAmplitude: 0.5
-  floatSpeed: 1
-  hpSlider: {fileID: 1395478879}
-  hitColor: {r: 1, g: 0, b: 0, a: 1}
-  hitDuration: 0.5
-  knockbackForce: 5
-  knockbackDuration: 0.2
-  player: {fileID: 220807423}
---- !u!50 &513345190
-Rigidbody2D:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 513345183}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_GravityScale: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
 --- !u!4 &539296948 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8508106772861048739, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
@@ -1723,6 +1728,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -1731,7 +1746,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &699581810
 Rigidbody2D:
   serializedVersion: 5
@@ -1948,6 +1964,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -1956,7 +1982,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &756739860
 Rigidbody2D:
   serializedVersion: 5
@@ -2162,6 +2189,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -2170,7 +2207,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &863229010
 Rigidbody2D:
   serializedVersion: 5
@@ -2376,6 +2414,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -2384,7 +2432,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &982063257
 Rigidbody2D:
   serializedVersion: 5
@@ -2540,89 +2589,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 043683496e3862f4ca1a0a53997d9d67, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveableObject
---- !u!1001 &990492073
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 24
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.512147
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1306811034026679289, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_Name
-      value: Boss
-      objectReference: {fileID: 0}
-    - target: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2297528177651143343, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2297528177651143343, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: dialogueUI
-      value: 
-      objectReference: {fileID: 1092185891}
-    - target: {fileID: 2297528177651143343, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: dialogueRunner
-      value: 
-      objectReference: {fileID: 720109176}
-    - target: {fileID: 5420998691811691792, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 513345189}
-    - targetCorrespondingSourceObject: {fileID: 1416545699075436577, guid: 5c4166c86b32d944db7a291739822355, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 513345190}
-  m_SourcePrefab: {fileID: 100100000, guid: 5c4166c86b32d944db7a291739822355, type: 3}
 --- !u!1 &1005625708
 GameObject:
   m_ObjectHideFlags: 0
@@ -2709,7 +2675,6 @@ GameObject:
   - component: {fileID: 1100042411}
   - component: {fileID: 1100042414}
   - component: {fileID: 1100042415}
-  - component: {fileID: 1100042416}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2860,29 +2825,6 @@ MonoBehaviour:
   m_CropFrameX: 0
   m_CropFrameY: 0
   m_StretchFill: 0
---- !u!114 &1100042416
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1100042410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ae31721480895247aa8675dafce3b36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleCameraFollow
-  target: {fileID: 220807422}
-  followSpeed: 10
-  offset: {x: 0, y: 0, z: -10}
-  limitX: 0
-  minX: -100
-  maxX: 100
-  limitY: 0
-  minY: -100
-  maxY: 100
-  followXOnly: 1
-  followYOnly: 0
 --- !u!1 &1161678668
 GameObject:
   m_ObjectHideFlags: 0
@@ -2916,245 +2858,6 @@ Transform:
   - {fileID: 91241849}
   m_Father: {fileID: 1100042413}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1262292919
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1262292920}
-  - component: {fileID: 1262292922}
-  - component: {fileID: 1262292921}
-  m_Layer: 5
-  m_Name: Background
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1262292920
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262292919}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1395478880}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.25}
-  m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1262292921
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262292919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1262292922
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262292919}
-  m_CullTransparentMesh: 1
---- !u!1 &1381814079
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1381814080}
-  - component: {fileID: 1381814082}
-  - component: {fileID: 1381814081}
-  m_Layer: 5
-  m_Name: Fill
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1381814080
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381814079}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1796285912}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1381814081
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381814079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1381814082
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1381814079}
-  m_CullTransparentMesh: 1
---- !u!1 &1395478878
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1395478880}
-  - component: {fileID: 1395478879}
-  m_Layer: 5
-  m_Name: BossHP
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1395478879
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1395478878}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Slider
-  m_Navigation:
-    m_Mode: 3
-    m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
-  m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
-    m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
-  m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
-    m_SelectedSprite: {fileID: 0}
-    m_DisabledSprite: {fileID: 0}
-  m_AnimationTriggers:
-    m_NormalTrigger: Normal
-    m_HighlightedTrigger: Highlighted
-    m_PressedTrigger: Pressed
-    m_SelectedTrigger: Selected
-    m_DisabledTrigger: Disabled
-  m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
-  m_FillRect: {fileID: 1381814080}
-  m_HandleRect: {fileID: 0}
-  m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 1
-  m_WholeNumbers: 0
-  m_Value: 0
-  m_OnValueChanged:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!224 &1395478880
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1395478878}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1262292920}
-  - {fileID: 1796285912}
-  m_Father: {fileID: 1884204092}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 1200, y: 80}
-  m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1525107278
 GameObject:
   m_ObjectHideFlags: 0
@@ -3431,6 +3134,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -3439,7 +3152,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &1555802375
 Rigidbody2D:
   serializedVersion: 5
@@ -3906,144 +3620,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1747993720}
   m_CullTransparentMesh: 1
---- !u!1 &1796285911
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1796285912}
-  m_Layer: 5
-  m_Name: Fill Area
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1796285912
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1796285911}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1381814080}
-  m_Father: {fileID: 1395478880}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.25}
-  m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -5, y: 0}
-  m_SizeDelta: {x: -20, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &1884204091
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1884204092}
-  - component: {fileID: 1884204095}
-  - component: {fileID: 1884204094}
-  - component: {fileID: 1884204093}
-  m_Layer: 5
-  m_Name: BossUI
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1884204092
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1884204091}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1395478880}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0, y: 0}
---- !u!114 &1884204093
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1884204091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!114 &1884204094
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1884204091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 1
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 1920, y: 1080}
-  m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
---- !u!223 &1884204095
-Canvas:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1884204091}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
-  m_PlaneDistance: 100
-  m_PixelPerfect: 0
-  m_ReceivesEvents: 1
-  m_OverrideSorting: 0
-  m_OverridePixelPerfect: 0
-  m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
-  m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 0
-  m_TargetDisplay: 0
 --- !u!1 &1938882238
 GameObject:
   m_ObjectHideFlags: 0
@@ -4094,6 +3670,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolsFinalGameEnemy
   activateOnStart: 0
+  isBoss: 0
+  bossFallSpeed: 5
+  bossTargetY: 1.2
+  phase2HpThreshold: 20
+  minionPrefab: {fileID: 0}
+  summonInterval: 5
+  summonCount: 2
+  landShakeMagnitude: 0.5
+  landShakeDuration: 0.2
+  landSound: {fileID: 0}
   canMove: 1
   xSpeed: 1.5
   ySpeed: 1.5
@@ -4102,7 +3688,8 @@ MonoBehaviour:
   hitsToDie: 2
   hitColor: {r: 1, g: 0, b: 0, a: 1}
   hitColorDuration: 0.3
-  bossSpawnDelay: 1
+  bossRiseSpeed: 15
+  bossStompWaitTime: 3
 --- !u!50 &1938882242
 Rigidbody2D:
   serializedVersion: 5
@@ -4391,30 +3978,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1600751662}
     m_Modifications:
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: dialogueUI
-      value: 
-      objectReference: {fileID: 1092185891}
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: cameraStopX
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: cameraTargetX
-      value: 18
-      objectReference: {fileID: 0}
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: cameraMoveTime
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: dialogueRunner
-      value: 
-      objectReference: {fileID: 720109176}
-    - target: {fileID: 1108945591059973081, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
-      propertyPath: cameraFollowSpeed
-      value: 5
-      objectReference: {fileID: 0}
     - target: {fileID: 1851471699730641872, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
       propertyPath: m_Name
       value: Enemy1
@@ -4459,8 +4022,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 2453665319983900591, guid: 31ff307946ba3bd4bacdc575c4432568, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -4470,12 +4032,11 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1100042413}
-  - {fileID: 1884204092}
   - {fileID: 2108940976}
   - {fileID: 91378649}
   - {fileID: 1600751662}
   - {fileID: 334859631}
   - {fileID: 31196246}
   - {fileID: 1005625711}
+  - {fileID: 8040583}
   - {fileID: 443352047}
-  - {fileID: 990492073}
