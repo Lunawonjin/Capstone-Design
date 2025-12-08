@@ -222,7 +222,6 @@ public class SoundManager : MonoBehaviour
     public void StopAllSFX() { foreach (var s in _sfxPool) { if (s.isPlaying) s.Stop(); s.clip = null; } }
 
     private void ConfigureSource(AudioSource s, float p, float sb) { s.outputAudioMixerGroup = sfxGroup; s.pitch = p; s.spatialBlend = sb; s.loop = false; }
-
     private IEnumerator Co_AutoRelease(AudioSource s) { yield return new WaitForSecondsRealtime(s.clip.length + 0.1f); if (!s.loop) { s.Stop(); s.clip = null; } }
     private void PrewarmSFXPool(int c) { for (int i = 0; i < c; i++) _sfxPool.Add(CreateChildAudioSource($"SFX_{i}", false, sfxGroup)); }
     private AudioSource GetFreeSFXSource() { foreach (var s in _sfxPool) if (!s.isPlaying) return s; if (_sfxPool.Count < sfxPoolHardLimit) { var s = CreateChildAudioSource($"SFX_{_sfxPool.Count}", false, sfxGroup); _sfxPool.Add(s); return s; } return _sfxPool[0]; }
