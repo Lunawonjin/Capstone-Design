@@ -664,7 +664,7 @@ public class NpcEventDebugLoader : MonoBehaviour
         if (string.Equals(eventForIO, "Boss_Sol_FinalGame", StringComparison.OrdinalIgnoreCase))
         {
             // 1. Boss NPC는 제거하지 않도록 _spawnedDuringEvent에서 제외
-            var bossNpc = ResolveNpc("Boss");
+            var bossNpc = ResolveNpc("Boss_Npc");
             if (bossNpc != null && _spawnedDuringEvent.Contains(bossNpc))
             {
                 _spawnedDuringEvent.Remove(bossNpc);
@@ -673,7 +673,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
 
             // 2. Sol NPC를 (34.24, 21.1)로 이동
-            var solNpc = ResolveNpc("Sol");
+            var solNpc = ResolveNpc("Sol_Npc");
             if (solNpc != null)
             {
                 Vector3 solFinalPos = new Vector3(34.24f, 21.1f, solNpc.transform.position.z);
@@ -707,28 +707,7 @@ public class NpcEventDebugLoader : MonoBehaviour
             }
         }
         EnterEventGuard();
-        // Boss_Sol_FinalGame 이벤트 특수 처리 (이벤트 시작 전)
-        if (string.Equals(eventForIO, "Boss_Sol_FinalGame", StringComparison.OrdinalIgnoreCase))
-        {
-            if (verboseLog)
-                Debug.Log("[NpcEventDebugLoader] Boss_Sol_FinalGame 이벤트 사전 처리 시작");
 
-            // Boss NPC는 유지 (제거하지 않음)
-            var bossNpc = ResolveNpc("Boss");
-            if (bossNpc != null && _spawnedDuringEvent.Contains(bossNpc))
-            {
-                _spawnedDuringEvent.Remove(bossNpc);
-                if (verboseLog)
-                    Debug.Log("[NpcEventDebugLoader] Boss_Npc를 이벤트 종료 시 제거 목록에서 제외");
-            }
-            var solNpc = ResolveNpc("Sol");
-            if (solNpc != null)
-            {
-                _spawnedDuringEvent.Remove(solNpc);
-                if (verboseLog)
-                    Debug.Log($"[NpcEventDebugLoader] Boss_Sol_FinalGame: {solNpc.name}를 유지 목록에서 제외");
-            }
-        }
         if (!TryParseEventScript(rawJson, out EventScript script, logSanitizedJsonOnError))
         {
             Debug.LogWarning($"[NpcEventDebugLoader] JSON 무효. 즉시 종료: {ownerForIO}/{eventForIO}");

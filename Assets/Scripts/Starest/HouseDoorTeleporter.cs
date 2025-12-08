@@ -461,7 +461,6 @@ public class HouseDoorTeleporter : MonoBehaviour
     }
 
     // ───────── [수정됨] 집 입장 시 미션 패널을 "찾아서" 강제로 끄는 로직 추가 ─────────
-    // ───────── [수정됨] 집 입장 시 미션 패널을 "찾아서" 강제로 끄는 로직 추가 ─────────
     private void Sequence_HouseToDoor(int index)
     {
         // 1. 다른 캐릭터 집 비활성화
@@ -523,15 +522,6 @@ public class HouseDoorTeleporter : MonoBehaviour
         // 5. 상태 플래그 갱신
         if (ShouldUseStarestFlags())
             SetState_OnEnterHouseByName(CurrentOwnerName);
-
-        // ★★★ [중요 추가] Sol 집 입장 시 Boss_Sol_FinalGame 이벤트 체크
-        if (verboseLog)
-            Debug.Log($"[Teleporter] Sequence_HouseToDoor 완료, CheckAndRunBossSolFinalGameOnEnter 호출: owner='{CurrentOwnerName}'");
-
-        CheckAndRunBossSolFinalGameOnEnter(CurrentOwnerName);
-
-        if (verboseLog)
-            Debug.Log($"[Teleporter] CheckAndRunBossSolFinalGameOnEnter 호출 완료");
     }
 
     private void TeleportToDoorIndex(int index)
@@ -607,84 +597,6 @@ public class HouseDoorTeleporter : MonoBehaviour
             Debug.Log($"[Teleporter] Boss_SaltKey_Lost 체크: Sol_First_Meet={solFirstMeet}, Boss_SaltKey_Lost={bossSaltKeyLost}");
 
         return solFirstMeet && !bossSaltKeyLost;
-    }
-
-    // ───────── Sol 집 입장 시 Boss_Sol_FinalGame 이벤트 트리거 ─────────
-    private void CheckAndRunBossSolFinalGameOnEnter(string ownerName)
-    {
-        if (verboseLog)
-            Debug.Log($"[Teleporter] CheckAndRunBossSolFinalGameOnEnter 호출: ownerName='{ownerName}'");
-
-        // Sol의 집이 아니면 리턴
-        if (string.IsNullOrWhiteSpace(ownerName))
-        {
-            if (verboseLog) Debug.Log("[Teleporter] ownerName이 비어있어 리턴");
-            return;
-        }
-
-        if (!string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase))
-        {
-            if (verboseLog) Debug.Log($"[Teleporter] Sol의 집이 아님 ('{ownerName}'), 리턴");
-            return;
-        }
-
-        if (npcEventLoader == null)
-        {
-            if (verboseLog) Debug.LogWarning("[Teleporter] npcEventLoader가 null입니다!");
-            return;
-        }
-
-        if (verboseLog)
-            Debug.Log("[Teleporter] Sol 집 입장 확인, 조건 체크 시작");
-
-        // 조건 체크
-        if (!IsBossSolFinalGameConditionMet())
-        {
-            if (verboseLog) Debug.Log("[Teleporter] Boss_Sol_FinalGame 조건 불충족");
-            return;
-        }
-
-        if (verboseLog)
-            Debug.Log("[Teleporter] Sol 집 입장 → Boss_Sol_FinalGame 조건 충족, 이벤트 실행 시도");
-
-        // 이벤트 실행 (약간의 딜레이 후 실행)
-        StartCoroutine(RunBossSolFinalGameWithDelay());
-    }
-
-    private bool IsBossSolFinalGameConditionMet()
-    {
-        bool bossSolFinalGame = GetPlayerBoolFlag("Boss_Sol_FinalGame");
-        bool bossSeconday = GetPlayerBoolFlag("Boss_Seconday_Busstop");
-        bool solPuzzleClear = GetPlayerBoolFlag("Sol_Puzzle_Clear");
-        bool solSecondMeet = GetPlayerBoolFlag("Sol_Second_Meet");
-
-        if (verboseLog)
-            Debug.Log($"[Teleporter] Boss_Sol_FinalGame 체크: " +
-                     $"Boss_Sol_FinalGame={bossSolFinalGame}, " +
-                     $"Boss_Seconday_Busstop={bossSeconday}, " +
-                     $"Sol_Puzzle_Clear={solPuzzleClear}, " +
-                     $"Sol_Second_Meet={solSecondMeet}");
-
-        // Boss_Sol_FinalGame이 False이고 나머지가 모두 True일 때
-        return !bossSolFinalGame && bossSeconday && solPuzzleClear && solSecondMeet;
-    }
-
-    private System.Collections.IEnumerator RunBossSolFinalGameWithDelay()
-    {
-        // 바로 실행 (딜레이 제거)
-        // yield return new WaitForSeconds(0.5f); // 제거됨
-
-        bool ok = npcEventLoader.RunEventByName_External("Boss", "Boss_Sol_FinalGame", () =>
-        {
-            SetPlayerBoolFlag("Boss_Sol_FinalGame", true);
-            if (verboseLog)
-                Debug.Log("[Teleporter] Boss_Sol_FinalGame 플래그를 true로 설정했습니다.");
-        });
-
-        if (!ok && verboseLog)
-            Debug.LogWarning("[Teleporter] Boss_Sol_FinalGame 실행 실패 (NpcEventDebugLoader 참조 또는 JSON/이름 확인 필요)");
-
-        yield break;
     }
 
     // PlayerData의 bool 플래그 읽기

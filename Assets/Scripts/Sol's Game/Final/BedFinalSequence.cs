@@ -9,66 +9,54 @@ public class BedFinalSequence : MonoBehaviour
     [Header("플레이어 설정")]
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private KeyCode interactKey = KeyCode.F;
+    [Tooltip("플레이어 이동을 막기 위한 PlayerMove 참조(비워두면 자동 검색)")]
     [SerializeField] private PlayerMove playerMove;
 
-    [Header("조건: 팔찌 획득 여부")]
-    [Tooltip("서랍에서 비활성화시키는 팔찌 오브젝트")]
+    [Header("조건: 팔찌 획득 여부 확인용")]
+    [Tooltip("서랍에서 비활성화시키는 팔찌 오브젝트 (activeSelf == false 이면 획득으로 간주)")]
     [SerializeField] private GameObject braceletFromDrawer;
 
-    [Header("팔찌 연출 설정")]
-    [Tooltip("둥근 팔찌 이펙트 프리팹 (SpriteRenderer 포함)")]
+    [Header("둥근 팔찌 연출")]
+    [Tooltip("둥근 팔찌 이펙트 프리팹 (SpriteRenderer 포함 가정)")]
     [SerializeField] private GameObject braceletEffectPrefab;
-
-    [Tooltip("팔찌 시작 오프셋 (플레이어 기준)")]
+    [Tooltip("팔찌가 시작할 때 기준이 되는 오프셋 (플레이어 위치 기준)")]
     [SerializeField] private Vector3 braceletStartOffset = new Vector3(0f, 0.5f, 0f);
-
     [Tooltip("팔찌가 떠오르는 높이")]
     [SerializeField] private float braceletRiseHeight = 2.5f;
-
-    [Tooltip("1단계: 천천히 떠오르는 시간")]
-    [SerializeField] private float braceletRiseDuration = 1.2f;
-
-    [Tooltip("2단계: 회전하며 빛나는 시간")]
-    [SerializeField] private float braceletGlowDuration = 1.0f;
-
-    [Tooltip("3단계: 빠르게 플레이어에게 들어가는 시간")]
-    [SerializeField] private float braceletAbsorbDuration = 0.4f;
-
-    [Header("팔찌 색상")]
+    [Tooltip("팔찌가 떠오르는 연출 시간(초)")]
+    [SerializeField] private float braceletRiseDuration = 1.5f;
+    [Tooltip("팔찌 시작 색")]
     [SerializeField] private Color braceletStartColor = new Color(1f, 1f, 1f, 0.3f);
-    [SerializeField] private Color braceletGlowColor = new Color(2f, 2f, 2.5f, 1f); // 밝은 푸른빛
-    [SerializeField] private Color braceletFinalColor = new Color(3f, 3f, 3.5f, 1f); // 더 강렬한 빛
-
-    [Header("팔찌 연출 효과")]
-    [Tooltip("회전 속도 (도/초)")]
-    [SerializeField] private float rotationSpeed = 360f;
-
-    [Tooltip("맥동 효과 강도")]
-    [SerializeField] private float pulseIntensity = 0.2f;
-
-    [Tooltip("맥동 속도")]
-    [SerializeField] private float pulseSpeed = 3f;
-
-    [Header("파티클 효과 (선택)")]
-    [Tooltip("팔찌 주변 반짝이 파티클 프리팹")]
-    [SerializeField] private GameObject sparkleParticlePrefab;
+    [Tooltip("팔찌 최종 색(아주 밝은 흰색)")]
+    [SerializeField] private Color braceletEndColor = new Color(1.5f, 1.5f, 1.5f, 1f);
 
     [Header("솔 타겟")]
+    [Tooltip("플레이어가 빨려 들어갈 솔의 Transform (비워두면 fixedSolPosition 사용)")]
     [SerializeField] private Transform solTargetTransform;
+
+    [Tooltip("솔이 있는 고정 위치 (월드 좌표). 기본값: (-0.4309998, -0.06031036)")]
     [SerializeField] private Vector2 fixedSolPosition = new Vector2(29.53173f, 20.22195f);
+
+    [Tooltip("흡수 연출 동안 참조용 솔 프리팹(선택 사항, 없어도 됨)")]
     [SerializeField] private GameObject solPrefab;
 
     [Header("플레이어 흡수 연출")]
+    [Tooltip("플레이어가 솔 안으로 빨려 들어가는 연출 시간(초)")]
     [SerializeField] private float absorbDuration = 1.5f;
+    [Tooltip("흡수되는 동안 플레이어 스케일이 줄어드는 최소값 비율")]
     [SerializeField] private float playerMinScaleFactor = 0.05f;
 
     [Header("페이드 아웃")]
+    [Tooltip("전체 화면을 덮는 검은 이미지에 CanvasGroup을 붙인 오브젝트")]
     [SerializeField] private CanvasGroup fadeCanvasGroup;
+    [Tooltip("페이드 아웃 시간(초)")]
     [SerializeField] private float fadeOutDuration = 1.2f;
 
-    [Header("다음 씬")]
+    [Header("다음 씬 이름")]
+    [Tooltip("엔딩 이후 이동할 씬 이름")]
     [SerializeField] private string nextSceneName = "Sol's Game Final";
 
+    // 내부 상태
     private bool isPlayerColliding = false;
     private bool isPlayingSequence = false;
     private Transform playerTransform;
@@ -76,6 +64,7 @@ public class BedFinalSequence : MonoBehaviour
 
     private void Awake()
     {
+        // 플레이어 자동 검색
         if (playerMove == null)
         {
             playerMove = FindFirstObjectByType<PlayerMove>(FindObjectsInactive.Include);
@@ -89,6 +78,7 @@ public class BedFinalSequence : MonoBehaviour
 
         if (fadeCanvasGroup != null)
         {
+            // 시작 시 페이드는 투명
             fadeCanvasGroup.alpha = 0f;
             if (!fadeCanvasGroup.gameObject.activeSelf)
                 fadeCanvasGroup.gameObject.SetActive(true);
@@ -113,13 +103,20 @@ public class BedFinalSequence : MonoBehaviour
 
     private void Update()
     {
-        if (!isPlayerColliding || isPlayingSequence)
+        if (!isPlayerColliding)
+            return;
+
+        if (isPlayingSequence)
             return;
 
         if (Input.GetKeyDown(interactKey))
         {
+            // 조건: 팔찌 오브젝트가 비활성화(activeSelf == false)일 때만 연출 시작
             if (braceletFromDrawer != null && braceletFromDrawer.activeSelf)
+            {
+                // 아직 팔찌를 못 얻었다면 아무것도 안 함
                 return;
+            }
 
             if (playerTransform == null)
             {
@@ -127,21 +124,21 @@ public class BedFinalSequence : MonoBehaviour
                 return;
             }
 
-            StartCoroutine(Co_PlayEnhancedFinalSequence());
+            StartCoroutine(Co_PlayFinalSequence());
         }
     }
 
-    private IEnumerator Co_PlayEnhancedFinalSequence()
+    private IEnumerator Co_PlayFinalSequence()
     {
         isPlayingSequence = true;
 
+        // 플레이어 조작 잠금
         if (playerMove != null)
             playerMove.controlEnabled = false;
 
-        // ========== 팔찌 연출 시작 ==========
+        // 1) 둥근 팔찌 이펙트 생성 및 위로 떠오르면서 밝아지는 연출
         GameObject braceletFx = null;
         SpriteRenderer braceletSr = null;
-        GameObject sparkleEffect = null;
 
         if (braceletEffectPrefab != null)
         {
@@ -154,14 +151,6 @@ public class BedFinalSequence : MonoBehaviour
                 braceletSr.color = braceletStartColor;
             }
 
-            // 파티클 효과 생성
-            if (sparkleParticlePrefab != null)
-            {
-                sparkleEffect = Instantiate(sparkleParticlePrefab, startPos, Quaternion.identity);
-                sparkleEffect.transform.SetParent(braceletFx.transform);
-            }
-
-            // ===== 1단계: 천천히 떠오르기 =====
             float t = 0f;
             Vector3 riseStartPos = startPos;
             Vector3 riseEndPos = startPos + new Vector3(0f, braceletRiseHeight, 0f);
@@ -179,90 +168,23 @@ public class BedFinalSequence : MonoBehaviour
 
                 if (braceletSr != null)
                 {
-                    // 서서히 밝아지기
-                    braceletSr.color = Color.Lerp(braceletStartColor, braceletGlowColor, ease);
+                    braceletSr.color = Color.Lerp(braceletStartColor, braceletEndColor, ease);
                 }
 
                 yield return null;
             }
 
-            // ===== 2단계: 회전하며 빛나기 =====
-            t = 0f;
-            Vector3 glowPos = riseEndPos;
-            Vector3 baseScale = braceletFx.transform.localScale;
-
-            while (t < braceletGlowDuration)
-            {
-                t += Time.deltaTime;
-                float u = Mathf.Clamp01(t / braceletGlowDuration);
-
-                if (braceletFx != null)
-                {
-                    // 회전
-                    braceletFx.transform.Rotate(0f, 0f, rotationSpeed * Time.deltaTime);
-
-                    // 맥동 효과 (크기 변화)
-                    float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseIntensity;
-                    braceletFx.transform.localScale = baseScale * pulse;
-
-                    // 위아래로 살짝 흔들리기
-                    float bobbing = Mathf.Sin(Time.time * 2f) * 0.1f;
-                    braceletFx.transform.position = glowPos + new Vector3(0f, bobbing, 0f);
-                }
-
-                if (braceletSr != null)
-                {
-                    // 점점 더 밝아지기
-                    braceletSr.color = Color.Lerp(braceletGlowColor, braceletFinalColor, u);
-                }
-
-                yield return null;
-            }
-
-            // ===== 3단계: 플레이어에게 빠르게 흡수 =====
-            t = 0f;
-            Vector3 absorbStartPos = braceletFx.transform.position;
-            Vector3 absorbEndPos = playerTransform.position + new Vector3(0f, 0.5f, 0f);
-
-            while (t < braceletAbsorbDuration)
-            {
-                t += Time.deltaTime;
-                float u = Mathf.Clamp01(t / braceletAbsorbDuration);
-                float ease = EaseInCubic(u);
-
-                if (braceletFx != null)
-                {
-                    // 플레이어를 향해 빠르게 이동
-                    braceletFx.transform.position = Vector3.Lerp(absorbStartPos, playerTransform.position, ease);
-
-                    // 크기 축소
-                    braceletFx.transform.localScale = Vector3.Lerp(baseScale, baseScale * 0.1f, ease);
-
-                    // 회전 가속
-                    braceletFx.transform.Rotate(0f, 0f, rotationSpeed * 3f * Time.deltaTime);
-                }
-
-                if (braceletSr != null)
-                {
-                    // 페이드 아웃
-                    Color currentColor = braceletSr.color;
-                    currentColor.a = Mathf.Lerp(1f, 0f, ease);
-                    braceletSr.color = currentColor;
-                }
-
-                yield return null;
-            }
-
-            // 팔찌 이펙트 제거
             if (braceletFx != null)
-                Destroy(braceletFx);
-            if (sparkleEffect != null)
-                Destroy(sparkleEffect);
+            {
+                braceletFx.transform.position = riseEndPos;
+                if (braceletSr != null)
+                    braceletSr.color = braceletEndColor;
+            }
         }
 
         yield return new WaitForSeconds(0.3f);
 
-        // ========== 솔로 흡수되는 연출 ==========
+        // 2) 솔 위치 계산: 우선 solTargetTransform, 없으면 fixedSolPosition 사용
         Vector3 playerStartPos = playerTransform.position;
         Vector3 playerTargetPos;
 
@@ -273,9 +195,11 @@ public class BedFinalSequence : MonoBehaviour
         }
         else
         {
+            // 고정 좌표 (-0.4309998, -0.06031036)로 빨려 들어가게 설정
             playerTargetPos = new Vector3(fixedSolPosition.x, fixedSolPosition.y, playerStartPos.z);
         }
 
+        // 선택 사항: 솔 프리팹이 있으면 그 위치에 연출용 솔 생성
         GameObject solObj = null;
         if (solPrefab != null)
         {
@@ -292,21 +216,29 @@ public class BedFinalSequence : MonoBehaviour
             float u = Mathf.Clamp01(tAbsorb / absorbDuration);
             float ease = EaseInCubic(u);
 
+            // 플레이어 위치를 솔 위치로 보간
             playerTransform.position = Vector3.Lerp(playerStartPos, playerTargetPos, ease);
+            // 플레이어 스케일 축소
             playerTransform.localScale = Vector3.Lerp(playerStartScale, playerEndScale, ease);
 
             yield return null;
         }
 
+        // 완전히 빨려 들어간 상태처럼 보이게 처리
         playerTransform.position = playerTargetPos;
         playerTransform.localScale = playerEndScale;
 
+        // 플레이어 렌더러를 잠깐 꺼서 완전히 사라진 느낌
         if (playerRenderer != null)
             playerRenderer.enabled = false;
 
+        // 팔찌 이펙트는 더 이상 필요 없으면 제거
+        if (braceletFx != null)
+            Destroy(braceletFx);
+
         yield return new WaitForSeconds(0.3f);
 
-        // ========== 페이드 아웃 ==========
+        // 3) 페이드 아웃
         if (fadeCanvasGroup != null)
         {
             float tFade = 0f;
@@ -321,17 +253,18 @@ public class BedFinalSequence : MonoBehaviour
             fadeCanvasGroup.alpha = 1f;
         }
 
-        // ========== 다음 씬 ==========
+        // 4) 다음 씬으로 이동
         if (!string.IsNullOrEmpty(nextSceneName))
         {
             SceneManager.LoadScene(nextSceneName);
         }
         else
         {
-            Debug.LogError("[BedFinalSequence] nextSceneName이 비어 있습니다.");
+            Debug.LogError("[BedFinalSequence] nextSceneName 이 비어 있습니다.");
         }
     }
 
+    // 부드러운 감속(위로 떠오르기)용 이징
     private float EaseOutCubic(float t)
     {
         t = Mathf.Clamp01(t);
@@ -339,6 +272,7 @@ public class BedFinalSequence : MonoBehaviour
         return t * t * t + 1f;
     }
 
+    // 부드러운 가속(빨려들어가기)용 이징
     private float EaseInCubic(float t)
     {
         t = Mathf.Clamp01(t);

@@ -614,7 +614,7 @@ Transform:
   m_GameObject: {fileID: 3011433786608772905}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.25, y: -1, z: 0}
+  m_LocalPosition: {x: 3.47, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -841,7 +841,7 @@ Transform:
   m_GameObject: {fileID: 4254651221494405356}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.6599998, y: -0.64, z: 0}
+  m_LocalPosition: {x: 2, y: -0.64, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1846,6 +1846,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9af393fad49e3194eb3e2ae3db16be2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BedSleepTrigger
+  isFirstDayOnly: 1
+  startWithFadeIn: 0
   goodNightPanel: {fileID: 0}
   goodNightQA: {fileID: 0}
   sleepButton: {fileID: 0}
@@ -1854,8 +1856,20 @@ MonoBehaviour:
   playerMove: {fileID: 0}
   autoFindPlayerMove: 1
   lockIfPlayerInsideOnStart: 1
+  targetFadeCanvas: {fileID: 0}
   fadeCanvasGroup: {fileID: 0}
   fadeDuration: 0.6
+  sleepUIRoot: {fileID: 0}
+  dayText: {fileID: 0}
+  dayUIRect: {fileID: 0}
+  coinText: {fileID: 0}
+  coinUIRect: {fileID: 0}
+  sleepNextButton: {fileID: 0}
+  sleepSlideDuration: 0.5
+  sleepSlideStartX: -500
+  sleepSlideTargetX: 0
+  prologSceneName: Prolog
+  playerRoomSceneName: Player's Room
   verboseLog: 1
 --- !u!1 &4800216969038954358
 GameObject:
