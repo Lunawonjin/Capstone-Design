@@ -63,7 +63,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1344281181097994
-    m_Localized: '{System}'
+    m_Localized: "\uC138\uB85C"
     m_Metadata:
       m_Items: []
   - m_Id: 1344281181097995
@@ -71,7 +71,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1344281181097996
-    m_Localized: "\uC138\uB85C"
+    m_Localized: '{System}'
     m_Metadata:
       m_Items: []
   - m_Id: 1344281181097997
