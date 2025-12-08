@@ -15,6 +15,12 @@ MonoBehaviour:
   m_GroupName: Localization-String-Tables-Japanese (ja)
   m_GUID: cbd97113c59d0294985385b69ee4d844
   m_SerializeEntries:
+  - m_GUID: 00bb4e2f242115f419e09c173085aad5
+    m_Address: Boss_Sol_FinalGame_First_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 02311829732d9c14fa46675bf393a9ae
     m_Address: Sol_Puzzle_Clear_Speaker_ja
     m_ReadOnly: 1
@@ -42,6 +48,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1ab82920b77a64c4aa6907782f04e23f
     m_Address: Boss_Starest_SeondMeet_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2bcf7eef48d24ad4390b4b2913258772
+    m_Address: Boss_Sol_FinalGame_Third_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
@@ -76,6 +88,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3a8d419422dafa54a82653e0a501b269
+    m_Address: Boss_Sol_FinalGame_Third_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4d3cc1a6b1767cc4aa1495d604396cd1
     m_Address: Boss_Seconday_Busstop_Dialogue_ja
     m_ReadOnly: 1
@@ -84,6 +102,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 50106cf8c2891d847860ca7eeb0f29a0
     m_Address: Boss_Sol_FinalGame_Dialogue_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 57d02664e6055a24293c25186964a36d
+    m_Address: Boss_Sol_FinalGame_First_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
@@ -142,6 +166,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ja
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab5bcb0eab0e9d644907d177bd67e4d0
+    m_Address: Boss_Sol_FinalGame_Second_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b90ba0b5bffebb0489411bb211fb3b32
     m_Address: Salt_First_Meet_Speaker_ja
     m_ReadOnly: 1
@@ -168,6 +198,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e8744a3aaa8c20d46bd8fab3fea83d54
     m_Address: Boss_Sol_FinalGame_Speaker_ja
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ja
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f6f9ee74603eb6e41bdba552035616fd
+    m_Address: Boss_Sol_FinalGame_Second_Dialogue_ja
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ja
