@@ -81,6 +81,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-en
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 779df7d35d1b9d7499a475dfc362b7fb
+    m_Address: Boss_SaltAfter_Calling_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7cdca8d9fd3a56b48a2a846836fd70b9
     m_Address: Sol_FinalGame_Dialogue_en
     m_ReadOnly: 1
@@ -126,6 +132,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a77498e9fd363e347915173ca7b3f61a
     m_Address: Boss_Sol_FinalGame_First_Dialogue_en
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa07d382cc5f0064483b2dfb5cc952e5
+    m_Address: Sol_Second_Meet_Speaker_en
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en

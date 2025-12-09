@@ -756,7 +756,7 @@ MonoBehaviour:
   canvasGroup: {fileID: 0}
   padding: {x: 100, y: 150}
   minWidth: 120
-  maxWidth: 1600
+  maxWidth: 1700
   autoWrap: 1
   textOffsetX: 50
   textOffsetY: 25
@@ -851,7 +851,7 @@ MonoBehaviour:
   - Dialogue_015_President
   - Dialogue_016_President
   - Dialogue_017_President
-  - Dialogue_018_Player
+  - Dialogue_018_President
   playerTransform: {fileID: 1984392224}
   presidentTransform: {fileID: 1596140460}
   mainRoot: {fileID: 132198677}
