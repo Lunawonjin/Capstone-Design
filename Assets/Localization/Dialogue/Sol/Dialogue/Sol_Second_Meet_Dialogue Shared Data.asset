@@ -19,8 +19,8 @@ MonoBehaviour:
     m_Key: Dialogue_001
     m_Metadata:
       m_Items: []
-  - m_Id: 2339188969472
-    m_Key: Dialogue_002
+  - m_Id: 4308839629787136
+    m_Key: Dialogue_002_Sad
     m_Metadata:
       m_Items: []
   - m_Id: 2339193163776
@@ -39,20 +39,20 @@ MonoBehaviour:
     m_Key: Dialogue_Choice1_Same_002_Sad
     m_Metadata:
       m_Items: []
-  - m_Id: 2339193163780
+  - m_Id: 4310696221675520
     m_Key: Dialogue_Choice2_S1_001
     m_Metadata:
       m_Items: []
-  - m_Id: 2339193163781
+  - m_Id: 4310696221675521
     m_Key: Dialogue_Choice2_S2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 2339193163782
-    m_Key: Dialogue_Choice2_Same_001
+  - m_Id: 4310337008898050
+    m_Key: Dialogue_Choice2_Same_001_Sad
     m_Metadata:
       m_Items: []
-  - m_Id: 2339193163783
-    m_Key: Dialogue_Choice2_Same_002
+  - m_Id: 4310337008898051
+    m_Key: Dialogue_Choice2_Same_002_Sad
     m_Metadata:
       m_Items: []
   - m_Id: 2339193163784
@@ -63,8 +63,8 @@ MonoBehaviour:
     m_Key: Dialogue_Choice3_S2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 4267687954288641
-    m_Key: Dialogue_Choice3_Same_001_Smlie
+  - m_Id: 4308839684313088
+    m_Key: Dialogue_Choice3_Same_001_Smile
     m_Metadata:
       m_Items: []
   m_Metadata:

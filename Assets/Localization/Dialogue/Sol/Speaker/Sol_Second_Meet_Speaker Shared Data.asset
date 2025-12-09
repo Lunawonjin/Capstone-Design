@@ -39,20 +39,20 @@ MonoBehaviour:
     m_Key: Dialogue_Choice1_Same_002_Sad
     m_Metadata:
       m_Items: []
-  - m_Id: 767180607493
+  - m_Id: 44915988303872
     m_Key: Dialogue_Choice2_S1_001
     m_Metadata:
       m_Items: []
-  - m_Id: 767180607494
+  - m_Id: 44915988303873
     m_Key: Dialogue_Choice2_S2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 767180607495
-    m_Key: Dialogue_Choice2_Same_001
+  - m_Id: 44599003779073
+    m_Key: Dialogue_Choice2_Same_001_Sad
     m_Metadata:
       m_Items: []
-  - m_Id: 767180607496
-    m_Key: Dialogue_Choice2_Same_002
+  - m_Id: 44599003779074
+    m_Key: Dialogue_Choice2_Same_002_Sad
     m_Metadata:
       m_Items: []
   - m_Id: 767180607497

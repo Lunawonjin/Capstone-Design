@@ -2642,23 +2642,53 @@ public class NpcEventDebugLoader : MonoBehaviour
             return;
         }
 
-        // 현재 이벤트의 오너에 해당하는 NPC 찾기
-        if (!_npcSpecByName.TryGetValue($"{_ctxOwner}", out var spec) &&
-            !_npcSpecByName.TryGetValue(_ctxOwner, out spec))
+        // ★ 여러 가능한 NPC 이름 조합 시도
+        string[] possibleNames = new string[]
+        {
+        _ctxOwner,                    // "Sol"
+        $"{_ctxOwner}_Npc",          // "Sol_Npc"  
+        $"{_ctxOwner}_N",            // "Sol_N"
+        $"{_ctxOwner}Npc",           // "SolNpc"
+        $"{_ctxOwner.ToLower()}",    // "sol"
+        };
+
+        NpcSpec spec = null;
+        GameObject npcObj = null;
+
+        // Spec 찾기
+        foreach (var name in possibleNames)
+        {
+            if (_npcSpecByName.TryGetValue(name, out spec))
+            {
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] NPC Spec 발견: '{name}'");
+                break;
+            }
+        }
+
+        if (spec == null)
         {
             if (verboseLog)
-                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC Spec을 찾을 수 없습니다.");
+                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC Spec을 찾을 수 없습니다. 시도한 이름들: {string.Join(", ", possibleNames)}");
             return;
         }
 
-        GameObject npcObj = ResolveNpc($"{_ctxOwner}");
-        if (npcObj == null)
-            npcObj = ResolveNpc(_ctxOwner);
+        // GameObject 찾기
+        foreach (var name in possibleNames)
+        {
+            npcObj = ResolveNpc(name);
+            if (npcObj != null)
+            {
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] NPC GameObject 발견: '{name}' -> '{npcObj.name}'");
+                break;
+            }
+        }
 
         if (npcObj == null)
         {
             if (verboseLog)
-                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC GameObject를 찾을 수 없습니다.");
+                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC GameObject를 찾을 수 없습니다. 시도한 이름들: {string.Join(", ", possibleNames)}");
             return;
         }
 
