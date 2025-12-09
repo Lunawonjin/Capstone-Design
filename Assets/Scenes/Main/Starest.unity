@@ -36537,7 +36537,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1190056253
 Transform:
   m_ObjectHideFlags: 0
@@ -53235,11 +53235,11 @@ MonoBehaviour:
   useSmooth: 0
   smoothTime: 0.15
   clampX: 1
-  minX: -5.5
-  maxX: 9.5
+  minX: -7
+  maxX: 22
   clampY: 1
   minY: 2
-  maxY: 15.5
+  maxY: 25
 --- !u!1 &2010120439
 GameObject:
   m_ObjectHideFlags: 0
