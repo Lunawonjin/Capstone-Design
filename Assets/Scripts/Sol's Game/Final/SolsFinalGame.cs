@@ -50,9 +50,6 @@ public class SolsFinalGame : MonoBehaviour
     [Header("보스 인트로 대사 설정")]
     [SerializeField] private string bossIntroDialogueKey = "Boss_Sol_FinalGame_Third";
 
-    [Header("보스 엔딩 대사 설정")]
-    [SerializeField] private string bossEndingDialogueKey = "Boss_Sol_FinalGame_Ending";
-
     [Header("보스 카메라 이동 설정")]
     [SerializeField] private float bossCameraTargetX = 30f;
     [SerializeField] private float bossCameraMoveDuration = 1.5f;
@@ -80,7 +77,6 @@ public class SolsFinalGame : MonoBehaviour
     private bool _hasLandedOnce = false;
 
     private bool hasPlayedBossIntroDialogue = false;
-    private bool hasPlayedBossEndingDialogue = false;
     private bool isPlayingBossDialogue = false;
 
     private bool isLandingDialogueActive = false;
@@ -114,12 +110,41 @@ public class SolsFinalGame : MonoBehaviour
         return anyChildActive;
     }
 
+    /// <summary>
+    /// 보스 소환 시퀀스 트리거 (Enemy에서 호출)
+    /// </summary>
+    public void TriggerBossSpawnSequence(float delay)
+    {
+        StartCoroutine(DelayedBossSpawn(delay));
+    }
+
+    private IEnumerator DelayedBossSpawn(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        Debug.Log("[SolsFinalGame] 보스 소환 시퀀스 시작!");
+
+        // 이미 시퀀스가 실행 중인지 확인
+        if (FindAnyObjectByType<BossSpawnSequence>() != null)
+        {
+            Debug.LogWarning("[SolsFinalGame] ⚠️ 이미 보스 소환 시퀀스가 실행 중입니다!");
+            yield break;
+        }
+
+        GameObject sequenceRunner = new GameObject("BossSpawnSequenceRunner");
+        BossSpawnSequence sequence = sequenceRunner.AddComponent<BossSpawnSequence>();
+        sequence.StartSequence(0f); // delay는 이미 적용됨
+    }
+
     // ========================================
     // 🔹 Unity 생명주기
     // ========================================
 
     void Awake()
     {
+        // ⭐ 가장 먼저 적 카운트 리셋 (Start보다 먼저 실행되도록)
+        SolsFinalGameEnemy.ResetEnemyCount();
+
         if (Instance == null)
         {
             Instance = this;
@@ -205,6 +230,15 @@ public class SolsFinalGame : MonoBehaviour
         {
             transform.position = startPosition;
         }
+
+        // ⭐ 디버그: 실제 적 개수 확인 (1프레임 후)
+        StartCoroutine(DelayedEnemyCountCheck());
+    }
+
+    private IEnumerator DelayedEnemyCountCheck()
+    {
+        yield return null; // 모든 적의 Start가 끝날 때까지 대기
+        SolsFinalGameEnemy.DebugCountAllEnemies();
     }
 
     void Update()
@@ -231,25 +265,10 @@ public class SolsFinalGame : MonoBehaviour
             }
         }
 
-        // ⭐ 테스트용: T키로 강제 보스 활성화
-        if (Input.GetKeyDown(KeyCode.T))
+        // ⭐ 디버그: E키로 적 카운트 확인
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            Debug.Log("[TEST] T키 입력! 강제 보스 활성화 테스트");
-            if (bossUIObject != null)
-            {
-                bossUIObject.SetActive(true);
-                Debug.Log("[TEST] BossUI 강제 활성화!");
-            }
-            if (bossObject != null)
-            {
-                bossObject.SetActive(true);
-                Debug.Log("[TEST] Boss 강제 활성화!");
-            }
-            if (cameraFollow != null)
-            {
-                cameraFollow.enabled = true;
-                Debug.Log("[TEST] 카메라 추적 활성화!");
-            }
+            SolsFinalGameEnemy.DebugCountAllEnemies();
         }
     }
 
@@ -548,7 +567,131 @@ public class SolsFinalGame : MonoBehaviour
     }
 
     // ==========================================
-    // ★★★ 보스 인트로 대사 시스템 (간소화) ★★★
+    // ★★★ 보스 등장 시퀀스용 카메라 시스템 ★★★
+    // ==========================================
+
+    /// <summary>
+    /// 보스로 카메라 이동
+    /// </summary>
+    public IEnumerator MoveCameraToBoss()
+    {
+        if (targetCamera == null)
+        {
+            Debug.LogWarning("[SolsFinalGame] targetCamera가 null!");
+            yield break;
+        }
+
+        Debug.Log("[SolsFinalGame] 카메라를 보스로 이동 시작");
+
+        Vector3 startPos = targetCamera.position;
+        Vector3 endPos = new Vector3(bossCameraTargetX, startPos.y, startPos.z);
+
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime / Mathf.Max(0.01f, bossCameraMoveDuration);
+            targetCamera.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        targetCamera.position = endPos;
+        Debug.Log("[SolsFinalGame] 카메라 보스 도착 완료");
+    }
+
+    /// <summary>
+    /// 플레이어로 카메라 복귀
+    /// </summary>
+    public IEnumerator MoveCameraToPlayer()
+    {
+        if (targetCamera == null || playerRb == null)
+        {
+            Debug.LogWarning("[SolsFinalGame] targetCamera 또는 playerRb가 null!");
+            yield break;
+        }
+
+        Debug.Log("[SolsFinalGame] 카메라를 플레이어로 복귀 시작");
+
+        Vector3 startPos = targetCamera.position;
+        Vector3 playerPos = playerRb.position;
+        Vector3 endPos = new Vector3(playerPos.x, startPos.y, startPos.z);
+
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime / Mathf.Max(0.01f, bossCameraMoveDuration);
+            targetCamera.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, t));
+            yield return null;
+        }
+
+        targetCamera.position = endPos;
+        Debug.Log("[SolsFinalGame] 카메라 플레이어 복귀 완료");
+    }
+
+    /// <summary>
+    /// 보스 시퀀스용 대사 실행 (제어 잠금 없음)
+    /// </summary>
+    public IEnumerator PlayBossIntroDialogueForSequence()
+    {
+        Debug.Log("[SolsFinalGame] 보스 인트로 대사 시작");
+
+        if (dialogueUIObject != null)
+        {
+            Transform current = dialogueUIObject.transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    current.gameObject.SetActive(true);
+                }
+                current = current.parent;
+            }
+        }
+
+        if (dialogueRunner != null)
+        {
+            Transform current = dialogueRunner.transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    current.gameObject.SetActive(true);
+                }
+                current = current.parent;
+            }
+
+            yield return null;
+
+            dialogueRunner.BeginWithEventName(bossIntroDialogueKey);
+            Debug.Log($"[SolsFinalGame] 보스 인트로 대사 실행: {bossIntroDialogueKey}");
+
+            bool dialogueEnded = false;
+            System.Action onDialogueEnd = () =>
+            {
+                dialogueEnded = true;
+                Debug.Log("[SolsFinalGame] 보스 인트로 대사 종료 감지");
+            };
+
+            dialogueRunner.OnDialogueEnded += onDialogueEnd;
+
+            while (!dialogueEnded)
+            {
+                yield return null;
+            }
+
+            dialogueRunner.OnDialogueEnded -= onDialogueEnd;
+
+            if (dialogueUIObject != null)
+            {
+                dialogueUIObject.SetActive(false);
+                Debug.Log("[SolsFinalGame] DialogueUI 비활성화");
+            }
+        }
+
+        Debug.Log("[SolsFinalGame] 보스 인트로 대사 완료");
+    }
+
+    // ==========================================
+    // ★★★ 보스 인트로 대사 시스템 (기존) ★★★
     // ==========================================
 
     public void StartBossIntroDialogue()
@@ -634,7 +777,6 @@ public class SolsFinalGame : MonoBehaviour
             }
         }
 
-        // ⭐⭐⭐ 대사 종료 후 즉시 보스 활성화
         Debug.Log("[SolsFinalGame] ========== 보스 활성화 시작 ==========");
 
         if (bossUIObject != null)
@@ -680,144 +822,6 @@ public class SolsFinalGame : MonoBehaviour
         }
 
         Debug.Log("[SolsFinalGame] ========== 보스 활성화 완료 ==========");
-
-        isPlayingBossDialogue = false;
-    }
-
-    // ==========================================
-    // ★★★ 보스 엔딩 대사 & 카메라 시스템 ★★★
-    // ==========================================
-
-    public void StartBossEndingSequence()
-    {
-        if (hasPlayedBossEndingDialogue)
-        {
-            Debug.Log("[SolsFinalGame] 보스 엔딩은 이미 재생되었습니다.");
-            return;
-        }
-
-        StartCoroutine(BossEndingSequence());
-    }
-
-    private IEnumerator BossEndingSequence()
-    {
-        hasPlayedBossEndingDialogue = true;
-        isPlayingBossDialogue = true;
-
-        Debug.Log("[SolsFinalGame] 보스 엔딩 시퀀스 시작");
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(false);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 비활성화");
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(false);
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대사 중 공격 비활성화");
-        }
-
-        if (playerRb != null)
-        {
-            playerRb.linearVelocity = Vector2.zero;
-            playerRb.angularVelocity = 0f;
-        }
-
-        if (cameraFollow != null)
-        {
-            cameraFollow.enabled = false;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 중 SimpleCameraFollow 비활성화");
-        }
-
-        if (targetCamera != null)
-        {
-            Vector3 startPos = targetCamera.position;
-            Vector3 endPos = new Vector3(bossCameraTargetX, startPos.y, startPos.z);
-
-            float t = 0f;
-            while (t < 1f)
-            {
-                t += Time.deltaTime / Mathf.Max(0.01f, bossCameraMoveDuration);
-                targetCamera.position = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, t));
-                yield return null;
-            }
-            targetCamera.position = endPos;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 카메라 이동 완료");
-        }
-
-        if (dialogueUIObject != null)
-        {
-            Transform current = dialogueUIObject.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-            Debug.Log("[SolsFinalGame] DialogueUI 활성화");
-        }
-
-        if (dialogueRunner != null)
-        {
-            Transform current = dialogueRunner.transform;
-            while (current != null)
-            {
-                if (!current.gameObject.activeSelf)
-                {
-                    current.gameObject.SetActive(true);
-                }
-                current = current.parent;
-            }
-
-            yield return null;
-
-            PlayerMove originalPlayerMove = dialogueRunner.playerMove;
-            dialogueRunner.playerMove = null;
-
-            dialogueRunner.BeginWithEventName(bossEndingDialogueKey);
-            Debug.Log($"[SolsFinalGame] 보스 엔딩 대화 시작: {bossEndingDialogueKey}");
-
-            bool dialogueEnded = false;
-            System.Action onDialogueEnd = () =>
-            {
-                dialogueEnded = true;
-                Debug.Log("[SolsFinalGame] 보스 엔딩 대화 종료 감지");
-            };
-
-            dialogueRunner.OnDialogueEnded += onDialogueEnd;
-
-            while (!dialogueEnded)
-            {
-                yield return null;
-            }
-
-            dialogueRunner.OnDialogueEnded -= onDialogueEnd;
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대화 완전 종료");
-
-            dialogueRunner.playerMove = originalPlayerMove;
-        }
-
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(true);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 복구");
-        }
-
-        if (syringeShooter != null)
-        {
-            syringeShooter.SetShootingEnabled(true);
-            Debug.Log("[SolsFinalGame] 보스 엔딩 대사 종료 후 공격 활성화");
-        }
-
-        yield return null;
-        if (targetMover != null)
-        {
-            targetMover.SetControlEnabled(true);
-            Debug.Log("[SolsFinalGame] 플레이어 제어 재확인 및 복구");
-        }
 
         isPlayingBossDialogue = false;
     }
