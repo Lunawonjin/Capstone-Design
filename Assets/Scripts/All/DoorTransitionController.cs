@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 /// <summary>
 /// 방 <-> 길 거리 전환 컨트롤러
@@ -63,6 +64,11 @@ public class DoorTransitionController : MonoBehaviour
     [Header("디버그")]
     public bool verbose = false;
 
+    [Header("효과음 설정")]
+    [SerializeField] private string openDoorSFXKey = "OpenDoor";
+    [SerializeField] private string closeDoorSFXKey = "CloseDoor";
+    [SerializeField] private float closeDoorDelay = 0.3f; // CloseDoor 효과음 지연 시간
+
     // 내부 상태
     bool _isTeleporting = false;
 
@@ -78,6 +84,10 @@ public class DoorTransitionController : MonoBehaviour
         fadeInDuration = 0.25f;
         fadeOutDuration = 0.001f; // 요청: 즉시 걷어내기
         fadeColor = Color.black;
+
+        openDoorSFXKey = "OpenDoor";
+        closeDoorSFXKey = "CloseDoor";
+        closeDoorDelay = 0.3f;
     }
 
     void Awake()
@@ -174,9 +184,12 @@ public class DoorTransitionController : MonoBehaviour
     }
 
     // 활성화 토글: 도착지 먼저 켜고 → 이동 → 출발지 끄기(깜빡임/유실 방지)
-    System.Collections.IEnumerator Co_Teleport(Vector2 targetPos, bool roomActive, bool roadActive)
+    IEnumerator Co_Teleport(Vector2 targetPos, bool roomActive, bool roadActive)
     {
         _isTeleporting = true;
+
+        // ⭐ OpenDoor 효과음 재생
+        PlayOpenDoorSFX();
 
         if (useTeleportFade)
             yield return ScreenFader.Instance.FadeTo(1f, Mathf.Max(0.01f, fadeInDuration), fadeColor);
@@ -203,7 +216,49 @@ public class DoorTransitionController : MonoBehaviour
         if (useTeleportFade)
             yield return ScreenFader.Instance.FadeTo(0f, Mathf.Max(0f, fadeOutDuration), fadeColor);
 
+        // ⭐ CloseDoor 효과음 재생 (지연 후)
+        StartCoroutine(PlayCloseDoorSFXDelayed());
+
         _isTeleporting = false;
+    }
+
+    /// <summary>
+    /// OpenDoor 효과음 재생
+    /// </summary>
+    private void PlayOpenDoorSFX()
+    {
+        if (string.IsNullOrEmpty(openDoorSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(openDoorSFXKey);
+            if (verbose) Debug.Log($"[DoorTransition] ✅ OpenDoor 효과음 재생: {openDoorSFXKey}");
+        }
+        else
+        {
+            if (verbose) Debug.LogWarning($"[DoorTransition] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{openDoorSFXKey}' 재생 실패");
+        }
+    }
+
+    /// <summary>
+    /// CloseDoor 효과음 지연 재생
+    /// </summary>
+    private IEnumerator PlayCloseDoorSFXDelayed()
+    {
+        yield return new WaitForSeconds(closeDoorDelay);
+
+        if (string.IsNullOrEmpty(closeDoorSFXKey))
+            yield break;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(closeDoorSFXKey);
+            if (verbose) Debug.Log($"[DoorTransition] ✅ CloseDoor 효과음 재생: {closeDoorSFXKey}");
+        }
+        else
+        {
+            if (verbose) Debug.LogWarning($"[DoorTransition] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{closeDoorSFXKey}' 재생 실패");
+        }
     }
 
 #if UNITY_EDITOR
@@ -221,4 +276,3 @@ public class DoorTransitionController : MonoBehaviour
     }
 #endif
 }
-

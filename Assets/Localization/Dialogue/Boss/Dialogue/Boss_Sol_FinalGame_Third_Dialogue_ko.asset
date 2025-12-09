@@ -19,29 +19,40 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 2261430767616
-    m_Localized: "\uC774\uB7F0... \uBCF4\uC2A4\uAC00 \uB098\uD0C0\uB0AC\uB124."
+    m_Localized: "\uC774\uB7F0... \uBCF4\uC2A4\uAC00 \uB098\uD0C0\uB0AC\uC796\uC544!?"
     m_Metadata:
       m_Items: []
   - m_Id: 2261468516352
-    m_Localized: "\uC544\uAE4C\uBCF4\uB2E4 \uB354 \uAC15\uD55C \uACF5\uACA9\uC774
-      \uD544\uC694\uD560 \uAC70\uC57C!"
+    m_Localized: "\uBCF4\uC2A4 \uBC31\uD608\uAD6C\uC5D0\uAC8C \uD55C \uBC88\uB9CC
+      \uB2FF\uC544\uB3C4 \uD53C\uAC00 \uB2E4 \uB2F3\uACE0 \uB9D0 \uAC70\uC57C!"
     m_Metadata:
       m_Items: []
   - m_Id: 2261468516353
-    m_Localized: "\uB9C8\uC6B0\uC2A4 \uD074\uB9AD\uC744 \uC77C\uC815\uC2DC\uAC04
-      \uAFB9 \uB204\uB978 \uD6C4 \uC8FC\uC0AC\uAE30\uB97C \uB358\uC838\uBD10."
+    m_Localized: "\uB4A4\uCABD\uC73C\uB85C \uB3C4\uB9DD\uCE58\uBA70 \uACF5\uACA9\uD558\uB294
+      \uC218\uBC16\uC5D0 \uC5C6\uACA0\uC5B4..."
     m_Metadata:
       m_Items: []
   - m_Id: 2261468516354
-    m_Localized: "\uC798 \uD560 \uC218 \uC788\uC9C0?!"
+    m_Localized: "\uC544\uCC38! \uC774\uBBF8 \uC54C\uC544\uB0C8\uC744 \uC218\uB3C4
+      \uC788\uC9C0\uB9CC,"
     m_Metadata:
       m_Items: []
   - m_Id: 2261468516355
+    m_Localized: "\uB9C8\uC6B0\uC2A4\uB97C \uC77C\uC815\uC2DC\uAC04 \uAFB9 \uB204\uB978
+      \uD6C4 \uC8FC\uC0AC\uAE30\uB97C \uB358\uC9C0\uBA74 \uB354 \uAC15\uD558\uAC8C
+      \uACF5\uACA9\uD560 \uC218 \uC788\uC5B4."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2261468516356
+    m_Localized: "\uC798 \uD560 \uC218 \uC788\uC9C0?!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563948936433664
     m_Localized: "\uC774\uC81C... \uB098\uB294 \uBA40\uB9AC\uC11C \uC751\uC6D0\uBC16\uC5D4
       \uD560 \uC218 \uC5C6\uACA0\uB124."
     m_Metadata:
       m_Items: []
-  - m_Id: 2261468516356
+  - m_Id: 563949003542528
     m_Localized: "\uBB34\uC0AC\uD788 \uB3CC\uC544\uC640\uC57C\uD574 {playerName}!!"
     m_Metadata:
       m_Items: []
