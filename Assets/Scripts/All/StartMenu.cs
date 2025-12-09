@@ -48,6 +48,53 @@ public class StartMenu : MonoBehaviour
         if (endNoButton) endNoButton.onClick.AddListener(OnClickExitCancel);
 
         RefreshLoadButtonVisibility();
+
+        // ⭐ 모든 버튼에 호버 효과음 추가
+        AddHoverSoundToAllButtons();
+    }
+
+    /// <summary>
+    /// 씬의 모든 버튼에 호버 효과음 추가
+    /// </summary>
+    private void AddHoverSoundToAllButtons()
+    {
+        Button[] allButtons = FindObjectsOfType<Button>(true);
+        foreach (var btn in allButtons)
+        {
+            AddHoverSoundToButton(btn);
+        }
+    }
+
+    /// <summary>
+    /// 개별 버튼에 호버 효과음 이벤트 추가
+    /// </summary>
+    private void AddHoverSoundToButton(Button btn)
+    {
+        if (btn == null) return;
+
+        var trigger = btn.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>();
+        if (trigger == null)
+            trigger = btn.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+
+        // 기존 PointerEnter 이벤트 제거 (중복 방지)
+        trigger.triggers.RemoveAll(e => e.eventID == UnityEngine.EventSystems.EventTriggerType.PointerEnter);
+
+        // 새 PointerEnter 이벤트 추가
+        var entry = new UnityEngine.EventSystems.EventTrigger.Entry();
+        entry.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+        entry.callback.AddListener((data) => { PlaySelectButtonSFX(); });
+        trigger.triggers.Add(entry);
+    }
+
+    /// <summary>
+    /// SelectBT 효과음 재생
+    /// </summary>
+    private void PlaySelectButtonSFX()
+    {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX("SelectBT");
+        }
     }
 
     void OnEnable()

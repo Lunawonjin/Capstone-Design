@@ -14,12 +14,25 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
     [Header("UI 잠금 연동 / UI Lock Integration")]
     [SerializeField] private UIExclusiveManager uiLock;
 
+    [Header("걷기 효과음 설정")]
+    [SerializeField] private bool enableWalkSound = true;
+    [SerializeField] private string defaultWalkSFXKey = "StoneRoad"; // 기본 효과음을 StoneRoad로 변경
+    [SerializeField] private string stoneRoadSFXKey = "StoneRoad";
+    [SerializeField] private string grassRoadSFXKey = "GrassRoad";
+
     private Rigidbody2D rb;
     private Animator animator;
     private Vector2 moveDirection;
 
     // 외부 연출이 애니를 구동할 때 true
     private bool externalAnimDriving = false;
+
+    // 걷기 효과음 관련
+    private AudioSource currentWalkSFX;
+    private string currentGroundTag = ""; // 현재 밟고 있는 지면 태그
+    private string lastPlayedSFXKey = ""; // 마지막으로 재생한 효과음 키
+    private bool isMoving = false;
+    private bool wasMoving = false;
 
     void Start()
     {
@@ -39,12 +52,20 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
         if (!effectiveEnabled)
         {
             moveDirection = Vector2.zero;
+            isMoving = false;
 
             if (!externalAnimDriving && animator != null)
             {
                 var st = animator.GetCurrentAnimatorStateInfo(0);
                 animator.Play(st.shortNameHash, 0, 0f);
                 animator.speed = 0f;
+            }
+
+            // 멈추면 걷기 효과음 정지
+            if (wasMoving)
+            {
+                StopWalkSFX();
+                wasMoving = false;
             }
             return;
         }
@@ -57,6 +78,7 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
         if (Input.GetKey(KeyCode.D)) moveX += 1f;
 
         moveDirection = new Vector2(moveX, moveY).normalized;
+        isMoving = (moveDirection != Vector2.zero);
 
         if (animator == null) return;
 
@@ -72,6 +94,28 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
             animator.Play(st.shortNameHash, 0, 0f);
             animator.speed = 0f;
         }
+
+        // ===== 걷기 효과음 처리 =====
+        if (enableWalkSound)
+        {
+            if (isMoving && !wasMoving)
+            {
+                // 걷기 시작
+                UpdateWalkSFX();
+            }
+            else if (!isMoving && wasMoving)
+            {
+                // 걷기 멈춤
+                StopWalkSFX();
+            }
+            else if (isMoving)
+            {
+                // 걷는 중 - 지면이 바뀌었는지 체크
+                UpdateWalkSFX();
+            }
+        }
+
+        wasMoving = isMoving;
     }
 
     void FixedUpdate()
@@ -83,13 +127,126 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
 
         if (!effectiveEnabled)
         {
-            // Rigidbody2D는 velocity 프로퍼티를 사용합니다.
             rb.linearVelocity = Vector2.zero;
             rb.MovePosition(rb.position);
             return;
         }
 
         rb.MovePosition(rb.position + moveDirection * moveSpeed * Time.fixedDeltaTime);
+    }
+
+    // ===== 충돌 감지 (지면 태그 체크) =====
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        CheckGroundTag(collision.gameObject);
+    }
+
+    void OnCollisionStay2D(Collision2D collision)
+    {
+        CheckGroundTag(collision.gameObject);
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if (string.IsNullOrEmpty(currentGroundTag))
+            return;
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        CheckGroundTag(other.gameObject);
+    }
+
+    void OnTriggerStay2D(Collider2D other)
+    {
+        CheckGroundTag(other.gameObject);
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (string.IsNullOrEmpty(currentGroundTag))
+            return;
+        {
+            currentGroundTag = "";
+        }
+    }
+
+    private void CheckGroundTag(GameObject ground)
+    {
+        if (ground.CompareTag("Rock"))
+        {
+            currentGroundTag = "Rock";
+        }
+        else if (ground.CompareTag("Grass"))
+        {
+            currentGroundTag = "Grass";
+        }
+    }
+
+    // ===== 걷기 효과음 시스템 =====
+
+    /// <summary>
+    /// 걷기 효과음 업데이트 (지면에 따라 루프 효과음 전환)
+    /// </summary>
+    private void UpdateWalkSFX()
+    {
+        if (!enableWalkSound)
+            return;
+
+        // 현재 지면에 맞는 효과음 키 결정
+        string sfxKey = defaultWalkSFXKey;
+
+        if (currentGroundTag == "Rock" && !string.IsNullOrEmpty(stoneRoadSFXKey))
+        {
+            sfxKey = stoneRoadSFXKey;
+        }
+        else if (currentGroundTag == "Grass" && !string.IsNullOrEmpty(grassRoadSFXKey))
+        {
+            sfxKey = grassRoadSFXKey;
+        }
+
+        // 효과음이 바뀌었으면 재생 전환
+        if (lastPlayedSFXKey != sfxKey)
+        {
+            StopWalkSFX();
+            PlayWalkSFX(sfxKey);
+        }
+        // 효과음이 재생 중이 아니면 시작
+        else if (currentWalkSFX == null)
+        {
+            PlayWalkSFX(sfxKey);
+        }
+    }
+
+    /// <summary>
+    /// 걷기 효과음 시작 (루프)
+    /// </summary>
+    private void PlayWalkSFX(string sfxKey)
+    {
+        if (!enableWalkSound || string.IsNullOrEmpty(sfxKey))
+            return;
+
+        // 이전 효과음이 있으면 정지
+        StopWalkSFX();
+
+        if (SoundManager.Instance != null)
+        {
+            currentWalkSFX = SoundManager.Instance.PlaySFXLoop(sfxKey);
+            lastPlayedSFXKey = sfxKey;
+        }
+    }
+
+    /// <summary>
+    /// 걷기 효과음 정지
+    /// </summary>
+    private void StopWalkSFX()
+    {
+        if (currentWalkSFX != null && SoundManager.Instance != null)
+        {
+            SoundManager.Instance.StopSFXSource(currentWalkSFX);
+            currentWalkSFX = null;
+            lastPlayedSFXKey = "";
+        }
     }
 
     // ==== 외부/이벤트 제어용 유틸리티 ====
@@ -104,6 +261,7 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
     {
         controlEnabled = false;
         moveDirection = Vector2.zero;
+        isMoving = false;
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
 
         if (animator != null && !externalAnimDriving)
@@ -112,6 +270,10 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
             animator.Play(st.shortNameHash, 0, 0f);
             animator.speed = 0f;
         }
+
+        // 걷기 효과음 정지
+        StopWalkSFX();
+        wasMoving = false;
     }
 
     public void Unfreeze() => Unfreeze(false);
@@ -158,6 +320,9 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
         var st = animator.GetCurrentAnimatorStateInfo(0);
         animator.Play(st.shortNameHash, 0, 0f);
         animator.speed = 0f;
+
+        // 외부 애니메이션 종료 시 걷기 효과음 정지
+        StopWalkSFX();
     }
 
     private void PlayWalkByVector(Vector2 dir)
@@ -172,5 +337,17 @@ public class PlayerMove : MonoBehaviour, NpcEventDebugLoader.IPlayerControlToggl
             if (dir.y > 0f) animator.Play("Back_Walk");
             else animator.Play("Front_Walk");
         }
+    }
+
+    void OnDisable()
+    {
+        // 비활성화 시 효과음 정지
+        StopWalkSFX();
+    }
+
+    void OnDestroy()
+    {
+        // 파괴 시 효과음 정지
+        StopWalkSFX();
     }
 }

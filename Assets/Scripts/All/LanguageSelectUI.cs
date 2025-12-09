@@ -60,13 +60,11 @@ public class LanguageSelectUI : MonoBehaviour
         {
             string startCode = fallbackLang;
 
-            // [수정됨] 최신 세이브가 있으면 그 언어를 '읽어오기만' 함 (전체 데이터 로드 X)
             if (DataManager.instance.HasAnySave())
             {
                 int recentSlot = DataManager.instance.GetMostRecentSaveSlot();
                 if (recentSlot >= 0)
                 {
-                    // 새로 추가된 PeekLanguageFromSlot 함수를 사용
                     string langFromFile = DataManager.instance.PeekLanguageFromSlot(recentSlot);
                     if (!string.IsNullOrEmpty(langFromFile))
                     {
@@ -75,13 +73,58 @@ public class LanguageSelectUI : MonoBehaviour
                 }
             }
 
-            // UI/로케일 즉시 반영(세이브에는 아직 쓰지 않음)
             yield return SwitchLanguage(startCode, writeToSave: false);
         }
         else
         {
-            // 최소 한 번은 라벨 표기
             RefreshLabel();
+        }
+
+        // ⭐ 모든 버튼에 호버 효과음 추가
+        AddHoverSoundToAllButtons();
+    }
+
+    /// <summary>
+    /// 씬의 모든 버튼에 호버 효과음 추가
+    /// </summary>
+    private void AddHoverSoundToAllButtons()
+    {
+        Button[] allButtons = FindObjectsOfType<Button>(true);
+        foreach (var btn in allButtons)
+        {
+            AddHoverSoundToButton(btn);
+        }
+    }
+
+    /// <summary>
+    /// 개별 버튼에 호버 효과음 이벤트 추가
+    /// </summary>
+    private void AddHoverSoundToButton(Button btn)
+    {
+        if (btn == null) return;
+
+        var trigger = btn.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>();
+        if (trigger == null)
+            trigger = btn.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+
+        // 기존 PointerEnter 이벤트 제거 (중복 방지)
+        trigger.triggers.RemoveAll(e => e.eventID == UnityEngine.EventSystems.EventTriggerType.PointerEnter);
+
+        // 새 PointerEnter 이벤트 추가
+        var entry = new UnityEngine.EventSystems.EventTrigger.Entry();
+        entry.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
+        entry.callback.AddListener((data) => { PlaySelectButtonSFX(); });
+        trigger.triggers.Add(entry);
+    }
+
+    /// <summary>
+    /// SelectBT 효과음 재생
+    /// </summary>
+    private void PlaySelectButtonSFX()
+    {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX("SelectBT");
         }
     }
 
