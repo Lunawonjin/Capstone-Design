@@ -614,7 +614,7 @@ Transform:
   m_GameObject: {fileID: 3011433786608772905}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.25, y: -1, z: 0}
+  m_LocalPosition: {x: 3.47, y: -0.84, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -841,7 +841,7 @@ Transform:
   m_GameObject: {fileID: 4254651221494405356}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.6599998, y: -0.64, z: 0}
+  m_LocalPosition: {x: 2.2, y: -0.64, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1649,11 +1649,27 @@ Tilemap:
     m_Data: {fileID: 11400000, guid: b9a992ff02d0edd488b23f64ae07c0e0, type: 2}
   - m_RefCount: 41
     m_Data: {fileID: 11400000, guid: 797525bc85e2f634cb98a4e476145fcd, type: 2}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileSpriteArray:
   - m_RefCount: 41
     m_Data: {fileID: 678155817968981599, guid: 185c13537c09f7b469a33a8cda709912, type: 3}
   - m_RefCount: 24
     m_Data: {fileID: 901842672320297418, guid: 00662a09d1990414595ab0d503460e14, type: 3}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
   m_TileMatrixArray:
   - m_RefCount: 65
     m_Data:
@@ -1679,8 +1695,8 @@ Tilemap:
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Origin: {x: -4, y: -4, z: 0}
-  m_Size: {x: 8, y: 10, z: 1}
+  m_Origin: {x: -10, y: -26, z: 0}
+  m_Size: {x: 47, y: 32, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
   m_TileOrientation: 0
   m_TileOrientationMatrix:
@@ -1846,6 +1862,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9af393fad49e3194eb3e2ae3db16be2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BedSleepTrigger
+  isFirstDayOnly: 1
+  startWithFadeIn: 1
   goodNightPanel: {fileID: 0}
   goodNightQA: {fileID: 0}
   sleepButton: {fileID: 0}
@@ -1854,8 +1872,20 @@ MonoBehaviour:
   playerMove: {fileID: 0}
   autoFindPlayerMove: 1
   lockIfPlayerInsideOnStart: 1
+  targetFadeCanvas: {fileID: 0}
   fadeCanvasGroup: {fileID: 0}
-  fadeDuration: 0.6
+  fadeDuration: 1
+  sleepUIRoot: {fileID: 0}
+  dayText: {fileID: 0}
+  dayUIRect: {fileID: 0}
+  coinText: {fileID: 0}
+  coinUIRect: {fileID: 0}
+  sleepNextButton: {fileID: 0}
+  sleepSlideDuration: 1
+  sleepSlideStartX: -500
+  sleepSlideTargetX: 0
+  prologSceneName: Prolog
+  playerRoomSceneName: Player's Room
   verboseLog: 1
 --- !u!1 &4800216969038954358
 GameObject:
@@ -2320,7 +2350,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.773344}
+  m_Offset: {x: 0, y: -0.7720021}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -2330,7 +2360,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.8875, y: 0.45331204}
+  m_Size: {x: 1.8875, y: 0.45599586}
   m_EdgeRadius: 0
 --- !u!1 &6135616445434669238
 GameObject:

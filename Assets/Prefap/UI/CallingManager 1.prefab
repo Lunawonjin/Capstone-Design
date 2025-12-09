@@ -61,12 +61,27 @@ MonoBehaviour:
     ringing: 0
     answered: 0
     firedOnce: 0
-  - callingName: Boss_Second_Calling
+  - callingName: Boss_First_Calling
     callerName: Boss
     callerProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
     conditions:
     - varType: 3
-      key: Player's Room
+      key: StartGame
+      boolValue: 0
+      intOp: 0
+      intValue: 0
+      stringOp: 0
+      stringValue: 
+      stringIgnoreCase: 0
+    ringing: 0
+    answered: 0
+    firedOnce: 0
+  - callingName: Boss_SaltAfter_Calling
+    callerName: Boss
+    callerProfile: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+    conditions:
+    - varType: 3
+      key: Starest
       boolValue: 0
       intOp: 0
       intValue: 0
@@ -74,18 +89,10 @@ MonoBehaviour:
       stringValue: 
       stringIgnoreCase: 0
     - varType: 0
-      key: Sol_Puzzle_Clear
+      key: Salt_First_Meet
       boolValue: 1
       intOp: 0
       intValue: 0
-      stringOp: 0
-      stringValue: 
-      stringIgnoreCase: 0
-    - varType: 1
-      key: Day
-      boolValue: 0
-      intOp: 0
-      intValue: 2
       stringOp: 0
       stringValue: 
       stringIgnoreCase: 0

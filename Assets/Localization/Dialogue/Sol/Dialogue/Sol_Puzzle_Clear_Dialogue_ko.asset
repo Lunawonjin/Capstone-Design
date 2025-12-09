@@ -46,10 +46,6 @@ MonoBehaviour:
     m_Localized: "\uCC29\uAC01\uC778 \uAC70 \uC544\uB2C8\uC57C?"
     m_Metadata:
       m_Items: []
-  - m_Id: 3626573823938560
-    m_Localized: "\uC0AC\uC2E4... \uC194\uC774\uAC00 \uBAB8\uC774 \uC880 \uC544\uD30C\uC11C...."
-    m_Metadata:
-      m_Items: []
   - m_Id: 3626573823938561
     m_Localized: "\uC194\uC774\uAC00 \uADC0\uCC2E\uC558\uC744 \uAC70\uC608\uC694..."
     m_Metadata:
@@ -122,6 +118,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 3626573823938577
     m_Localized: "\uAC10\uC0AC\uD574\uC694 {playerName}\uB2D8!!!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4265420039589888
+    m_Localized: "\uC0AC\uC2E4... \uC194\uC774\uAC00 \uBAB8\uC774 \uC880 \uC544\uD30C\uC11C...."
     m_Metadata:
       m_Items: []
   references:

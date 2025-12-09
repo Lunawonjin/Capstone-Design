@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0982c93b8fb48f34e9619adef43e676d
+    m_Address: Sol_Second_Meet_Speaker_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0c469a967bf09294185476d77388db4f
     m_Address: Prolog_Table_ko
     m_ReadOnly: 1
@@ -126,6 +132,12 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8b09e70ba6ef0d94babb0418e34a21c5
     m_Address: Boss_Sol_FinalGame_Dialogue_ko
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-ko
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e29bb2445394da4f930ffaf9dac3d11
+    m_Address: Boss_SaltAfter_Calling_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko

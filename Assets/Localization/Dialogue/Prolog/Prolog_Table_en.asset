@@ -19,35 +19,35 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 5172039680
-    m_Localized: "Oh? I don\u2019t believe we\u2019ve met."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064583004160
-    m_Localized: "Um\u2026 where am I?"
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064583004161
-    m_Localized: "I see. So you don\u2019t know where this is."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064583004162
-    m_Localized: "Yes. I\u2026 I don\u2019t even remember what I was doing."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198464
-    m_Localized: "Haha, there\u2019s always a reason people end up here."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198465
-    m_Localized: As it happens, I have a place I can offer you.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198466
-    m_Localized: How about resting here for a while and recovering your memories?
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198467
-    m_Localized: "But\u2026"
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198468
@@ -67,24 +67,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 42064587198474
-    m_Localized: "Good. I\u2019ll take you to your home now\u2014close your eyes
-      and rest."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 9458719599824896
-    m_Localized: "\u2026All right, I\u2019ll do it."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 9458719599824897
-    m_Localized: Get a good rest today, and begin work tomorrow.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 9458719599824898
-    m_Localized: Then, I wish you good fortune.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 9458719599824899
-    m_Localized: "What just happened\u2026? I should get some sleep for now."
+    m_Localized: 
     m_Metadata:
       m_Items: []
   references:

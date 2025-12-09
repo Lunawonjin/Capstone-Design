@@ -1,12 +1,14 @@
 // DialogueRunnerStringTables.cs
 // Common runner for localized string tables.
-// Updated: added "Re" choice flow.
+// Updated: added "Re" choice flow + NPC Expression System
 //  - Re choice S keys: Dialogue_Choice{n}_S{k}_Re_{l:000}
 //  - Re choice A keys: Dialogue_Choice{n}_A{k}_Re_{l:000}
+//  - Expression keys: Any dialogue key ending with _Smile, _Sad, _Wow, _Sleep
 // Behavior:
 //  - If any Re S{k}_Re_001 exists for a choice n, that choice becomes Re-choice set.
 //  - Picking a Re option shows all its Re answers, then shows remaining Re options only.
 //  - After all Re options are exhausted, continues with normal Same lines and linear flow.
+//  - Expression: When showing a key with expression suffix, applies NPC sprite change via event
 
 using System;
 using System.Collections;
@@ -25,6 +27,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
     // ===== External events =====
     public event Action<string> OnKeyShown;
     public event Action OnDialogueEnded;
+
+    // ===== Expression event =====
+    public event Action<string> OnExpressionRequested; // expression name: Smile, Sad, Wow, Sleep, or null for default
 
     // ===== UI =====
     [Header("UI")]
@@ -99,6 +104,14 @@ public class DialogueRunnerStringTables : MonoBehaviour
     [Tooltip("최대 스케일 배수(1.1 ~ 1.3 정도 추천)")]
     [SerializeField] private float bossSaltPunchScale = 1.15f;
 
+    [Header("NPC Expression System")]
+    [Tooltip("표정 시스템 활성화")]
+    [SerializeField] private bool enableExpressionSystem = true;
+    [Tooltip("표정이 없는 다음 대사로 넘어갈 때 기본 표정으로 복구")]
+    [SerializeField] private bool autoResetExpression = true;
+    [Tooltip("표정 변경 로그 출력")]
+    [SerializeField] private bool logExpressionChanges = true;
+
     // ===== Internal state =====
     private RectTransform _choiceRoot;
     private VerticalLayoutGroup _vlg;
@@ -147,6 +160,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     // Punch effect runtime
     private Coroutine _punchRoutine;
+
+    // Expression state
+    private string _lastExpression = null; // null means default/no expression
 
     private void Awake()
     {
@@ -278,6 +294,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _inReChoice = false;
         _reRemainingOptions.Clear();
         _reChoiceN = -1;
+
+        _lastExpression = null; // Reset expression state
 
         var initOp = LocalizationSettings.InitializationOperation;
         if (!initOp.IsDone) yield return initOp;
@@ -413,8 +431,15 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private bool HasBody(string key)
     {
         if (_dialogueTable == null) return false;
-        if (_dialogueTable.GetEntry(key) != null) return true;
-        return FindEntryLoose(key) != null;
+
+        // 표정 suffix가 있으면 제거한 키로만 검색
+        string baseKey = StripExpressionSuffix(key);
+
+        // baseKey로 검색 (표정 없는 원본 키)
+        if (_dialogueTable.GetEntry(baseKey) != null) return true;
+        if (FindEntryLoose(baseKey) != null) return true;
+
+        return false;
     }
 
     private StringTableEntry FindEntryLoose(string key)
@@ -440,11 +465,15 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (_dialogueTable == null) return key;
 
-        var e = _dialogueTable.GetEntry(key);
+        // 표정 suffix 제거
+        string baseKey = StripExpressionSuffix(key);
+
+        // baseKey로만 검색
+        var e = _dialogueTable.GetEntry(baseKey);
 
         if (e == null)
         {
-            e = FindEntryLoose(key);
+            e = FindEntryLoose(baseKey);
 
             if (e == null)
             {
@@ -457,7 +486,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
                 }
 
                 Debug.LogWarning(
-                    $"[DialogueRunnerStringTables] Table '{tableName}' has no entry for key '{key}'. Existing keys: {string.Join(", ", keys)}");
+                    $"[DialogueRunnerStringTables] Table '{tableName}' has no entry for key '{baseKey}' (original: '{key}'). Existing keys: {string.Join(", ", keys)}");
 
                 return key;
             }
@@ -469,9 +498,95 @@ public class DialogueRunnerStringTables : MonoBehaviour
     private string LSpeakerRaw(string key)
     {
         if (!_speakerAvailable || _speakerTable == null) return "";
-        var e = _speakerTable.GetEntry(key);
+
+        // 표정 suffix 제거
+        string baseKey = StripExpressionSuffix(key);
+
+        // baseKey로만 검색
+        var e = _speakerTable.GetEntry(baseKey);
+
         if (e == null) return "";
         return ReplaceTokens(e.GetLocalizedString());
+    }
+
+    // ===== Expression System =====
+
+    /// <summary>
+    /// Extracts expression from key name (e.g., "Dialogue_001_Smile" returns "Smile")
+    /// Returns null if no expression suffix found
+    /// </summary>
+    private string ExtractExpression(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return null;
+
+        string[] validExpressions = { "Smile", "Sad", "Wow", "Sleep" };
+
+        foreach (var expr in validExpressions)
+        {
+            if (key.EndsWith("_" + expr, StringComparison.OrdinalIgnoreCase))
+            {
+                return expr;
+            }
+        }
+
+        // Typo support: Smlie → Smile
+        if (key.EndsWith("_Smlie", StringComparison.OrdinalIgnoreCase))
+        {
+            if (logExpressionChanges)
+                Debug.LogWarning($"[DialogueRunnerStringTables] Detected typo '_Smlie' in key '{key}', treating as 'Smile'");
+            return "Smile";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Removes expression suffix from key (e.g., "Dialogue_001_Smile" returns "Dialogue_001")
+    /// </summary>
+    private string StripExpressionSuffix(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return key;
+
+        string[] validExpressions = { "Smile", "Sad", "Wow", "Sleep" };
+
+        foreach (var expr in validExpressions)
+        {
+            string suffix = "_" + expr;
+            if (key.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return key.Substring(0, key.Length - suffix.Length);
+            }
+        }
+
+        // Typo support: Smlie → Smile
+        if (key.EndsWith("_Smlie", StringComparison.OrdinalIgnoreCase))
+        {
+            return key.Substring(0, key.Length - "_Smlie".Length);
+        }
+
+        return key;
+    }
+
+    /// <summary>
+    /// Applies expression or resets to default
+    /// </summary>
+    private void ApplyExpression(string expression)
+    {
+        if (!enableExpressionSystem) return;
+
+        // Same expression - no need to change
+        if (_lastExpression == expression) return;
+
+        if (logExpressionChanges)
+        {
+            if (expression == null)
+                Debug.Log("[DialogueRunnerStringTables] Resetting expression to default");
+            else
+                Debug.Log($"[DialogueRunnerStringTables] Applying expression: {expression}");
+        }
+
+        _lastExpression = expression;
+        OnExpressionRequested?.Invoke(expression);
     }
 
     private void Next()
@@ -965,6 +1080,28 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _lastKeyShown = key;
         _currentFullText = full;
 
+        // Apply expression based on key name
+        string expression = ExtractExpression(key);
+        if (expression != null)
+        {
+            // Has explicit expression
+            if (logExpressionChanges)
+                Debug.Log($"[DialogueRunnerStringTables] Key '{key}' → Expression: {expression}");
+            ApplyExpression(expression);
+        }
+        else if (autoResetExpression && _lastExpression != null)
+        {
+            // No expression in this key, reset to default
+            if (logExpressionChanges)
+                Debug.Log($"[DialogueRunnerStringTables] Key '{key}' → Reset to default (no expression suffix)");
+            ApplyExpression(null);
+        }
+        else
+        {
+            if (logExpressionChanges)
+                Debug.Log($"[DialogueRunnerStringTables] Key '{key}' → No expression change (keeping current)");
+        }
+
         OnKeyShown?.Invoke(key);
 
         if (_typingRoutine != null)
@@ -1084,7 +1221,9 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         // Boss_SaltKey_Lost 이벤트의 Dialogue_004에서만 적용
         if (!string.Equals(_eventName, "Boss_SaltKey_Lost", StringComparison.Ordinal)) return;
-        if (!string.Equals(key, "Dialogue_004", StringComparison.OrdinalIgnoreCase)) return;
+
+        string baseKey = StripExpressionSuffix(key);
+        if (!string.Equals(baseKey, "Dialogue_004", StringComparison.OrdinalIgnoreCase)) return;
 
         if (_punchRoutine != null)
         {
@@ -1209,11 +1348,25 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (playerMove != null) playerMove.controlEnabled = false;
         SetSpeakerUI(false);
+
+        // Reset expression at dialogue start
+        _lastExpression = null;
+        if (enableExpressionSystem)
+        {
+            ApplyExpression(null);
+        }
     }
 
     private void OnDialogueEnd()
     {
         if (playerMove != null) playerMove.controlEnabled = true;
+
+        // Reset expression when dialogue ends
+        if (enableExpressionSystem && autoResetExpression)
+        {
+            ApplyExpression(null);
+        }
+
         OnDialogueEnded?.Invoke();
     }
 

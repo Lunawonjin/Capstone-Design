@@ -14,7 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
   m_TableCollectionName: Salt's_Talk_Dialogue
   m_TableCollectionNameGuidString: c868df77452a8594a9914e1419457157
-  m_Entries: []
+  m_Entries:
+  - m_Id: 9407660361715712
+    m_Key: Salt_Talk_01
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9407660407853056
+    m_Key: Salt_Talk_02
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

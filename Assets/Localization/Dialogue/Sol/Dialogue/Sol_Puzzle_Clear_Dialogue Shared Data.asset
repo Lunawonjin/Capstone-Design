@@ -39,8 +39,8 @@ MonoBehaviour:
     m_Key: Dialogue_Choice1_S2_001
     m_Metadata:
       m_Items: []
-  - m_Id: 3626573823938560
-    m_Key: Dialogue_Choice1_Same_001
+  - m_Id: 4265420039589888
+    m_Key: Dialogue_Choice1_Same_001_Sad
     m_Metadata:
       m_Items: []
   - m_Id: 3626573823938561
