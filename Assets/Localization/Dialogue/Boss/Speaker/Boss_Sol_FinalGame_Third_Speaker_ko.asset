@@ -42,14 +42,6 @@ MonoBehaviour:
     m_Localized: "\uC138\uB85C"
     m_Metadata:
       m_Items: []
-  - m_Id: 563732506152960
-    m_Localized: "\uC138\uB85C"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 563732543901696
-    m_Localized: "\uC138\uB85C"
-    m_Metadata:
-      m_Items: []
   references:
     version: 2
     RefIds: []
