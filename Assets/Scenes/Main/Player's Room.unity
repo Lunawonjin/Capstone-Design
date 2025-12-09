@@ -12492,6 +12492,10 @@ PrefabInstance:
       propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1235178147958398201, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1609183466851415095, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_SizeDelta.x
       value: 100
@@ -12552,6 +12556,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2247500071441576298, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -1539111407301489279, guid: f78aa39db45aa2d4a917ec7ea1940611, type: 3}
     - target: {fileID: 2432085484451438611, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -12812,6 +12820,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4646413945439682069, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -1539111407301489279, guid: f78aa39db45aa2d4a917ec7ea1940611, type: 3}
     - target: {fileID: 4714709473673795777, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -13047,6 +13059,14 @@ PrefabInstance:
     - target: {fileID: 7353537574873838010, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7365330803388160526, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7365330803388160526, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 7574983579712454949, guid: 804a8da076ee7244aae8efdd5a3c867a, type: 3}
       propertyPath: m_AnchorMax.y
@@ -13481,11 +13501,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4706366350204779051, guid: 9ef73df9ae70c654db668a8415ed1fcc, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 1200
+      value: 1100
       objectReference: {fileID: 0}
     - target: {fileID: 4706366350204779051, guid: 9ef73df9ae70c654db668a8415ed1fcc, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 350
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 4706366350204779051, guid: 9ef73df9ae70c654db668a8415ed1fcc, type: 3}
       propertyPath: m_LocalScale.x
@@ -13547,6 +13567,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5755267406572430596, guid: 9ef73df9ae70c654db668a8415ed1fcc, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -7614824497199973513, guid: bb63e2721bbb62a44b40cc34f7d5218f, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13647,9 +13671,13 @@ PrefabInstance:
       value: Boss_Second_Calling
       objectReference: {fileID: 0}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: calls.Array.data[0].callerProfile
+      value: 
+      objectReference: {fileID: -1539111407301489279, guid: f78aa39db45aa2d4a917ec7ea1940611, type: 3}
+    - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: calls.Array.data[1].callerProfile
       value: 
-      objectReference: {fileID: -160859169, guid: 922df97f48a23b44680211f1a87478df, type: 3}
+      objectReference: {fileID: -1539111407301489279, guid: f78aa39db45aa2d4a917ec7ea1940611, type: 3}
     - target: {fileID: 3551791684239565405, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: disableWhilePhoneActive.Array.size
       value: 0
@@ -13770,6 +13798,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5212585417687026501, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 4334840205267593290, guid: 5701a669f4a7d5d4e93ffb577508c301, type: 3}
     - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_Name
       value: Player
@@ -13777,6 +13809,10 @@ PrefabInstance:
     - target: {fileID: 6675400901116583632, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7335006160390057266, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 7922428163170844219, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: controlEnabled
