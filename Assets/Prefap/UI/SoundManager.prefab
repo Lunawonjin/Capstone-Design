@@ -50,11 +50,51 @@ MonoBehaviour:
   bgmClips:
   - key: Starest
     clip: {fileID: 8300000, guid: 29b2ada5ad0cb8147ad8a73974897401, type: 3}
-  - key: Puzzle
-    clip: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
   - key: StartMenu
     clip: {fileID: 8300000, guid: a97ac4cced38d2549a5e4f031c4e9392, type: 3}
-  sfxClips: []
+  - key: Puzzle
+    clip: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+  sfxClips:
+  - key: Teleport
+    clip: {fileID: 8300000, guid: 3fd287cf33220c64b99c7473726bc6a9, type: 3}
+  - key: Gone
+    clip: {fileID: 8300000, guid: e4d8a21fa67290b469f48625c8a4dafb, type: 3}
+  - key: StoneRoad
+    clip: {fileID: 8300000, guid: 073120c73322c8b4c8ce0f2d37e4a98c, type: 3}
+  - key: GrassRoad
+    clip: {fileID: 8300000, guid: 57939eb6d2fea3f49bbdaf36143e2d5b, type: 3}
+  - key: GoBus
+    clip: {fileID: 8300000, guid: a04c33152ad0f534bacfc68fbf9c4eb7, type: 3}
+  - key: EndBus
+    clip: {fileID: 8300000, guid: b44b0ae280164f64f960bce000849a6a, type: 3}
+  - key: OpenDoor
+    clip: {fileID: 8300000, guid: 24a35a544dbf86d4580e962642e56d6d, type: 3}
+  - key: CloseDoor
+    clip: {fileID: 8300000, guid: bcab00b15442e6441a0216b98c8215db, type: 3}
+  - key: ThrowSy
+    clip: {fileID: 8300000, guid: 47b63ae92e5dd854baae75bcd3679edf, type: 3}
+  - key: BossCome
+    clip: {fileID: 8300000, guid: 024d12feffeaae946aa162b9d42a8907, type: 3}
+  - key: SelectBT
+    clip: {fileID: 8300000, guid: ca25d56afce5ddf4e95798815e5b5225, type: 3}
+  - key: Dialogue
+    clip: {fileID: 8300000, guid: 0e96f93da814d4442964dd040928b6c7, type: 3}
+  - key: Phone
+    clip: {fileID: 8300000, guid: b3869f26265397a4db614cfcdc607bc0, type: 3}
+  - key: GetCoin
+    clip: {fileID: 8300000, guid: cf68c1b068cd1004aba2a223b771d1d4, type: 3}
+  - key: Calling
+    clip: {fileID: 8300000, guid: 005e5577ebe7e91418592096d92ae940, type: 3}
+  - key: F
+    clip: {fileID: 8300000, guid: 27bc3efaca69f514a90c3eb2aa1d8ed5, type: 3}
+  - key: Messeage
+    clip: {fileID: 8300000, guid: 983b78c420aa2ba4e92ff45e7ca00d47, type: 3}
+  - key: PuzzleWin
+    clip: {fileID: 8300000, guid: a8121d219823f3c438f38322e8b9124b, type: 3}
+  - key: PuzzleWin
+    clip: {fileID: 8300000, guid: a8121d219823f3c438f38322e8b9124b, type: 3}
+  - key: GetObject
+    clip: {fileID: 8300000, guid: be65d23aa46dc114eb126c0e8a443550, type: 3}
   bgmVolume: 0.5
   bgmMute: 0
   sfxVolume: 0.5
@@ -80,10 +120,6 @@ MonoBehaviour:
     fadeSeconds: 0
   - sceneName: Sol's Game Puzzle
     bgmKey: Puzzle
-    startTime: 0
-    fadeSeconds: 0
-  - sceneName: Starest
-    bgmKey: Starest
     startTime: 0
     fadeSeconds: 0
   defaultFadeSeconds: 1.5
