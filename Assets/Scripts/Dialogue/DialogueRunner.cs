@@ -432,12 +432,17 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (_dialogueTable == null) return false;
 
-        // 표정 suffix가 있으면 제거한 키로만 검색
-        string baseKey = StripExpressionSuffix(key);
+        // 1단계: 원본 키 그대로 검색 (표정 suffix 포함)
+        if (_dialogueTable.GetEntry(key) != null) return true;
+        if (FindEntryLoose(key) != null) return true;
 
-        // baseKey로 검색 (표정 없는 원본 키)
-        if (_dialogueTable.GetEntry(baseKey) != null) return true;
-        if (FindEntryLoose(baseKey) != null) return true;
+        // 2단계: 표정 suffix 제거 후 검색 (호환성)
+        string baseKey = StripExpressionSuffix(key);
+        if (baseKey != key) // suffix가 실제로 제거되었을 때만
+        {
+            if (_dialogueTable.GetEntry(baseKey) != null) return true;
+            if (FindEntryLoose(baseKey) != null) return true;
+        }
 
         return false;
     }
@@ -465,31 +470,39 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (_dialogueTable == null) return key;
 
-        // 표정 suffix 제거
-        string baseKey = StripExpressionSuffix(key);
+        // 1단계: 원본 키 그대로 검색 (표정 suffix 포함)
+        var e = _dialogueTable.GetEntry(key);
 
-        // baseKey로만 검색
-        var e = _dialogueTable.GetEntry(baseKey);
+        if (e == null)
+            e = FindEntryLoose(key);
+
+        // 2단계: 표정 suffix 제거 후 검색 (호환성)
+        if (e == null)
+        {
+            string baseKey = StripExpressionSuffix(key);
+            if (baseKey != key) // suffix가 실제로 제거되었을 때만
+            {
+                e = _dialogueTable.GetEntry(baseKey);
+
+                if (e == null)
+                    e = FindEntryLoose(baseKey);
+            }
+        }
 
         if (e == null)
         {
-            e = FindEntryLoose(baseKey);
-
-            if (e == null)
+            string tableName = _dialogueTable.TableCollectionName;
+            List<string> keys = new List<string>();
+            foreach (var entry in _dialogueTable.Values)
             {
-                string tableName = _dialogueTable.TableCollectionName;
-                List<string> keys = new List<string>();
-                foreach (var entry in _dialogueTable.Values)
-                {
-                    if (entry != null && !string.IsNullOrEmpty(entry.Key))
-                        keys.Add(entry.Key);
-                }
-
-                Debug.LogWarning(
-                    $"[DialogueRunnerStringTables] Table '{tableName}' has no entry for key '{baseKey}' (original: '{key}'). Existing keys: {string.Join(", ", keys)}");
-
-                return key;
+                if (entry != null && !string.IsNullOrEmpty(entry.Key))
+                    keys.Add(entry.Key);
             }
+
+            Debug.LogWarning(
+                $"[DialogueRunnerStringTables] Table '{tableName}' has no entry for key '{key}'. Existing keys: {string.Join(", ", keys)}");
+
+            return key;
         }
 
         return ReplaceTokens(e.GetLocalizedString());
@@ -499,11 +512,18 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (!_speakerAvailable || _speakerTable == null) return "";
 
-        // 표정 suffix 제거
-        string baseKey = StripExpressionSuffix(key);
+        // 1단계: 원본 키 그대로 검색
+        var e = _speakerTable.GetEntry(key);
 
-        // baseKey로만 검색
-        var e = _speakerTable.GetEntry(baseKey);
+        // 2단계: 표정 suffix 제거 후 검색 (호환성)
+        if (e == null)
+        {
+            string baseKey = StripExpressionSuffix(key);
+            if (baseKey != key) // suffix가 실제로 제거되었을 때만
+            {
+                e = _speakerTable.GetEntry(baseKey);
+            }
+        }
 
         if (e == null) return "";
         return ReplaceTokens(e.GetLocalizedString());
@@ -637,21 +657,112 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
     }
 
+    private string ResolveKeyWithSuffix(string baseKey)
+    {
+        if (_dialogueTable == null) return null;
+
+        // 1. 원본 키가 존재하면 그대로 반환
+        if (_dialogueTable.GetEntry(baseKey) != null) return baseKey;
+
+        // 2. 표정 접미사가 붙은 키가 있는지 확인
+        string[] validExpressions = { "Smile", "Sad", "Wow", "Sleep" };
+        foreach (var expr in validExpressions)
+        {
+            string suffixedKey = $"{baseKey}_{expr}";
+            if (_dialogueTable.GetEntry(suffixedKey) != null)
+            {
+                return suffixedKey; // 접미사가 붙은 실제 키 반환 (예: Dialogue_001_Smile)
+            }
+        }
+
+        // 3. 오타(_Smlie) 지원
+        if (_dialogueTable.GetEntry(baseKey + "_Smlie") != null) return baseKey + "_Smlie";
+
+        // 4. Loose search (대소문자 무시 등)
+        if (FindEntryLoose(baseKey) != null) return baseKey;
+
+        return null; // 정말로 없음
+    }
+
+    // [수정] TryShowLinear 메서드를 아래와 같이 교체
     private bool TryShowLinear()
     {
-        string key = KeyLinear(_linearIndex);
-        if (!HasBody(key)) return false;
-        ShowKey(key);
+        string baseKey = KeyLinear(_linearIndex);
+
+        // 접미사가 붙은 실제 키를 찾음
+        string actualKey = ResolveKeyWithSuffix(baseKey);
+
+        // 키가 없으면(null) 대사가 끝난 것으로 간주
+        if (string.IsNullOrEmpty(actualKey)) return false;
+
+        ShowKey(actualKey); // 찾아낸 실제 키(suffix 포함)로 ShowKey 호출
         _linearIndex++;
         return true;
     }
 
+    // [수정] TryShowAnswer 메서드를 아래와 같이 교체
+    private bool TryShowAnswer(int n, int k)
+    {
+        string baseKey = KeyChoiceA(n, k, _answerLine);
+        string actualKey = ResolveKeyWithSuffix(baseKey);
+
+        if (string.IsNullOrEmpty(actualKey))
+        {
+            _answerLine = 1;
+            return false;
+        }
+
+        ShowKey(actualKey);
+        _answerLine++;
+        return true;
+    }
+
+    // [수정] TryShowReAnswer 메서드를 아래와 같이 교체
+    private bool TryShowReAnswer(int n, int k)
+    {
+        string baseKey = KeyChoiceARe(n, k, _answerLine);
+        string actualKey = ResolveKeyWithSuffix(baseKey);
+
+        if (string.IsNullOrEmpty(actualKey))
+        {
+            _answerLine = 1;
+            return false;
+        }
+
+        ShowKey(actualKey);
+        _answerLine++;
+        return true;
+    }
+
+    // [수정] TryShowSame 메서드를 아래와 같이 교체
+    private bool TryShowSame(int n)
+    {
+        string baseKey = KeyChoiceSame(n, _sameLine);
+        string actualKey = ResolveKeyWithSuffix(baseKey);
+
+        if (string.IsNullOrEmpty(actualKey))
+        {
+            _sameLine = 1;
+            return false;
+        }
+
+        ShowKey(actualKey);
+        _sameLine++;
+        return true;
+    }
+
+    // [수정] TryStartChoice 에서도 HasBody 대신 ResolveKeyWithSuffix를 사용하여 체크하도록 수정 권장
+    // (선택지 문구에도 표정 키가 붙을 경우를 대비)
     private bool TryStartChoice(int n)
     {
         // Re-choice detection first
         var reOptions = new List<int>();
         for (int k = 1; k <= 9; k++)
-            if (HasBody(KeyChoiceSRe(n, k, 1))) reOptions.Add(k);
+        {
+            // 수정: HasBody 대신 ResolveKeyWithSuffix 사용 (키 존재 여부 확인)
+            if (!string.IsNullOrEmpty(ResolveKeyWithSuffix(KeyChoiceSRe(n, k, 1))))
+                reOptions.Add(k);
+        }
 
         if (reOptions.Count > 0)
         {
@@ -662,7 +773,11 @@ public class DialogueRunnerStringTables : MonoBehaviour
         // Normal choices
         var options = new List<int>();
         for (int k = 1; k <= 9; k++)
-            if (HasBody(KeyChoiceS(n, k, 1))) options.Add(k);
+        {
+            // 수정: HasBody 대신 ResolveKeyWithSuffix 사용
+            if (!string.IsNullOrEmpty(ResolveKeyWithSuffix(KeyChoiceS(n, k, 1))))
+                options.Add(k);
+        }
 
         if (options.Count == 0) return false;
 
@@ -979,15 +1094,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         _answerLine = 2;
     }
 
-    private bool TryShowAnswer(int n, int k)
-    {
-        string key = KeyChoiceA(n, k, _answerLine);
-        if (!HasBody(key)) { _answerLine = 1; return false; }
-
-        ShowKey(key);
-        _answerLine++;
-        return true;
-    }
 
     private void ShowReAnswerFirstLine(int n, int k)
     {
@@ -1011,26 +1117,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
         ShowKey(k1);
         _answerLine = 2;
-    }
-
-    private bool TryShowReAnswer(int n, int k)
-    {
-        string key = KeyChoiceARe(n, k, _answerLine);
-        if (!HasBody(key)) { _answerLine = 1; return false; }
-
-        ShowKey(key);
-        _answerLine++;
-        return true;
-    }
-
-    private bool TryShowSame(int n)
-    {
-        string key = KeyChoiceSame(n, _sameLine);
-        if (!HasBody(key)) { _sameLine = 1; return false; }
-
-        ShowKey(key);
-        _sameLine++;
-        return true;
     }
 
     private static bool IsSystemSpeakerString(string sp)
@@ -1579,6 +1665,23 @@ public class DialogueRunnerStringTables : MonoBehaviour
             _inputUnlocked = true;
             if (nextIndicator) nextIndicator.SetActive(true);
         }
+    }
+
+    // ===== Public Methods =====
+
+    /// <summary>
+    /// 외부에서 표정을 직접 설정할 수 있는 public 메서드
+    /// </summary>
+    /// <param name="expression">Smile, Sad, Wow, Sleep 또는 null (기본 표정)</param>
+    public void ApplyExpressionPublic(string expression)
+    {
+        if (!enableExpressionSystem)
+        {
+            Debug.LogWarning("[DialogueRunnerStringTables] Expression system is disabled. Enable it in Inspector.");
+            return;
+        }
+
+        ApplyExpression(expression);
     }
 
     // ===== NPC id extraction ("Sol_Talk_08" -> "Sol") =====
