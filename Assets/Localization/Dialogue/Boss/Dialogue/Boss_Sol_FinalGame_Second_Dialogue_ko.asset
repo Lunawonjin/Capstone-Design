@@ -37,11 +37,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 2339864252419
-    m_Localized: "\uB0B4\uAC00 \uB108\uC5D0\uAC8C \uBB34\uAE30\uB97C \uBCF4\uB0B4\uC904\uAC8C."
+    m_Localized: "{playerName} \uBC14\uB85C \uC55E\uC5D0 \uC8FC\uC0AC\uAE30\uAC00
+      \uC788\uC9C0?"
     m_Metadata:
       m_Items: []
   - m_Id: 2339864252420
-    m_Localized: "\uC774 \uC8FC\uC0AC\uAE30\uB97C \uB4E4\uACE0 \uB9C8\uC6B0\uC2A4
+    m_Localized: "\uADF8 \uC8FC\uC0AC\uAE30\uB97C \uB4E4\uACE0 \uB9C8\uC6B0\uC2A4
       \uD074\uB9AD\uC73C\uB85C \uBC31\uD608\uAD6C\uB4E4\uC744 \uB9DE\uD788\uBA74
       \uB3FC!"
     m_Metadata:

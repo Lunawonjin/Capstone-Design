@@ -157,6 +157,10 @@ public class CallingSystem : MonoBehaviour
     public float shakeOffscreenJitterMin = 0.15f;
     public float shakeOffscreenJitterMax = 0.35f;
 
+    [Header("효과음 설정")]
+    [SerializeField] private string phoneSlideSFXKey = "Phone";
+    [SerializeField] private string callingSFXKey = "Calling";
+
     // ─────────────────────────────────────────────────────────────
     // Dialogue
     // ─────────────────────────────────────────────────────────────
@@ -406,6 +410,9 @@ public class CallingSystem : MonoBehaviour
     {
         if (!phonePanel || !phone) return;
 
+        // ⭐ Phone 슬라이드 효과음 재생
+        PlayPhoneSlideSFX();
+
         SetExtraObjectsActive(false);
         phonePanel.SetActive(true);
 
@@ -417,8 +424,29 @@ public class CallingSystem : MonoBehaviour
     {
         if (!phonePanel || !phone) return;
 
+        // ⭐ Phone 슬라이드 효과음 재생
+        PlayPhoneSlideSFX();
+
         if (_slideCoroutine != null) StopCoroutine(_slideCoroutine);
         _slideCoroutine = StartCoroutine(CoSlide(phone, slideToY, slideFromY, slideDuration, keepActiveAtEnd: false));
+    }
+
+    /// <summary>
+    /// Phone 슬라이드 효과음 재생
+    /// </summary>
+    void PlayPhoneSlideSFX()
+    {
+        if (string.IsNullOrEmpty(phoneSlideSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(phoneSlideSFXKey);
+            LogI($"✅ Phone 슬라이드 효과음 재생: {phoneSlideSFXKey}");
+        }
+        else
+        {
+            LogW($"⚠️ SoundManager를 찾을 수 없습니다! SFX '{phoneSlideSFXKey}' 재생 실패");
+        }
     }
 
     IEnumerator CoSlide(RectTransform rt, float fromY, float toY, float dur, bool keepActiveAtEnd)
@@ -647,6 +675,9 @@ public class CallingSystem : MonoBehaviour
     {
         while (HasAnyRinging())
         {
+            // ⭐ 흔들림 시작 시 Calling 효과음 재생
+            PlayCallingSFX();
+
             float t = 0f;
             while (t < 1f && HasAnyRinging())
             {
@@ -672,6 +703,24 @@ public class CallingSystem : MonoBehaviour
         }
 
         StopShake();
+    }
+
+    /// <summary>
+    /// Calling 효과음 재생
+    /// </summary>
+    void PlayCallingSFX()
+    {
+        if (string.IsNullOrEmpty(callingSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(callingSFXKey);
+            LogI($"✅ Calling 효과음 재생: {callingSFXKey}");
+        }
+        else
+        {
+            LogW($"⚠️ SoundManager를 찾을 수 없습니다! SFX '{callingSFXKey}' 재생 실패");
+        }
     }
 
     bool HasAnyRinging()

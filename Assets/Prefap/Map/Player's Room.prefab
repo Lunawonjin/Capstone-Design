@@ -1887,6 +1887,8 @@ MonoBehaviour:
   prologSceneName: Prolog
   playerRoomSceneName: Player's Room
   verboseLog: 1
+  getCoinSFXKey: GetCoin
+  selectButtonSFXKey: SelectBT
 --- !u!1 &4800216969038954358
 GameObject:
   m_ObjectHideFlags: 0
