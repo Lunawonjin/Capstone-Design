@@ -8572,7 +8572,7 @@ MonoBehaviour:
     Weekday: 1
     Language: ko
     StartGame: 0
-    CanFirstSleep: 1
+    CanFirstSleep: 0
     Starest_First_Visit: 0
     Sol_Today_Talk: 0
     Salt_Today_Talk: 0
@@ -13813,6 +13813,10 @@ PrefabInstance:
     - target: {fileID: 7335006160390057266, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7335006160390057266, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 7922428163170844219, guid: a5f7cc2b301c23d468b9935086274ba0, type: 3}
       propertyPath: controlEnabled
