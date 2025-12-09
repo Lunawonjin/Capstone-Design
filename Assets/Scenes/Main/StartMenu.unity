@@ -7193,6 +7193,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[1].key
+      value: StartMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[2].key
+      value: Puzzle
+      objectReference: {fileID: 0}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[1].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: a97ac4cced38d2549a5e4f031c4e9392, type: 3}
+    - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: bgmClips.Array.data[2].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.data[0].bgmKey
+      value: StartMenu
+      objectReference: {fileID: 0}
     - target: {fileID: 4616045820766984285, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
       propertyPath: m_Name
       value: SoundManager

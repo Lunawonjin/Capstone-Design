@@ -54,10 +54,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     [SerializeField] private string tableName = "Dialogue_Main";
     [SerializeField] private string entryKey = "Dialogue_001";
 
-    [Header("대사 효과음")]
-    [SerializeField] private bool playDialogueSFX = true;
-    [SerializeField] private string dialogueSFXKey = "Dialogue";
-
     [Header("디버그 로그 옵션")]
     [SerializeField] private bool debugLog = false;
 
@@ -71,9 +67,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
     // 새로 추가: 현재 실행 중인 표시/타이핑 코루틴 핸들
     private Coroutine showCR;
     private Coroutine typeCR;
-
-    // ⭐ 루프 SFX용 AudioSource 핸들
-    private AudioSource currentDialogueSFX;
 
     // 외부 접근용
     public bool IsTypingNow => isTyping;
@@ -199,9 +192,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         isTyping = false;
         forceComplete = false;
 
-        // ⭐ 코루틴 정리 시 효과음도 정지
-        StopDialogueSFX();
-
         if (debugLog) Debug.Log("[BalloonAutoTyper] 현재 코루틴 정리 완료");
     }
 
@@ -247,48 +237,9 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
             canvasGroup.alpha = 1f;
 
         RecalcAndAnimateSize(fullMessage);
-
-        // ⭐ 대사 시작 시 효과음 재생
-        PlayDialogueSFX();
-
         typeCR = StartCoroutine(Co_Type());
         yield return typeCR;
         typeCR = null;
-    }
-
-    /// <summary>
-    /// 대사 효과음 재생 (루프)
-    /// </summary>
-    private void PlayDialogueSFX()
-    {
-        if (!playDialogueSFX || string.IsNullOrEmpty(dialogueSFXKey))
-            return;
-
-        // 이전 효과음이 있으면 정지
-        StopDialogueSFX();
-
-        if (SoundManager.Instance != null)
-        {
-            currentDialogueSFX = SoundManager.Instance.PlaySFXLoop(dialogueSFXKey);
-            if (debugLog) Debug.Log($"[BalloonAutoTyper] ✅ 대사 효과음 루프 재생 시작: {dialogueSFXKey}");
-        }
-        else
-        {
-            if (debugLog) Debug.LogWarning($"[BalloonAutoTyper] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{dialogueSFXKey}' 재생 실패");
-        }
-    }
-
-    /// <summary>
-    /// 대사 효과음 정지
-    /// </summary>
-    private void StopDialogueSFX()
-    {
-        if (currentDialogueSFX != null && SoundManager.Instance != null)
-        {
-            SoundManager.Instance.StopSFXSource(currentDialogueSFX);
-            if (debugLog) Debug.Log($"[BalloonAutoTyper] ✅ 대사 효과음 정지");
-            currentDialogueSFX = null;
-        }
     }
 
     private void RecalcAndAnimateSize(string message)
@@ -354,9 +305,6 @@ public class BalloonAutoTyper_LocalizedFX : MonoBehaviour
         bodyText.text = fullMessage;
         isTyping = false;
         forceComplete = false;
-
-        // ⭐ 타이핑 종료 시 효과음 정지
-        StopDialogueSFX();
 
         if (debugLog) Debug.Log("[BalloonAutoTyper] Co_Type 종료");
     }

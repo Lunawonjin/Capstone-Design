@@ -63,10 +63,6 @@ public class BedSleepTrigger : MonoBehaviour
     [Header("디버그")]
     public bool verboseLog = false;
 
-    [Header("효과음 설정")]
-    [SerializeField] private string getCoinSFXKey = "GetCoin";
-    [SerializeField] private string selectButtonSFXKey = "SelectBT";
-
     // 내부 상태
     private bool _cantSleepActive = false;
     private bool _sleepingRoutine = false;
@@ -116,19 +112,16 @@ public class BedSleepTrigger : MonoBehaviour
         {
             sleepButton.onClick.RemoveAllListeners();
             sleepButton.onClick.AddListener(OnClickSleep);
-            AddHoverSoundToButton(sleepButton);
         }
         if (notYetButton)
         {
             notYetButton.onClick.RemoveAllListeners();
             notYetButton.onClick.AddListener(OnClickNotYet);
-            AddHoverSoundToButton(notYetButton);
         }
         if (sleepNextButton)
         {
             sleepNextButton.onClick.RemoveAllListeners();
             sleepNextButton.onClick.AddListener(OnClickSleepNextButton);
-            AddHoverSoundToButton(sleepNextButton);
         }
 
         if (lockIfPlayerInsideOnStart)
@@ -339,9 +332,6 @@ public class BedSleepTrigger : MonoBehaviour
             DataManager.instance.AddCoin(rewardAmount);
             DataManager.instance.SaveData();
 
-            // ⭐ GetCoin 효과음 재생
-            PlayGetCoinSFX();
-
             int endCoin = DataManager.instance.nowPlayer.Coin;
             float elapsed = 0f;
             while (elapsed < 0.8f)
@@ -366,58 +356,6 @@ public class BedSleepTrigger : MonoBehaviour
         yield return StartCoroutine(FadeTo(0f, 0.6f)); // 화면 밝게
 
         _sceneLoading = false;
-    }
-
-    /// <summary>
-    /// GetCoin 효과음 재생
-    /// </summary>
-    private void PlayGetCoinSFX()
-    {
-        if (string.IsNullOrEmpty(getCoinSFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(getCoinSFXKey);
-            if (verboseLog) Debug.Log($"[BedSleepTrigger] ✅ GetCoin 효과음 재생: {getCoinSFXKey}");
-        }
-        else
-        {
-            if (verboseLog) Debug.LogWarning($"[BedSleepTrigger] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{getCoinSFXKey}' 재생 실패");
-        }
-    }
-
-    /// <summary>
-    /// SelectBT 효과음 재생
-    /// </summary>
-    private void PlaySelectButtonSFX()
-    {
-        if (string.IsNullOrEmpty(selectButtonSFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(selectButtonSFXKey);
-        }
-    }
-
-    /// <summary>
-    /// 버튼에 호버 효과음 이벤트 추가
-    /// </summary>
-    private void AddHoverSoundToButton(Button btn)
-    {
-        if (btn == null || string.IsNullOrEmpty(selectButtonSFXKey)) return;
-
-        var trigger = btn.gameObject.GetComponent<UnityEngine.EventSystems.EventTrigger>();
-        if (trigger == null)
-            trigger = btn.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-
-        // 기존 PointerEnter 이벤트 제거
-        trigger.triggers.RemoveAll(e => e.eventID == UnityEngine.EventSystems.EventTriggerType.PointerEnter);
-
-        // 새 PointerEnter 이벤트 추가
-        var entry = new UnityEngine.EventSystems.EventTrigger.Entry();
-        entry.eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter;
-        entry.callback.AddListener((data) => { PlaySelectButtonSFX(); });
-        trigger.triggers.Add(entry);
     }
 
     private void OnClickSleepNextButton()

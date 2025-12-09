@@ -214,123 +214,16 @@ public class SoundManager : MonoBehaviour
         src.volume = 0f; src.Stop(); src.clip = null; _bgmFadeCo = null;
     }
 
-    // =====================================================================
-    // SFX 기능
-    // =====================================================================
+    // --- SFX 메서드 (기존과 동일) ---
+    public void PlaySFX(string key, float v = 1f, float p = 1f) { if (_sfxDict.TryGetValue(key, out var c)) PlaySFX(c, v, p); }
+    public void PlaySFX(AudioClip c, float v = 1f, float p = 1f) { if (c == null) return; var s = GetFreeSFXSource(); ConfigureSource(s, p, 0f); s.clip = c; s.volume = (sfxMute ? 0f : sfxVolume * v); s.Play(); StartCoroutine(Co_AutoRelease(s)); }
+    public void PlaySFXAt(string key, Vector3 pos, float v = 1f, float p = 1f) { if (_sfxDict.TryGetValue(key, out var c)) PlaySFXAt(c, pos, v, p); }
+    public void PlaySFXAt(AudioClip c, Vector3 pos, float v = 1f, float p = 1f) { if (c == null) return; var s = GetFreeSFXSource(); ConfigureSource(s, p, 1f); s.transform.position = pos; s.clip = c; s.volume = (sfxMute ? 0f : sfxVolume * v); s.Play(); StartCoroutine(Co_AutoRelease(s)); }
+    public void StopAllSFX() { foreach (var s in _sfxPool) { if (s.isPlaying) s.Stop(); s.clip = null; } }
 
-    // --- 일반 SFX (원샷) ---
-    public void PlaySFX(string key, float v = 1f, float p = 1f)
-    {
-        if (_sfxDict.TryGetValue(key, out var c)) PlaySFX(c, v, p);
-    }
+    private void ConfigureSource(AudioSource s, float p, float sb) { s.outputAudioMixerGroup = sfxGroup; s.pitch = p; s.spatialBlend = sb; s.loop = false; }
 
-    public void PlaySFX(AudioClip c, float v = 1f, float p = 1f)
-    {
-        if (c == null) return;
-        var s = GetFreeSFXSource();
-        ConfigureSource(s, p, 0f);
-        s.clip = c;
-        s.volume = (sfxMute ? 0f : sfxVolume * v);
-        s.Play();
-        StartCoroutine(Co_AutoRelease(s));
-    }
-
-    public void PlaySFXAt(string key, Vector3 pos, float v = 1f, float p = 1f)
-    {
-        if (_sfxDict.TryGetValue(key, out var c)) PlaySFXAt(c, pos, v, p);
-    }
-
-    public void PlaySFXAt(AudioClip c, Vector3 pos, float v = 1f, float p = 1f)
-    {
-        if (c == null) return;
-        var s = GetFreeSFXSource();
-        ConfigureSource(s, p, 1f);
-        s.transform.position = pos;
-        s.clip = c;
-        s.volume = (sfxMute ? 0f : sfxVolume * v);
-        s.Play();
-        StartCoroutine(Co_AutoRelease(s));
-    }
-
-    public void StopAllSFX()
-    {
-        foreach (var s in _sfxPool)
-        {
-            if (s.isPlaying) s.Stop();
-            s.loop = false;
-            s.clip = null;
-        }
-    }
-
-    // ⭐ 루프 SFX 재생 (반환된 AudioSource로 나중에 정지 가능)
-    public AudioSource PlaySFXLoop(string key, float v = 1f, float p = 1f)
-    {
-        if (!_sfxDict.TryGetValue(key, out var c))
-        {
-            Debug.LogWarning($"[SoundManager] SFX 키를 찾을 수 없습니다: '{key}'");
-            return null;
-        }
-        return PlaySFXLoop(c, v, p);
-    }
-
-    public AudioSource PlaySFXLoop(AudioClip c, float v = 1f, float p = 1f)
-    {
-        if (c == null) return null;
-        var s = GetFreeSFXSource();
-        ConfigureSource(s, p, 0f);
-        s.loop = true; // ⭐ 루프 활성화
-        s.clip = c;
-        s.volume = (sfxMute ? 0f : sfxVolume * v);
-        s.Play();
-        Debug.Log($"[SoundManager] 루프 SFX 재생 시작: {c.name}");
-        return s;
-    }
-
-    // ⭐ 특정 AudioSource 정지
-    public void StopSFXSource(AudioSource s)
-    {
-        if (s == null) return;
-        Debug.Log($"[SoundManager] SFX 정지: {s.clip?.name ?? "null"}");
-        s.Stop();
-        s.loop = false;
-        s.clip = null;
-    }
-
-    private void ConfigureSource(AudioSource s, float p, float sb)
-    {
-        s.outputAudioMixerGroup = sfxGroup;
-        s.pitch = p;
-        s.spatialBlend = sb;
-        s.loop = false;
-    }
-
-    private IEnumerator Co_AutoRelease(AudioSource s)
-    {
-        yield return new WaitForSecondsRealtime(s.clip.length + 0.1f);
-        if (!s.loop)
-        {
-            s.Stop();
-            s.clip = null;
-        }
-    }
-
-    private void PrewarmSFXPool(int c)
-    {
-        for (int i = 0; i < c; i++)
-            _sfxPool.Add(CreateChildAudioSource($"SFX_{i}", false, sfxGroup));
-    }
-
-    private AudioSource GetFreeSFXSource()
-    {
-        foreach (var s in _sfxPool)
-            if (!s.isPlaying) return s;
-
-        if (_sfxPool.Count < sfxPoolHardLimit)
-        {
-            var s = CreateChildAudioSource($"SFX_{_sfxPool.Count}", false, sfxGroup);
-            _sfxPool.Add(s);
-            return s;
-        }
-        return _sfxPool[0];
-    }
+    private IEnumerator Co_AutoRelease(AudioSource s) { yield return new WaitForSecondsRealtime(s.clip.length + 0.1f); if (!s.loop) { s.Stop(); s.clip = null; } }
+    private void PrewarmSFXPool(int c) { for (int i = 0; i < c; i++) _sfxPool.Add(CreateChildAudioSource($"SFX_{i}", false, sfxGroup)); }
+    private AudioSource GetFreeSFXSource() { foreach (var s in _sfxPool) if (!s.isPlaying) return s; if (_sfxPool.Count < sfxPoolHardLimit) { var s = CreateChildAudioSource($"SFX_{_sfxPool.Count}", false, sfxGroup); _sfxPool.Add(s); return s; } return _sfxPool[0]; }
 }

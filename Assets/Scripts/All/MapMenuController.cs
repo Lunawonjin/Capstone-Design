@@ -54,11 +54,6 @@ public class MapMenuController : MonoBehaviour
 
     [Header("버튼")]
     [SerializeField] private Button exitButton;
-    
-    [Header("효과음 설정")]
-    [SerializeField] private string selectButtonSFXKey = "SelectBT";
-    [SerializeField] private string goBusSFXKey = "GoBus";
-    [SerializeField] private string endBusSFXKey = "EndBus";
 
     // 맵 열기/닫기 애니 (스케일 보존)
     [Header("맵 애니메이션 (Unscaled) - 스케일 보존")]
@@ -440,7 +435,7 @@ public class MapMenuController : MonoBehaviour
     IEnumerator Co_DepartThenLoad(Action loadScene, DepartConfig cfg)
     {
         _isDeparting = true;
-        PlayGoBusSFX();
+
         if (disableDoorOnDepartStart) SetBusDoorEnabled(false);
 
         if (playerTransform)
@@ -537,7 +532,6 @@ public class MapMenuController : MonoBehaviour
             bus = Instantiate(cfg.busPrefab);
             var bp = bus.transform.position;
             bus.transform.position = new Vector3(cfg.busStartX, cfg.busY, bp.z);
-            PlayEndBusSFX();
         }
         else
         {
@@ -563,7 +557,6 @@ public class MapMenuController : MonoBehaviour
                 yield return null;
             }
             b.position = targetStop;
-            PlayEndBusSFX();
         }
 
         // 2) 정차 즉시 플레이어 활성화 + 하차 위치 배치
@@ -1103,63 +1096,13 @@ public class MapMenuController : MonoBehaviour
         if (!busDoor) return;
         if (busDoor.activeSelf != on) busDoor.SetActive(on);
     }
-    // ===== 효과음 시스템 =====
-
-    /// <summary>
-    /// SelectBT 효과음 재생 (버튼 호버)
-    /// </summary>
-    private void PlaySelectButtonSFX()
-    {
-        if (string.IsNullOrEmpty(selectButtonSFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(selectButtonSFXKey);
-        }
-    }
-
-    /// <summary>
-    /// GoBus 효과음 재생 (버스 출발)
-    /// </summary>
-    private void PlayGoBusSFX()
-    {
-        if (string.IsNullOrEmpty(goBusSFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(goBusSFXKey);
-            Debug.Log($"[MapMenu] ✅ GoBus 효과음 재생: {goBusSFXKey}");
-        }
-        else
-        {
-            Debug.LogWarning($"[MapMenu] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{goBusSFXKey}' 재생 실패");
-        }
-    }
-
-    /// <summary>
-    /// EndBus 효과음 재생 (버스 도착)
-    /// </summary>
-    private void PlayEndBusSFX()
-    {
-        if (string.IsNullOrEmpty(endBusSFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(endBusSFXKey);
-            Debug.Log($"[MapMenu] ✅ EndBus 효과음 재생: {endBusSFXKey}");
-        }
-        else
-        {
-            Debug.LogWarning($"[MapMenu] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{endBusSFXKey}' 재생 실패");
-        }
-    }
 }
 
 [RequireComponent(typeof(RectTransform))]
 public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     public Action onClick;
-    private static MapMenuController _controller;
+
     [SerializeField] private float _normalScale = 1f;
     [SerializeField] private float _hoverScale = 1.08f;
     [SerializeField] private Color _hoverColor = new Color(1.05f, 1.05f, 1.05f, 1f);
@@ -1183,12 +1126,7 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
     {
         _rect = GetComponent<RectTransform>();
         _graphic = GetComponent<Graphic>();
-        if (_controller == null)
-        {
-            _controller = GetComponentInParent<MapMenuController>();
-            if (_controller == null)
-                _controller = FindFirstObjectByType<MapMenuController>();
-        }
+
         if (_graphic != null)
         { _baseColor = _graphic.color; _hasBaseColor = true; }
         else
@@ -1216,10 +1154,6 @@ public class HoverableMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerEx
         SetScale(_hoverScale);
         if (_graphic != null && _hasBaseColor)
             _graphic.color = MultiplyColor(_baseColor, _hoverColor);
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX("SelectBT");
-        }
     }
 
     public void OnPointerExit(PointerEventData eventData)

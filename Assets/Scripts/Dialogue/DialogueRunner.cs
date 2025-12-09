@@ -163,13 +163,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
 
     // Expression state
     private string _lastExpression = null; // null means default/no expression
-    [Header("효과음 설정")]
-    [SerializeField] private string dialogueSFXKey = "Dialogue";
-    [SerializeField] private string selectButtonSFXKey = "SelectBT";
-    [SerializeField] private bool playDialogueSFX = true;
-    [SerializeField] private bool playSelectButtonSFX = true;
 
-    private AudioSource currentDialogueSFX;
     private void Awake()
     {
         if (speakerText) { speakerText.text = ""; speakerText.raycastTarget = false; }
@@ -239,11 +233,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             StopCoroutine(_punchRoutine);
             _punchRoutine = null;
         }
-        // ⭐ 효과음 정지 추가
-        StopDialogueSFX();
 
-        _resumePending = (_mode != Mode.Done);
-        _wasTypingWhenHidden = _isTyping;
         _resumePending = (_mode != Mode.Done);
         _wasTypingWhenHidden = _isTyping;
 
@@ -855,7 +845,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2f);
             le.preferredHeight = h; le.minHeight = h;
             if (choiceButtonMinWidth > 0f) le.minWidth = choiceButtonMinWidth;
-            AddHoverSoundToButton(btn);
+
             int capturedK = k;
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(() =>
@@ -946,7 +936,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             float h = choiceButtonHeight > 0f ? choiceButtonHeight : Mathf.Ceil(choiceFontSize * 2f);
             le.preferredHeight = h; le.minHeight = h;
             if (choiceButtonMinWidth > 0f) le.minWidth = choiceButtonMinWidth;
-            AddHoverSoundToButton(btn);
+
             int capturedK = k;
             btn.onClick.RemoveAllListeners();
             btn.onClick.AddListener(() =>
@@ -1163,10 +1153,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
     {
         if (promptText) promptText.gameObject.SetActive(false);
         if (_choiceRoot) _choiceRoot.gameObject.SetActive(false);
-        // ⭐ 대사 효과음 재생 추가
-        PlayDialogueSFX();
 
-        if (promptText) promptText.gameObject.SetActive(false);
         if (bodyText) bodyText.gameObject.SetActive(true);
         if (nextIndicator) nextIndicator.SetActive(false);
 
@@ -1292,10 +1279,6 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
 
         _isTyping = false;
-
-        // ⭐ 타이핑 종료 시 효과음 정지 추가
-        StopDialogueSFX();
-
         if (nextIndicator) nextIndicator.SetActive(true);
         _typingRoutine = null;
     }
@@ -1310,11 +1293,8 @@ public class DialogueRunnerStringTables : MonoBehaviour
         }
         if (bodyText) bodyText.text = _currentFullText;
         _isTyping = false;
-
-        // ⭐ 즉시 완료 시에도 효과음 정지 추가
-        StopDialogueSFX();
-
         if (nextIndicator) nextIndicator.SetActive(true);
+
         _inputUnlocked = true;
         _advanceCooldownLeft = advanceCooldownSec;
     }
@@ -1492,10 +1472,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             if (bodyText.rectTransform != null)
                 bodyText.rectTransform.localScale = Vector3.one;
         }
-        // ⭐ 대화 종료 시 효과음 정지 추가
-        StopDialogueSFX();
 
-        if (nextIndicator) nextIndicator.SetActive(false);
         _mode = Mode.Done;
 
         _resumePending = false;
@@ -1555,72 +1532,7 @@ public class DialogueRunnerStringTables : MonoBehaviour
             speakerText.fontSize = GetSpeakerFontSize();
         }
     }
-    private void PlayDialogueSFX()
-    {
-        if (!playDialogueSFX || string.IsNullOrEmpty(dialogueSFXKey))
-            return;
 
-        // 이전 효과음이 있으면 정지
-        StopDialogueSFX();
-
-        if (SoundManager.Instance != null)
-        {
-            currentDialogueSFX = SoundManager.Instance.PlaySFXLoop(dialogueSFXKey);
-            if (debugInputLog) Debug.Log($"[DialogueRunner] ✅ 대사 효과음 루프 재생 시작: {dialogueSFXKey}");
-        }
-        else
-        {
-            if (debugInputLog) Debug.LogWarning($"[DialogueRunner] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{dialogueSFXKey}' 재생 실패");
-        }
-    }
-
-    /// <summary>
-    /// 대사 효과음 정지
-    /// </summary>
-    private void StopDialogueSFX()
-    {
-        if (currentDialogueSFX != null && SoundManager.Instance != null)
-        {
-            SoundManager.Instance.StopSFXSource(currentDialogueSFX);
-            if (debugInputLog) Debug.Log($"[DialogueRunner] ✅ 대사 효과음 정지");
-            currentDialogueSFX = null;
-        }
-    }
-
-    /// <summary>
-    /// 선택지 버튼 호버 효과음 재생
-    /// </summary>
-    private void PlaySelectButtonSFX()
-    {
-        if (!playSelectButtonSFX || string.IsNullOrEmpty(selectButtonSFXKey))
-            return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(selectButtonSFXKey);
-        }
-    }
-
-    /// <summary>
-    /// 버튼에 호버 효과음 이벤트 추가
-    /// </summary>
-    private void AddHoverSoundToButton(Button btn)
-    {
-        if (btn == null || !playSelectButtonSFX) return;
-
-        var trigger = btn.gameObject.GetComponent<EventTrigger>();
-        if (trigger == null)
-            trigger = btn.gameObject.AddComponent<EventTrigger>();
-
-        // 기존 PointerEnter 이벤트 제거
-        trigger.triggers.RemoveAll(e => e.eventID == EventTriggerType.PointerEnter);
-
-        // 새 PointerEnter 이벤트 추가
-        var entry = new EventTrigger.Entry();
-        entry.eventID = EventTriggerType.PointerEnter;
-        entry.callback.AddListener((data) => { PlaySelectButtonSFX(); });
-        trigger.triggers.Add(entry);
-    }
     private void ApplyCurrentFontSizes()
     {
         if (speakerText)

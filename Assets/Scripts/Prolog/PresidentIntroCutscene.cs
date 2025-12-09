@@ -73,10 +73,6 @@ public class PresidentIntroSequence : MonoBehaviour
     [Header("미션 패널")]
     [SerializeField] private Image MissionUI;
 
-    [Header("효과음")]
-    [SerializeField] private string teleportSFXKey = "Teleport";
-    [SerializeField] private string goneSFXKey = "Gone";
-
     private bool sequenceRunning;
     private bool endingRoutine;
 
@@ -174,10 +170,6 @@ public class PresidentIntroSequence : MonoBehaviour
             if (key == "Dialogue_015_President")
             {
                 Debug.Log("[PresidentIntroSequence] Dialogue_015 이후 전환 연출 시작");
-
-                // ⭐ Teleport 효과음 재생
-                PlaySFX(teleportSFXKey);
-
                 yield return StartCoroutine(HandleMidTransition());
                 Debug.Log("[PresidentIntroSequence] Dialogue_015 이후 전환 연출 종료");
             }
@@ -185,10 +177,6 @@ public class PresidentIntroSequence : MonoBehaviour
             else if (key == "Dialogue_018_President")
             {
                 Debug.Log("[PresidentIntroSequence] Dialogue_018 이후 대표 사라짐 연출 시작");
-
-                // ⭐ Gone 효과음 재생
-                PlaySFX(goneSFXKey);
-
                 yield return StartCoroutine(VanishPresident());
                 Debug.Log("[PresidentIntroSequence] Dialogue_018 이후 대표 사라짐 연출 종료");
 
@@ -211,28 +199,6 @@ public class PresidentIntroSequence : MonoBehaviour
 
         // 모든 대사가 끝났으니 PlayerMove 다시 활성화
         EnablePlayerMove();
-    }
-
-    /// <summary>
-    /// 효과음 재생 (SoundManager 사용)
-    /// </summary>
-    private void PlaySFX(string sfxKey)
-    {
-        if (string.IsNullOrEmpty(sfxKey))
-        {
-            Debug.LogWarning("[PresidentIntroSequence] SFX 키가 비어있습니다!");
-            return;
-        }
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(sfxKey);
-            Debug.Log($"[PresidentIntroSequence] ✅ SFX 재생: {sfxKey}");
-        }
-        else
-        {
-            Debug.LogWarning($"[PresidentIntroSequence] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{sfxKey}' 재생 실패");
-        }
     }
 
     /// <summary>

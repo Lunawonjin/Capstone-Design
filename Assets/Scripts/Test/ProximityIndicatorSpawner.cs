@@ -55,11 +55,6 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
     [Header("생성 예외(이 오브젝트들에선 표시 안 함)")]
     public List<GameObject> exceptions = new();
 
-    [Header("F키 상호작용 효과음")]
-    [SerializeField] private bool enableFKeySound = true;
-    [SerializeField] private KeyCode interactionKey = KeyCode.F;
-    [SerializeField] private string fKeySFXKey = "F";
-
     [Header("디버그 로그")]
     public bool debugLog = false;
 
@@ -105,34 +100,6 @@ public class HoverIndicatorSpawner2D : MonoBehaviour
                 _scanTimer = scanInterval;
                 ScanByRadius();
             }
-        }
-
-        // ⭐ F키 입력 감지 및 효과음 재생
-        if (enableFKeySound && Input.GetKeyDown(interactionKey))
-        {
-            // 현재 상호작용 가능한 대상이 있을 때만 효과음 재생
-            if (currentTargets.Count > 0)
-            {
-                PlayFKeySFX();
-            }
-        }
-    }
-
-    /// <summary>
-    /// F키 효과음 재생
-    /// </summary>
-    private void PlayFKeySFX()
-    {
-        if (string.IsNullOrEmpty(fKeySFXKey)) return;
-
-        if (SoundManager.Instance != null)
-        {
-            SoundManager.Instance.PlaySFX(fKeySFXKey);
-            if (debugLog) Debug.Log($"[HoverIndicatorSpawner2D] ✅ F키 효과음 재생: {fKeySFXKey}");
-        }
-        else
-        {
-            if (debugLog) Debug.LogWarning($"[HoverIndicatorSpawner2D] ⚠️ SoundManager를 찾을 수 없습니다! SFX '{fKeySFXKey}' 재생 실패");
         }
     }
 
