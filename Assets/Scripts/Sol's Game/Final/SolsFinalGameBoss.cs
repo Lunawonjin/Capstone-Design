@@ -30,6 +30,13 @@ public class SolsFinalGameBoss : MonoBehaviour
     [Header("연결")]
     [SerializeField] private SyringePoolShooter player;
 
+    [Header("충돌 데미지 쿨다운")]
+    [SerializeField] private float damageCooldown = 0.5f;
+
+    [Header("보스 사망 시 CutScene")]
+    [SerializeField] private GameObject cutSceneObject;
+    [SerializeField] private string cutAnimationName = "Cut";
+
     private Rigidbody2D rb;
     private SpriteRenderer[] spriteRenderers;
     private Color[] originalColors;
@@ -39,6 +46,8 @@ public class SolsFinalGameBoss : MonoBehaviour
     private float floatTimer = 0f;
     private Coroutine hitRoutine;
     private bool isKnockback = false;
+    private float lastDamageTime = -999f;
+    private bool canMove = true; // ⭐ 움직임 제어용
 
     void Awake()
     {
@@ -66,6 +75,13 @@ public class SolsFinalGameBoss : MonoBehaviour
         {
             player = FindFirstObjectByType<SyringePoolShooter>();
         }
+
+        // CutScene 초기 비활성화
+        if (cutSceneObject != null)
+        {
+            cutSceneObject.SetActive(false);
+            Debug.Log("[SolsFinalGameBoss] CutScene 초기 비활성화");
+        }
     }
 
     void Start()
@@ -79,7 +95,7 @@ public class SolsFinalGameBoss : MonoBehaviour
 
     void Update()
     {
-        if (isDead || isKnockback) return;
+        if (isDead || isKnockback || !canMove) return;
 
         // 둥둥 떠다니는 효과 (사인파 이용)
         floatTimer += Time.deltaTime * floatSpeed;
@@ -91,6 +107,15 @@ public class SolsFinalGameBoss : MonoBehaviour
         targetPos.y = startPosition.y + yOffset;
 
         rb.MovePosition(targetPos);
+    }
+
+    /// <summary>
+    /// 보스 움직임 활성화/비활성화
+    /// </summary>
+    public void SetMovementEnabled(bool enabled)
+    {
+        canMove = enabled;
+        Debug.Log($"[SolsFinalGameBoss] 보스 움직임: {(enabled ? "활성화" : "비활성화")}");
     }
 
     /// <summary>
@@ -185,14 +210,68 @@ public class SolsFinalGameBoss : MonoBehaviour
 
         Debug.Log("[SolsFinalGameBoss] 보스 사망!");
 
-        // 엔딩 대사 시작
-        if (SolsFinalGame.Instance != null)
+        // ⭐ CutScene 활성화 및 애니메이션 재생
+        if (cutSceneObject != null)
         {
-            SolsFinalGame.Instance.StartBossEndingSequence();
+            cutSceneObject.SetActive(true);
+            Debug.Log("[SolsFinalGameBoss] ✅ CutScene 활성화!");
+
+            // 애니메이터 찾아서 애니메이션 재생
+            Animator cutAnimator = cutSceneObject.GetComponent<Animator>();
+            if (cutAnimator == null)
+            {
+                cutAnimator = cutSceneObject.GetComponentInChildren<Animator>();
+            }
+
+            if (cutAnimator != null && !string.IsNullOrEmpty(cutAnimationName))
+            {
+                cutAnimator.enabled = true;
+                cutAnimator.Play(cutAnimationName, -1, 0f);
+                Debug.Log($"[SolsFinalGameBoss] ✅ '{cutAnimationName}' 애니메이션 재생!");
+
+                // 애니메이션 길이 가져오기
+                AnimationClip[] clips = cutAnimator.runtimeAnimatorController.animationClips;
+                float animLength = 0f;
+                foreach (var clip in clips)
+                {
+                    if (clip.name == cutAnimationName)
+                    {
+                        animLength = clip.length;
+                        break;
+                    }
+                }
+
+                // 애니메이션 종료 후 씬 전환
+                StartCoroutine(LoadStartMenuAfterAnimation(animLength));
+            }
+            else
+            {
+                Debug.LogWarning("[SolsFinalGameBoss] ⚠️ CutScene의 Animator를 찾을 수 없거나 애니메이션 이름이 비어있습니다!");
+                // 애니메이터가 없으면 바로 씬 전환
+                StartCoroutine(LoadStartMenuAfterAnimation(2f));
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[SolsFinalGameBoss] ⚠️ cutSceneObject가 연결되지 않았습니다!");
+            // CutScene이 없으면 바로 씬 전환
+            StartCoroutine(LoadStartMenuAfterAnimation(2f));
         }
 
         // 오브젝트 비활성화
         gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 애니메이션 종료 후 StartMenu 씬으로 이동
+    /// </summary>
+    private IEnumerator LoadStartMenuAfterAnimation(float delay)
+    {
+        Debug.Log($"[SolsFinalGameBoss] {delay}초 후 StartMenu로 이동합니다...");
+        yield return new WaitForSeconds(delay);
+
+        Debug.Log("[SolsFinalGameBoss] StartMenu 씬 로드 시작!");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("StartMenu");
     }
 
     /// <summary>
@@ -204,30 +283,93 @@ public class SolsFinalGameBoss : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Player"))
         {
+            // 쿨다운 체크
+            if (Time.time - lastDamageTime < damageCooldown)
+                return;
+
             if (player != null)
             {
-                player.OnDamage(contactDamage, gameObject.tag);
+                player.OnDamage(contactDamage, "Boss");
+                lastDamageTime = Time.time;
                 Debug.Log($"[SolsFinalGameBoss] 플레이어에게 {contactDamage} 데미지!");
             }
         }
     }
 
     /// <summary>
-    /// 주사와 충돌 감지 (Trigger)
-    /// ⭐ 태그 대신 GetComponent 사용
+    /// 플레이어와 충돌 유지 시 데미지 (Collision)
+    /// </summary>
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (isDead) return;
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // 쿨다운 체크
+            if (Time.time - lastDamageTime < damageCooldown)
+                return;
+
+            if (player != null)
+            {
+                player.OnDamage(contactDamage, "Boss");
+                lastDamageTime = Time.time;
+                Debug.Log($"[SolsFinalGameBoss] 플레이어에게 지속 데미지! {contactDamage}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 플레이어와 트리거 충돌 시 데미지
     /// </summary>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (isDead) return;
 
-        // ⭐ GetComponent로 SyringeProjectile 직접 확인
+        // 주사 충돌 처리
         SyringeProjectile projectile = collision.GetComponent<SyringeProjectile>();
         if (projectile != null)
         {
             int damage = projectile.GetDamage();
             TakeHit(damage);
-
             Debug.Log($"[SolsFinalGameBoss] 주사 피격! 데미지: {damage}");
+            return;
+        }
+
+        // 플레이어 충돌 처리
+        if (collision.CompareTag("Player"))
+        {
+            // 쿨다운 체크
+            if (Time.time - lastDamageTime < damageCooldown)
+                return;
+
+            if (player != null)
+            {
+                player.OnDamage(contactDamage, "Boss");
+                lastDamageTime = Time.time;
+                Debug.Log($"[SolsFinalGameBoss] 플레이어에게 {contactDamage} 데미지! (Trigger)");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 플레이어와 트리거 충돌 유지 시 데미지
+    /// </summary>
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (isDead) return;
+
+        if (collision.CompareTag("Player"))
+        {
+            // 쿨다운 체크
+            if (Time.time - lastDamageTime < damageCooldown)
+                return;
+
+            if (player != null)
+            {
+                player.OnDamage(contactDamage, "Boss");
+                lastDamageTime = Time.time;
+                Debug.Log($"[SolsFinalGameBoss] 플레이어에게 지속 데미지! {contactDamage} (Trigger)");
+            }
         }
     }
 }

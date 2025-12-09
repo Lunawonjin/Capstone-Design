@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(SpriteRenderer))]
@@ -14,6 +15,25 @@ public class SyringePoolShooter : MonoBehaviour
     [Header("체력 설정")]
     [SerializeField] private int maxHp = 5;
     private int currentHp;
+
+    [Header("체력 UI")]
+    [SerializeField] private Slider playerHpSlider;
+    [SerializeField] private Image hpFillImage;
+
+    [Header("체력별 색상")]
+    [SerializeField] private Color hp5Color = Color.green;
+    [SerializeField] private Color hp4Color = Color.cyan;
+    [SerializeField] private Color hp3Color = Color.yellow;
+    [SerializeField] private Color hp2Color = new Color(1f, 0.5f, 0f); // 주황색
+    [SerializeField] private Color hp1Color = Color.red;
+
+    [Header("차징 UI")]
+    [SerializeField] private Slider chargeSlider;
+    [SerializeField] private Image chargeFillImage;
+    [SerializeField] private Color chargeStartColor = new Color(0.5f, 1f, 0.5f); // 연한 녹색
+    [SerializeField] private Color chargeEndColor = new Color(0f, 0.6f, 0f); // 진한 녹색
+    [SerializeField] private float chargeShakeIntensity = 10f;
+    [SerializeField] private float chargeShakeSpeed = 30f;
 
     [Header("피격 효과")]
     [SerializeField] private Color hitColor = Color.red;
@@ -80,6 +100,10 @@ public class SyringePoolShooter : MonoBehaviour
     private Coroutine hitRoutine;
     private Coroutine invincibleRoutine;
 
+    // 차징 UI 관련
+    private Vector3 chargeSliderOriginalPos;
+    private bool isChargeShaking = false;
+
     // ========================================
     // 🔹 Public 메서드
     // ========================================
@@ -111,6 +135,7 @@ public class SyringePoolShooter : MonoBehaviour
         if (currentHp <= 0) return;
         currentHp = Mathf.Min(currentHp + amount, maxHp);
         Debug.Log($"[SyringePoolShooter] HP 회복! 현재 HP: {currentHp}/{maxHp}");
+        UpdateHpUI();
     }
 
     /// <summary>
@@ -139,6 +164,8 @@ public class SyringePoolShooter : MonoBehaviour
 
         currentHp -= damageAmount;
         Debug.Log($"[SyringePoolShooter] 피격! 데미지: {damageAmount}, 남은 HP: {currentHp}/{maxHp}");
+
+        UpdateHpUI();
 
         if (hitRoutine != null) StopCoroutine(hitRoutine);
         hitRoutine = StartCoroutine(HitFlash());
@@ -187,6 +214,12 @@ public class SyringePoolShooter : MonoBehaviour
         if (attackAnimator == null) attackAnimator = GetComponentInParent<Animator>();
 
         shootingEnabled = false;
+
+        // 체력 슬라이더 초기화
+        InitializeHpUI();
+
+        // 차징 슬라이더 초기화
+        InitializeChargeUI();
     }
 
     void Update()
@@ -234,6 +267,9 @@ public class SyringePoolShooter : MonoBehaviour
             isCharging = true;
             chargeTimer += Time.deltaTime;
 
+            // 차징 UI 업데이트
+            UpdateChargeUI();
+
             // 차지 시각 효과
             if (showChargeEffect && chargeTimer >= chargeTime)
             {
@@ -257,12 +293,197 @@ public class SyringePoolShooter : MonoBehaviour
             isCharging = false;
             chargeTimer = 0f;
 
+            // 차징 UI 리셋
+            ResetChargeUI();
+
             // 원래 색상 복구
             if (spriteRenderer != null && currentHp > 0 && !isInvincible)
             {
                 spriteRenderer.color = originalColor;
             }
         }
+    }
+
+    // ========================================
+    // 🔹 체력 UI 관리
+    // ========================================
+
+    /// <summary>
+    /// 체력 슬라이더 초기화
+    /// </summary>
+    private void InitializeHpUI()
+    {
+        if (playerHpSlider == null)
+        {
+            Debug.LogWarning("[SyringePoolShooter] PlayerHp 슬라이더가 연결되지 않았습니다!");
+            return;
+        }
+
+        // Fill 이미지가 연결되지 않았다면 자동으로 찾기
+        if (hpFillImage == null)
+        {
+            Transform fillArea = playerHpSlider.transform.Find("Fill Area");
+            if (fillArea != null)
+            {
+                Transform fill = fillArea.Find("Fill");
+                if (fill != null)
+                {
+                    hpFillImage = fill.GetComponent<Image>();
+                }
+            }
+        }
+
+        playerHpSlider.maxValue = maxHp;
+        playerHpSlider.value = currentHp;
+        UpdateHpColor();
+        Debug.Log($"[SyringePoolShooter] HP UI 초기화 완료 ({currentHp}/{maxHp})");
+    }
+
+    /// <summary>
+    /// 체력 슬라이더 업데이트
+    /// </summary>
+    private void UpdateHpUI()
+    {
+        if (playerHpSlider == null) return;
+
+        playerHpSlider.value = currentHp;
+        UpdateHpColor();
+    }
+
+    /// <summary>
+    /// 현재 체력에 따라 슬라이더 Fill 색상 변경
+    /// </summary>
+    private void UpdateHpColor()
+    {
+        if (hpFillImage == null) return;
+
+        Color targetColor = currentHp switch
+        {
+            5 => hp5Color,
+            4 => hp4Color,
+            3 => hp3Color,
+            2 => hp2Color,
+            1 => hp1Color,
+            _ => Color.white
+        };
+
+        hpFillImage.color = targetColor;
+    }
+
+    // ========================================
+    // 🔹 차징 UI 관리
+    // ========================================
+
+    /// <summary>
+    /// 차징 슬라이더 초기화
+    /// </summary>
+    private void InitializeChargeUI()
+    {
+        if (chargeSlider == null)
+        {
+            Debug.LogWarning("[SyringePoolShooter] Charge 슬라이더가 연결되지 않았습니다!");
+            return;
+        }
+
+        // Fill 이미지가 연결되지 않았다면 자동으로 찾기
+        if (chargeFillImage == null)
+        {
+            Transform fillArea = chargeSlider.transform.Find("Fill Area");
+            if (fillArea != null)
+            {
+                Transform fill = fillArea.Find("Fill");
+                if (fill != null)
+                {
+                    chargeFillImage = fill.GetComponent<Image>();
+                }
+            }
+        }
+
+        chargeSlider.maxValue = chargeTime;
+        chargeSlider.value = 0f;
+
+        if (chargeFillImage != null)
+        {
+            chargeFillImage.color = chargeStartColor;
+        }
+
+        // 원래 위치 저장
+        chargeSliderOriginalPos = chargeSlider.transform.localPosition;
+
+        // 차징 슬라이더 숨기기
+        chargeSlider.gameObject.SetActive(false);
+
+        Debug.Log("[SyringePoolShooter] 차징 UI 초기화 완료");
+    }
+
+    /// <summary>
+    /// 차징 슬라이더 업데이트
+    /// </summary>
+    private void UpdateChargeUI()
+    {
+        if (chargeSlider == null) return;
+
+        // 차징 시작 시 슬라이더 표시
+        if (!chargeSlider.gameObject.activeSelf)
+        {
+            chargeSlider.gameObject.SetActive(true);
+        }
+
+        // 차징 진행도 업데이트
+        chargeSlider.value = chargeTimer;
+
+        // 색상 그라데이션 (연한 녹색 -> 진한 녹색)
+        if (chargeFillImage != null)
+        {
+            float t = Mathf.Clamp01(chargeTimer / chargeTime);
+            chargeFillImage.color = Color.Lerp(chargeStartColor, chargeEndColor, t);
+        }
+
+        // 차징 완료 시 흔들기 시작
+        if (chargeTimer >= chargeTime && !isChargeShaking)
+        {
+            isChargeShaking = true;
+            StartCoroutine(ShakeChargeSlider());
+        }
+    }
+
+    /// <summary>
+    /// 차징 슬라이더 리셋
+    /// </summary>
+    private void ResetChargeUI()
+    {
+        if (chargeSlider == null) return;
+
+        chargeSlider.value = 0f;
+        chargeSlider.gameObject.SetActive(false);
+        isChargeShaking = false;
+
+        // 원래 위치로 복구
+        chargeSlider.transform.localPosition = chargeSliderOriginalPos;
+
+        if (chargeFillImage != null)
+        {
+            chargeFillImage.color = chargeStartColor;
+        }
+    }
+
+    /// <summary>
+    /// 차징 슬라이더 흔들기 효과
+    /// </summary>
+    private IEnumerator ShakeChargeSlider()
+    {
+        while (isChargeShaking && isCharging)
+        {
+            float offsetX = Mathf.Sin(Time.time * chargeShakeSpeed) * chargeShakeIntensity;
+            float offsetY = Mathf.Cos(Time.time * chargeShakeSpeed * 1.3f) * chargeShakeIntensity * 0.5f;
+
+            chargeSlider.transform.localPosition = chargeSliderOriginalPos + new Vector3(offsetX, offsetY, 0f);
+
+            yield return null;
+        }
+
+        // 흔들기 종료 시 원래 위치로 복구
+        chargeSlider.transform.localPosition = chargeSliderOriginalPos;
     }
 
     // ========================================
@@ -384,6 +605,8 @@ public class SyringePoolShooter : MonoBehaviour
         shootingEnabled = false;
 
         Debug.Log($"[SyringePoolShooter] 사망! (킬러: {killerTag})");
+
+        UpdateHpUI();
 
         if (spriteRenderer != null) spriteRenderer.enabled = false;
 
