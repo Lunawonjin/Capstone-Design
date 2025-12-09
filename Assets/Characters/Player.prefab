@@ -181,7 +181,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 63
-  m_Sprite: {fileID: -4529042392078601758, guid: 0cc662a349fad81428fbc56aa8358b9b, type: 3}
+  m_Sprite: {fileID: -5504530352435231536, guid: 83edf6827df143b4e92c9ba2d58bb253, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -458,6 +458,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1688187547581903874, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1688187547581903874, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1688187547581903874, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0.85
       objectReference: {fileID: 0}
@@ -465,6 +473,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Phone
       objectReference: {fileID: 0}
+    - target: {fileID: 4246993736143164021, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 4334840205267593290, guid: 5701a669f4a7d5d4e93ffb577508c301, type: 3}
     - target: {fileID: 4894558660170857325, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
       propertyPath: calls.Array.size
       value: 1
@@ -519,7 +531,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5391807624942689214, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5498369495554070205, guid: bd2c9291f33f9744593ec719d5c39b14, type: 3}
       propertyPath: m_SortingOrder

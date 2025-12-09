@@ -51,14 +51,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 956247248902
-    m_Localized: "\uD63C\uC790 \uC798 \uD560 \uC218 \uC788\uACA0\uC9C0?"
+    m_Localized: "\uC18C\uAE08\uC774 \uC9D1\uC740 \uC194\uC774 \uC9D1 \uBC14\uB85C
+      \uC624\uB978\uD3B8\uC5D0 \uC788\uC5B4."
     m_Metadata:
       m_Items: []
   - m_Id: 956247248903
-    m_Localized: "\uB098\uB294 \uD68C\uC0AC\uB85C \uB3CC\uC544\uAC00\uBCFC\uAC8C."
+    m_Localized: "\uD63C\uC790 \uC798 \uD560 \uC218 \uC788\uACA0\uC9C0?"
     m_Metadata:
       m_Items: []
   - m_Id: 956247248904
+    m_Localized: "\uB098\uB294 \uD68C\uC0AC\uB85C \uB3CC\uC544\uAC00\uBCFC\uAC8C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2406244791291904
     m_Localized: "\uD30C\uC774\uD305\uD574 {playerName}!!"
     m_Metadata:
       m_Items: []

@@ -247,7 +247,7 @@ public class NpcEventDebugLoader : MonoBehaviour
     {
         [Header("기본")]
         public string ownerName = "Sol";
-        public string npcName = "Sol_Npc";
+        public string npcName = "Sol_N";
         public GameObject prefab;
         public bool spawnOnHouseEnter = true;
         public Vector3 spawnOffset = Vector3.zero;
@@ -255,6 +255,18 @@ public class NpcEventDebugLoader : MonoBehaviour
         public bool reuseIfAlreadySpawned = true;
         public bool deactivateOnExitHouse = true;
         public bool destroyOnExitHouse = false;
+
+        [Header("표정 스프라이트")]
+        [Tooltip("기본 스프라이트 (표정 없을 때)")]
+        public Sprite defaultSprite;
+        [Tooltip("웃음 표정 (Smile)")]
+        public Sprite smileSprite;
+        [Tooltip("슬픔 표정 (Sad)")]
+        public Sprite sadSprite;
+        [Tooltip("놀람 표정 (Wow)")]
+        public Sprite wowSprite;
+        [Tooltip("잠듦 표정 (Sleep)")]
+        public Sprite sleepSprite;
 
         [Header("애니메이터(선택)")]
         public RuntimeAnimatorController animatorController;
@@ -267,13 +279,16 @@ public class NpcEventDebugLoader : MonoBehaviour
         public string stateLeft = "Left_Walk";
         public string stateRight = "Right_Walk";
         public float animSpeedScale = 1f;
+
     }
 
     private readonly Dictionary<string, List<NpcSpec>> _npcSpecsByKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Dictionary<string, GameObject>> _spawnedNpcByKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, NpcSpec> _npcSpecByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, GameObject> _spawnedNpcByName = new(StringComparer.OrdinalIgnoreCase);
-
+    // NPC 표정 시스템 런타임 상태 (런타임 상태 섹션에 추가)
+    private readonly Dictionary<string, SpriteRenderer> _npcSpriteRenderers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Sprite> _npcOriginalSprites = new(StringComparer.OrdinalIgnoreCase);
     // npcShake 관리용
     private readonly Dictionary<string, Coroutine> _npcShakeCoByName = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Vector3> _npcShakeBaseLocalPos = new(StringComparer.OrdinalIgnoreCase);
@@ -330,6 +345,9 @@ public class NpcEventDebugLoader : MonoBehaviour
     private void Start()
     {
         if (teleporter != null) _lastTeleporterOwnerIndex = teleporter.CurrentOwnerIndex;
+
+        // ★ 이 줄 추가
+        SubscribeToDialogueExpressionEvents();
 
         if (runOnStart_IfSceneAndFlag)
             StartCoroutine(TryRunFirstVisitsOnStart());
@@ -396,7 +414,11 @@ public class NpcEventDebugLoader : MonoBehaviour
         }
         CheckPuzzleClearEvent();
     }
-
+    private void OnDestroy()
+    {
+        // ★ 이 줄 추가
+        UnsubscribeFromDialogueExpressionEvents();
+    }
     private IEnumerator TryRunFirstVisitsOnStart()
     {
         yield return null;
@@ -1624,18 +1646,33 @@ public class NpcEventDebugLoader : MonoBehaviour
     private bool IsEventAllowedByGameState(string ownerName, string eventName, PlayerData pd)
     {
         if (pd == null) return false;
-        if (string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(eventName, "Sol_Second_Meet", StringComparison.OrdinalIgnoreCase))
+
+        // Sol 퍼즐 관련 이벤트 추가 조건
+        if (string.Equals(ownerName, "Sol", StringComparison.OrdinalIgnoreCase))
         {
-            if (!TryBindInt(pd, "Day", out var getDay, out var _))
+            if (string.Equals(eventName, "Sol_First_Meet", StringComparison.OrdinalIgnoreCase))
             {
-                if (verboseLog) Debug.LogWarning("[NpcEventDebugLoader] PlayerData에 int 'Day'를 찾지 못해 Sol_Second_Meet 조건 체크 실패");
-                return false;
+                // Sol_First_Meet은 Day 1에만 실행
+                if (!TryBindInt(pd, "Day", out var getDay, out var _)) return false;
+                return getDay() == 1;
             }
-            int day = getDay();
-            if (verboseLog) Debug.Log($"[NpcEventDebugLoader] Sol_Second_Meet 조건 체크: Day={day}");
-            return day == 2;
+
+            if (string.Equals(eventName, "Sol_Second_Meet", StringComparison.OrdinalIgnoreCase))
+            {
+                // Sol_Second_Meet은 Day 2 AND Sol_First_Meet이 true여야 함
+                if (!TryBindInt(pd, "Day", out var getDay, out var _)) return false;
+                int day = getDay();
+
+                if (!TryBindBool(pd, "Sol_First_Meet", out var getFirstMeet, out var _)) return false;
+                bool hasFirstMeet = getFirstMeet();
+
+                if (verboseLog)
+                    Debug.Log($"[NpcEventDebugLoader] Sol_Second_Meet 조건: Day={day}, Sol_First_Meet={hasFirstMeet}");
+
+                return day == 2 && hasFirstMeet;
+            }
         }
+
         return true;
     }
 
@@ -2562,6 +2599,160 @@ public class NpcEventDebugLoader : MonoBehaviour
             Debug.Log($"[NpcEventDebugLoader] StartNpcEventByKey 호출: owner='{ownerName}', event='{eventName}'");
 
         return RunEventByName_External(ownerName, eventName);
+    }
+    // ===== NPC 표정 시스템 =====
+
+    /// <summary>
+    /// DialogueManager의 표정 이벤트 구독
+    /// </summary>
+    private void SubscribeToDialogueExpressionEvents()
+    {
+        if (autoFindDialogueManager && dialogueManager == null)
+            dialogueManager = FindFirstObjectByType<DialogueRunnerStringTables>(FindObjectsInactive.Include);
+
+        if (dialogueManager != null)
+        {
+            dialogueManager.OnExpressionRequested += HandleExpressionRequest;
+            if (verboseLog)
+                Debug.Log("[NpcEventDebugLoader] DialogueManager 표정 이벤트 구독 완료");
+        }
+    }
+
+    /// <summary>
+    /// DialogueManager의 표정 이벤트 구독 해제
+    /// </summary>
+    private void UnsubscribeFromDialogueExpressionEvents()
+    {
+        if (dialogueManager != null)
+        {
+            dialogueManager.OnExpressionRequested -= HandleExpressionRequest;
+        }
+    }
+
+    /// <summary>
+    /// 표정 변경 요청 처리
+    /// </summary>
+    /// <param name="expression">표정 이름 (Smile, Sad, Wow, Sleep) 또는 null (기본값)</param>
+    private void HandleExpressionRequest(string expression)
+    {
+        if (string.IsNullOrEmpty(_ctxOwner))
+        {
+            if (verboseLog)
+                Debug.LogWarning("[NpcEventDebugLoader] 표정 변경 요청이 있었지만 현재 이벤트 오너(_ctxOwner)가 없습니다.");
+            return;
+        }
+
+        // 현재 이벤트의 오너에 해당하는 NPC 찾기
+        if (!_npcSpecByName.TryGetValue($"{_ctxOwner}", out var spec) &&
+            !_npcSpecByName.TryGetValue(_ctxOwner, out spec))
+        {
+            if (verboseLog)
+                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC Spec을 찾을 수 없습니다.");
+            return;
+        }
+
+        GameObject npcObj = ResolveNpc($"{_ctxOwner}");
+        if (npcObj == null)
+            npcObj = ResolveNpc(_ctxOwner);
+
+        if (npcObj == null)
+        {
+            if (verboseLog)
+                Debug.LogWarning($"[NpcEventDebugLoader] 표정 변경: '{_ctxOwner}'에 해당하는 NPC GameObject를 찾을 수 없습니다.");
+            return;
+        }
+
+        ApplyNpcExpression(npcObj, spec, expression);
+    }
+
+    /// <summary>
+    /// NPC에 표정 스프라이트 적용
+    /// </summary>
+    private void ApplyNpcExpression(GameObject npcObj, NpcSpec spec, string expression)
+    {
+        if (spec == null || npcObj == null) return;
+
+        // SpriteRenderer 찾기 (캐싱)
+        string npcKey = npcObj.name;
+        if (!_npcSpriteRenderers.TryGetValue(npcKey, out var spriteRenderer))
+        {
+            spriteRenderer = npcObj.GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+                spriteRenderer = npcObj.GetComponentInChildren<SpriteRenderer>();
+
+            if (spriteRenderer != null)
+            {
+                _npcSpriteRenderers[npcKey] = spriteRenderer;
+
+                // 원본 스프라이트 저장 (첫 접근 시)
+                if (!_npcOriginalSprites.ContainsKey(npcKey) && spec.defaultSprite != null)
+                {
+                    _npcOriginalSprites[npcKey] = spec.defaultSprite;
+                }
+                else if (!_npcOriginalSprites.ContainsKey(npcKey) && spriteRenderer.sprite != null)
+                {
+                    _npcOriginalSprites[npcKey] = spriteRenderer.sprite;
+                }
+            }
+        }
+
+        if (spriteRenderer == null)
+        {
+            if (verboseLog)
+                Debug.LogWarning($"[NpcEventDebugLoader] NPC '{npcKey}'에서 SpriteRenderer를 찾을 수 없습니다.");
+            return;
+        }
+
+        // 표정 스프라이트 선택
+        Sprite targetSprite = null;
+
+        if (string.IsNullOrEmpty(expression))
+        {
+            // 기본 표정으로 복구
+            if (spec.defaultSprite != null)
+                targetSprite = spec.defaultSprite;
+            else if (_npcOriginalSprites.TryGetValue(npcKey, out var original))
+                targetSprite = original;
+
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] NPC '{npcKey}' 표정 초기화 (기본 표정)");
+        }
+        else
+        {
+            // 특정 표정 적용
+            switch (expression.ToLowerInvariant())
+            {
+                case "smile":
+                    targetSprite = spec.smileSprite;
+                    break;
+                case "sad":
+                    targetSprite = spec.sadSprite;
+                    break;
+                case "wow":
+                    targetSprite = spec.wowSprite;
+                    break;
+                case "sleep":
+                    targetSprite = spec.sleepSprite;
+                    break;
+                default:
+                    Debug.LogWarning($"[NpcEventDebugLoader] 알 수 없는 표정: '{expression}'");
+                    return;
+            }
+
+            if (verboseLog)
+                Debug.Log($"[NpcEventDebugLoader] NPC '{npcKey}' 표정 변경: {expression}");
+        }
+
+        // 스프라이트 적용
+        if (targetSprite != null)
+        {
+            spriteRenderer.sprite = targetSprite;
+        }
+        else
+        {
+            if (verboseLog)
+                Debug.LogWarning($"[NpcEventDebugLoader] NPC '{npcKey}'의 표정 스프라이트가 설정되지 않았습니다: {expression ?? "default"}");
+        }
     }
     private IEnumerator HandleSpecial_Dialogue003()
     {

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Boss_SaltAfter_Calling_Dialogue_ko
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: ko
+  m_SharedData: {fileID: 11400000, guid: ade5e27976446674bbb97ca0543c05e3, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 288467914752
+    m_Localized: "\uC18C\uAE08\uC774 \uC9D1 \uB2E4\uB140\uC654\uB2E4\uBA70!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440704
+    m_Localized: "\uC0AC\uC2E4 \uC18C\uAE08\uC774\uB294 \uAC81\uC774 \uB9CE\uC544\uC11C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440705
+    m_Localized: "\uCE5C\uD574\uC9C0\uAE30 \uC870\uAE08 \uC624\uB798\uAC78\uB9B4
+      \uC9C0\uB3C4 \uBAB0\uB77C..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440706
+    m_Localized: "\uD558\uC9C0\uB9CC \uD3EC\uAE30\uD558\uC9C0 \uC54A\uB294\uB2E4!!
+      \uC54C\uC9C0?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440707
+    m_Localized: "\uADF8\uB798\uB3C4 {playerName}(\uC740)\uB294 \uC2E0\uC785\uC774\uB77C
+      \uC601\uD63C 2\uBA85\uB9CC \uB9E1\uAC8C \uB420 \uAC70\uC57C."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440708
+    m_Localized: "\uADF8\uB7EC\uB2C8\uAE4C \uC194\uC774, \uC18C\uAE08\uC774\uB791
+      \uC798 \uC9C0\uB0B4\uC57C\uD55C\uB2E4!?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440709
+    m_Localized: "\uC624\uB298 \uD558\uB8E8 \uACE0\uC0DD\uB9CE\uC558\uC5B4!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 288522440710
+    m_Localized: "\uC774\uC81C \uC9D1 \uAC00\uC11C \uD479 \uC26C\uC5B4~!!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16733096579072
+    m_Localized: "\uC138\uB85C"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

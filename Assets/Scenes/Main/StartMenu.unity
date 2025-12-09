@@ -391,7 +391,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7478677377445641756, guid: 494335b661bb3d74cb3ebe5081d32705, type: 3}
+  m_Sprite: {fileID: 4039400600653599922, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -779,7 +779,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7478677377445641756, guid: 494335b661bb3d74cb3ebe5081d32705, type: 3}
+  m_Sprite: {fileID: 4039400600653599922, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4516,6 +4516,7 @@ MonoBehaviour:
   friendshipFontSizeJp: 30
   excludeTagsForActiveObjects:
   - HUD
+  - NPC
   excludeNamesForActiveObjects: []
   autoRestoreActiveObjectsOnSceneLoaded: 1
   activeRestoreMode: 0
@@ -4810,7 +4811,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -7478677377445641756, guid: 494335b661bb3d74cb3ebe5081d32705, type: 3}
+  m_Sprite: {fileID: 4039400600653599922, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7202,7 +7203,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
       propertyPath: bgmClips.Array.data[2].key
-      value: Sol's Game Puzzle
+      value: Puzzle
       objectReference: {fileID: 0}
     - target: {fileID: 921148846851034826, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
       propertyPath: bgmClips.Array.data[1].clip
@@ -7212,6 +7213,10 @@ PrefabInstance:
       propertyPath: bgmClips.Array.data[2].clip
       value: 
       objectReference: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+    - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
+      propertyPath: routes.Array.size
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 2898536825459386561, guid: 81f36bc26ec14a648904da8030c8ba3b, type: 3}
       propertyPath: routes.Array.data[0].bgmKey
       value: StartMenu

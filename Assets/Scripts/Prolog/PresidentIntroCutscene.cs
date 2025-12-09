@@ -30,8 +30,8 @@ public class PresidentIntroSequence : MonoBehaviour
         "Dialogue_014_Player",
         "Dialogue_015_President",   // 암흑. 집으로 이동. 플레이어 어질어질 모션
         "Dialogue_016_President",
-        "Dialogue_017_President",   // 대표 슉 하고 사라짐
-        "Dialogue_018_Player"       // 마지막: 플레이어 "무슨 일이 일어난 거지..."
+        "Dialogue_017_President",
+        "Dialogue_018_President"    // 마지막: "그럼 행운을 빌겠네!"
     };
 
     [Header("캐릭터 트랜스폼")]
@@ -46,7 +46,7 @@ public class PresidentIntroSequence : MonoBehaviour
     [SerializeField] private Vector3 playerPosAfter015 = new Vector3(22f, 0f, 0f);
     [SerializeField] private Vector3 presidentPosAfter015 = new Vector3(24f, 0f, 0f);
 
-    [Header("대표 사라짐 연출(Dialogue_017 이후)")]
+    [Header("대표 사라짐 연출(Dialogue_018 이후)")]
     [SerializeField] private float vanishDuration = 0.4f;
     [SerializeField] private float vanishMoveUp = 0.5f;
 
@@ -166,8 +166,6 @@ public class PresidentIntroSequence : MonoBehaviour
 
             Debug.Log("[PresidentIntroSequence] 대사 종료: " + key);
 
-            // 여기서 인덱스가 아니라 "대사 키"로만 분기함
-
             // Dialogue_015_President 이후: 암흑 → 집 이동 → 플레이어 흔들림
             if (key == "Dialogue_015_President")
             {
@@ -175,16 +173,13 @@ public class PresidentIntroSequence : MonoBehaviour
                 yield return StartCoroutine(HandleMidTransition());
                 Debug.Log("[PresidentIntroSequence] Dialogue_015 이후 전환 연출 종료");
             }
-            // Dialogue_017_President 이후: 대표 슉 하고 사라짐
-            else if (key == "Dialogue_017_President")
+            // Dialogue_018_President 이후: 대표 사라짐 → 페이드 아웃/인 → 미션 UI
+            else if (key == "Dialogue_018_President")
             {
-                Debug.Log("[PresidentIntroSequence] Dialogue_017 이후 대표 사라짐 연출 시작");
+                Debug.Log("[PresidentIntroSequence] Dialogue_018 이후 대표 사라짐 연출 시작");
                 yield return StartCoroutine(VanishPresident());
-                Debug.Log("[PresidentIntroSequence] Dialogue_017 이후 대표 사라짐 연출 종료");
-            }
-            // Dialogue_018_Player 이후: 마지막 페이드 아웃/인 + 미션 UI
-            else if (key == "Dialogue_018_Player")
-            {
+                Debug.Log("[PresidentIntroSequence] Dialogue_018 이후 대표 사라짐 연출 종료");
+
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 시작(씬 이동 없음)");
                 yield return StartCoroutine(FadeOutThenIn());
                 Debug.Log("[PresidentIntroSequence] 마지막 페이드 아웃/인 종료");
