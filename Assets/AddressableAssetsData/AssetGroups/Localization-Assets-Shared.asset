@@ -122,12 +122,6 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8b23ebaf2ba70d8408f92e42202fde43
-    m_Address: Assets/Localization/Dialogue/Boss/Speaker/Boss_Starest_SeondMeet_Speaker
-      Shared Data.asset
-    m_ReadOnly: 1
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 94edb753ccd5da14eae9f71068863694
     m_Address: Assets/Localization/Dialogue/Boss/Dialogue/Boss_Seconday_Busstop_Dialogue
       Shared Data.asset

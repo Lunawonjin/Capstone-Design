@@ -13,8 +13,103 @@ MonoBehaviour:
   m_Name: Default Local Group
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Default Local Group
-  m_GUID: 502900b52e6988042a5eb0e79db72e87
-  m_SerializeEntries: []
+  m_GUID: 687b789b4415bb043bfecaa1cfbe0912
+  m_SerializeEntries:
+  - m_GUID: 04089c0ac7532614aa464f9d41297c67
+    m_Address: Assets/Localization/Dialogue/Boss/Dialogue
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 08e15b06b9bd5c84e97ac9dc951a4af5
+    m_Address: Assets/Localization/GoogleSeets
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0a412d5f34ed1a043ab28ce648ecf074
+    m_Address: Assets/Localization/UI
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 45b1496aa1adbd74fb021e89d7b84c84
+    m_Address: Assets/Localization/Messenger
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 59e54eddad4d6764eb5c9051075ace21
+    m_Address: Assets/Localization/Calling/Boss
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5cd6959617840074cbf3a7d176e4a82a
+    m_Address: Assets/Localization/Chatting
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6d978dc8dbf14b64b9d45a12c5a824df
+    m_Address: Assets/Localization/Dialogue/Prolog
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 71bce89fa5708324ab621019a26d56e9
+    m_Address: Assets/Localization/Dialogue/Salt/Dialogue
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 827abffd521bb99428186c163faa2cda
+    m_Address: Assets/Localization/Dialogue/Sol/Dialogue
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8e1d91fbca786f5428f29733c8d2f94c
+    m_Address: Assets/Localization/Dialogue/Salt
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9228c93d52412434cacfdbd62ff069d0
+    m_Address: Assets/Localization/Calling
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ac6bcf9cc588fa740a4a0aee48020def
+    m_Address: Assets/Localization/Localization Settings.asset
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b9dfdf87dd96cf944ac83571b3e66e0e
+    m_Address: Assets/Localization/Dialogue/Sol/Speaker
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bafa6a1ed5519bb4e87b2b0713c22218
+    m_Address: Assets/Localization/Dialogue
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ceabb7d98535d9941b8677b0a5978562
+    m_Address: Assets/Localization/Chatting/Sero
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e4c03cd778933894892646db27bf0f5c
+    m_Address: Assets/Localization/Dialogue/Salt/Speaker
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ec5bda787775af94e9dae5f324b7eda9
+    m_Address: Assets/Localization/Dialogue/Boss
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f6de1f61e28b7c04bbea5adcec01ece5
+    m_Address: Assets/Localization/Dialogue/Sol
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f9367cb17348f4041bf936eb68f9c547
+    m_Address: Assets/Localization/Dialogue/Boss/Speaker
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 544fd178bf8e1be45bdb8065448f99a1, type: 2}
   m_SchemaSet:

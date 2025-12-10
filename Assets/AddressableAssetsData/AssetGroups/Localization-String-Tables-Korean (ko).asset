@@ -81,18 +81,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Locale-ko
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 43e44bed406176344b0f505c97e255c8
-    m_Address: Boss_Starest_SeondMeet_Speaker_ko
-    m_ReadOnly: 1
-    m_SerializedLabels:
-    - Locale-ko
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4b39f678413aea042bc549aa5b0ca535
     m_Address: Sol_First_Meet_Dialogue_ko
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-ko
-    - Preload
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 65b56d03d10e4aa458d9731091d40178
     m_Address: Boss_Sol_FinalGame_Second_Dialogue_ko
