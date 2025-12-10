@@ -64,6 +64,10 @@ public class SolsFinalGame : MonoBehaviour
     [Tooltip("보스전 후 활성화할 카메라 추적 스크립트")]
     [SerializeField] public SimpleCameraFollow cameraFollow;
 
+    [Header("효과음 설정")]
+    [SerializeField] private string interactSFXKey = "F";
+    [SerializeField] private string bossComeSFXKey = "BossCome";
+
     private bool moveWasEnabledBeforeAir = true;
     private bool animatorWasEnabledBeforeAir = true;
     private bool isGrounded = true;
@@ -247,6 +251,9 @@ public class SolsFinalGame : MonoBehaviour
 
         if (!isInteractionBlocked && !cameraMoving && syringeOverlapped && syringeObject != null && Input.GetKeyDown(interactKey))
         {
+            // ⭐ F키 상호작용 효과음 재생
+            PlayInteractSFX();
+
             syringeObject.SetActive(false);
             hasPickedUpSyringe = true;
             if (syringeShooter != null) syringeShooter.SetShootingEnabled(true);
@@ -583,6 +590,9 @@ public class SolsFinalGame : MonoBehaviour
 
         Debug.Log("[SolsFinalGame] 카메라를 보스로 이동 시작");
 
+        // ⭐ BossCome 효과음 재생
+        PlayBossComeSFX();
+
         Vector3 startPos = targetCamera.position;
         Vector3 endPos = new Vector3(bossCameraTargetX, startPos.y, startPos.z);
 
@@ -824,5 +834,37 @@ public class SolsFinalGame : MonoBehaviour
         Debug.Log("[SolsFinalGame] ========== 보스 활성화 완료 ==========");
 
         isPlayingBossDialogue = false;
+    }
+
+    // ==========================================
+    // ★★★ 효과음 시스템 ★★★
+    // ==========================================
+
+    /// <summary>
+    /// F키 상호작용 효과음 재생
+    /// </summary>
+    private void PlayInteractSFX()
+    {
+        if (string.IsNullOrEmpty(interactSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(interactSFXKey);
+            Debug.Log("[SolsFinalGame] ✅ F키 상호작용 효과음 재생");
+        }
+    }
+
+    /// <summary>
+    /// 보스 등장 카메라 연출 효과음 재생
+    /// </summary>
+    private void PlayBossComeSFX()
+    {
+        if (string.IsNullOrEmpty(bossComeSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(bossComeSFXKey);
+            Debug.Log("[SolsFinalGame] ✅ BossCome 효과음 재생");
+        }
     }
 }

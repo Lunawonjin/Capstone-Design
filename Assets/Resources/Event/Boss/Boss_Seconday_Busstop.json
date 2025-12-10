@@ -6,6 +6,13 @@
   "npcSpawns": [
     { "npcName": "Boss", "x": -12.5, "y": -18.5, "z": 0.0, "deactivateExisting": true, "relativeToPlayer": false }
   ],
+  "preActions": [
+    {
+      "type": "playBGM",
+      "bgmKey": "Busstop",
+      "fadeSeconds": 1.5
+    }
+  ],
   "steps": [
     
   ],

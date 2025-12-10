@@ -532,7 +532,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: 11400000, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: 11400000, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -548,7 +548,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: -3050571709569891352, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: -3523289834934110302, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -562,7 +562,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: 70
+          value: 60
         - localeIdentifier:
             m_Code: en
           value: 60
@@ -576,7 +576,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: 70
+          value: 60
         - localeIdentifier:
             m_Code: en
           value: 60
@@ -1822,8 +1822,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7635131891296033614, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2203,7 +2203,7 @@ MonoBehaviour:
           value: 110
         - localeIdentifier:
             m_Code: ko
-          value: 130
+          value: 175
         - localeIdentifier:
             m_Code: ja
           value: 110
@@ -2601,6 +2601,9 @@ MonoBehaviour:
   closeKey: 27
   extraCloseKeys: 000000001b000000
   exitButton: {fileID: 8076865373978485624}
+  selectButtonSFXKey: SelectBT
+  goBusSFXKey: GoBus
+  endBusSFXKey: EndBus
   keepOriginalScale: 1
   openStartMul: {x: 1, y: 1, z: 1}
   openEndMul: {x: 1, y: 1, z: 1}
@@ -2954,6 +2957,9 @@ MonoBehaviour:
   fadeOutDuration: 0.001
   fadeColor: {r: 0, g: 0, b: 0, a: 1}
   verbose: 0
+  openDoorSFXKey: OpenDoor
+  closeDoorSFXKey: CloseDoor
+  closeDoorDelay: 0.3
 --- !u!1 &1378829198847979340
 GameObject:
   m_ObjectHideFlags: 0
@@ -5409,7 +5415,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: 11400000, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: 11400000, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -5425,7 +5431,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: -3050571709569891352, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: -3523289834934110302, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -9403,8 +9409,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7635131891296033614, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -9567,8 +9573,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7635131891296033614, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -9693,7 +9699,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -787249571915144215, guid: a45be49ff92bd3547ac629384c341693, type: 3}
+  m_Sprite: {fileID: -7390560224966502635, guid: 986bd1385f5776f4a81acd7ee0a1dd64, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9770,8 +9776,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7635131891296033614, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -12296,7 +12302,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBCC4\uBB34\uB9AC\uD130"
+  m_text: "\uC740\uD558\uB9C8\uC744"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
   m_sharedMaterial: {fileID: -3523289834934110302, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
@@ -12445,7 +12451,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: 11400000, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: 11400000, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: 11400000, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -12461,7 +12467,7 @@ MonoBehaviour:
         m_VariantData:
         - localeIdentifier:
             m_Code: ko
-          value: {fileID: -3050571709569891352, guid: 9fe5bd8f9a18dc143b13e0f43e32ccad, type: 2}
+          value: {fileID: -3523289834934110302, guid: aa556dc1bfba3e24fb5fabe773ff1626, type: 2}
         - localeIdentifier:
             m_Code: en
           value: {fileID: -4534829781390108330, guid: 0c3ced1875499754499f6b06114aac44, type: 2}
@@ -18222,8 +18228,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: -7635131891296033614, guid: dcc0a0f1c63f3ab4fbe23750b12f32b8, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4

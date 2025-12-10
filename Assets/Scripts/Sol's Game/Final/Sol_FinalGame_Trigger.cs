@@ -31,6 +31,12 @@ public class SolFinalGameTrigger : MonoBehaviour
     [SerializeField] private string playerTag = "Player";
     [SerializeField] private SpriteRenderer playerSpriteRenderer;
 
+    [Header("배경음악 설정")]
+    [Tooltip("Sol's Living Room 활성화 시 재생할 BGM 키")]
+    [SerializeField] private string livingRoomBGMKey = "Final1";
+    [Tooltip("BGM 페이드 인 시간 (초)")]
+    [SerializeField] private float bgmFadeDuration = 2.0f;
+
     // 자동 찾기 옵션들
     [SerializeField] private bool autoFindReferences = true;
 
@@ -80,7 +86,7 @@ public class SolFinalGameTrigger : MonoBehaviour
         yield return StartCoroutine(Fade(0f, 1f));
 
         // 3. 오브젝트 교체 (검은 화면 상태)
-        // 주의: 여기서 solsHouse를 끌 때, 이 스크립트가 solsHouse의 자식이면 코루틴이 멈춥니다!
+        // ⭐ BGM 재생 포함
         SwapObjectsWaitUI();
 
         // 4. 검은 화면 유지 (Realtime 사용으로 일시정지 무시)
@@ -115,7 +121,13 @@ public class SolFinalGameTrigger : MonoBehaviour
     private void SwapObjectsWaitUI()
     {
         if (solsHouse != null) solsHouse.SetActive(false);
-        if (solsLivingRoom != null) solsLivingRoom.SetActive(true);
+        if (solsLivingRoom != null)
+        {
+            solsLivingRoom.SetActive(true);
+
+            // ⭐ Sol's Living Room 활성화 시 BGM 재생
+            PlayLivingRoomBGM();
+        }
         // uiPanel은 여기서 끄지 않고 페이드 인이 끝난 뒤에 끕니다.
 
         ApplyPlayerColor();
@@ -126,6 +138,28 @@ public class SolFinalGameTrigger : MonoBehaviour
 
         GameObject solNpc = GameObject.Find("Sol_Npc") ?? GameObject.Find("Sol");
         if (solNpc != null) solNpc.transform.position = new Vector3(34.24f, 21.1f, solNpc.transform.position.z);
+    }
+
+    /// <summary>
+    /// Sol's Living Room에서 재생할 BGM을 시작합니다.
+    /// </summary>
+    private void PlayLivingRoomBGM()
+    {
+        if (SoundManager.Instance == null)
+        {
+            Debug.LogWarning("[SolFinalGameTrigger] SoundManager.Instance가 null입니다. BGM을 재생할 수 없습니다.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(livingRoomBGMKey))
+        {
+            Debug.LogWarning("[SolFinalGameTrigger] livingRoomBGMKey가 설정되지 않았습니다.");
+            return;
+        }
+
+        // BGM 재생
+        SoundManager.Instance.PlayBGM(livingRoomBGMKey, bgmFadeDuration);
+        Debug.Log($"[SolFinalGameTrigger] BGM 재생: {livingRoomBGMKey} (페이드: {bgmFadeDuration}초)");
     }
 
     private void StartDialogue()

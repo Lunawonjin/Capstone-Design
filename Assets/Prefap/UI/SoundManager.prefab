@@ -54,6 +54,20 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: a97ac4cced38d2549a5e4f031c4e9392, type: 3}
   - key: Puzzle
     clip: {fileID: 8300000, guid: 8f9e9f306201b0f46b8ab3d36a960100, type: 3}
+  - key: Final1
+    clip: {fileID: 8300000, guid: 7c7dfe582e4e57a42a4eb3673436707d, type: 3}
+  - key: Final2
+    clip: {fileID: 8300000, guid: 165a0a5e18459bb46a332e99c15b43f9, type: 3}
+  - key: SolFM
+    clip: {fileID: 8300000, guid: 355d27d001e6f744487eeff6779fd83a, type: 3}
+  - key: KeyMission
+    clip: {fileID: 8300000, guid: 10a0999cbd3b8e5408364fed3da4b8e0, type: 3}
+  - key: SleepSol
+    clip: {fileID: 8300000, guid: a30ceec3d5d0d4d4f9e2c975204519d7, type: 3}
+  - key: AfterPuzzle
+    clip: {fileID: 8300000, guid: 1340a9830190bd749af0989ec938669e, type: 3}
+  - key: Busstop
+    clip: {fileID: 8300000, guid: 264239f4e0381d848aae971ae0a6136a, type: 3}
   sfxClips:
   - key: Teleport
     clip: {fileID: 8300000, guid: 3fd287cf33220c64b99c7473726bc6a9, type: 3}
@@ -120,6 +134,10 @@ MonoBehaviour:
     fadeSeconds: 0
   - sceneName: Sol's Game Puzzle
     bgmKey: Puzzle
+    startTime: 0
+    fadeSeconds: 0
+  - sceneName: Sol's Game Final
+    bgmKey: Final2
     startTime: 0
     fadeSeconds: 0
   defaultFadeSeconds: 1.5

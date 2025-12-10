@@ -2,12 +2,10 @@
   "defaultStepDuration": 1.0,
   "useWorldSpace": true,
   "useRigidbodyMove": true,
-
   "player": {
     "forceUsePlayerMoveSpeed": true,
     "moveSpeed": 1.0
   },
-
   "npcSpawns": [
     {
       "npcName": "Boss",
@@ -18,8 +16,12 @@
       "relativeToPlayer": false
     }
   ],
-
   "preActions": [
+    {
+      "type": "playBGM",
+      "bgmKey": "KeyMission",
+      "fadeSeconds": 1.0
+    },
     {
       "type": "snapPlayer",
       "x": -7.85,
@@ -27,14 +29,12 @@
       "z": 0.0
     }
   ],
-
   "steps": [
     {
       "axis": "y",
       "delta": -1.0
     }
   ],
-
   "afterPlayerActions": [
     { 
       "type": "npcMove", 
@@ -61,10 +61,9 @@
       "active": true
     }
   ],
-
   "dialogueReactions": [
     {
-      "onKey": "Dialogue_003",
+      "onKey": "Dialogue_004",
       "actions": [
         {
           "type": "textPunch",

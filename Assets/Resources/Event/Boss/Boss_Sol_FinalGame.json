@@ -35,6 +35,14 @@
     }
   ],
   
+  "preActions": [
+    {
+      "type": "playBGM",
+      "bgmKey": "SleepSol",
+      "fadeSeconds": 2.0
+    }
+  ],
+  
   "afterPlayerActions": [
     { 
       "type": "npcMove", 
