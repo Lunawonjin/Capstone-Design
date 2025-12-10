@@ -29,7 +29,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1763493162717185
-    m_Localized: "\u2018\uB091\u2019\uC774 \uC624\uB298\uC740 \uC6A9\uAC10\uD558\uB300\uC694.
+    m_Localized: "\uB091\uC774\uAC00 \uC624\uB298\uC740 \uC6A9\uAC10\uD558\uB300\uC694.
       \uADF8\uB798\uC11C \uC800\uB3C4 \uC6A9\uAC10\uD574\uC694!"
     m_Metadata:
       m_Items: []
@@ -39,8 +39,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 1763493162717187
-    m_Localized: "{playerName}\uB2D8\uC774 \uC624\uBA74 \uB9C8\uC74C\uC774 \uD3B8\uC548\uD574\uC838\uC694.
-      \uADF8\uB798\uC11C \uAE30\uB2E4\uB838\uC5B4\uC694."
+    m_Localized: "{playerName}\uB2D8\uC774 \uC624\uBA74 \uB9C8\uC74C\uC774 \uD3B8\uC548\uD574\uC838\uC694!"
     m_Metadata:
       m_Items: []
   - m_Id: 1763493162717188
@@ -90,8 +89,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 1763493162717197
     m_Localized: "\uC5B4\uB978\uB4E4\uC740 \uC800\uB97C \uC870\uC2EC\uC870\uC2EC
-      \uB300\uD574\uC694. \uADF8\uB798\uB3C4 \uC800\uB294 \uC529 \uC6C3\uC5B4 \uC904
-      \uC218 \uC788\uC5B4\uC694."
+      \uB300\uD574\uC694. \uADF8\uB798\uB3C4 \uC800\uB294 \uC6C3\uC5B4 \uC904 \uC218
+      \uC788\uC5B4\uC694."
     m_Metadata:
       m_Items: []
   - m_Id: 1763493162717198

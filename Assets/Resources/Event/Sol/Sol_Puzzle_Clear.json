@@ -18,6 +18,11 @@
   ],
   "preActions": [
     {
+      "type": "playBGM",
+      "bgmKey": "AfterPuzzle",
+      "fadeSeconds": 2.0
+    },
+    {
       "type": "snapPlayer",
       "x": 32.2,
       "y": 18.0,

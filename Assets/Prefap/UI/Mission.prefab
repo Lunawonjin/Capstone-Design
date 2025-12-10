@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4170738578110774332
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1505905603413785085}
+  - component: {fileID: 6839182918625755612}
+  m_Layer: 0
+  m_Name: Mission
+  m_TagString: HUD
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1505905603413785085
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4170738578110774332}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -16.71506, y: -19.15472, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6839182918625755612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4170738578110774332}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03f4becf35b833f40a95cd5513284608, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MissionPanel
+  targetPanelImageName: MissionPanel
+  targetDetailTextName: MissionDetail
+  missionPanelImage: {fileID: 0}
+  missionDetailText: {fileID: 0}
+  missionRoot: {fileID: 0}
+  hideOnAwake: 1
+  missions:
+  - key: Starest_First_Visit
+    detailText: "\uC138\uB85C\uB97C \uB530\uB77C \uBD84\uD64D\uC0C9\n\uC194\uC774
+      \uC9D1\uC5D0 \uB4E4\uC5B4\uAC00\uC790"
+  - key: Sol_First_Meet
+    detailText: 
+  - key: Boss_SaltKey_Lost
+    detailText: "\uB9C8\uC744\uC744 \uB3CC\uC544\uB2E4\uB2C8\uBA70 \uC5F4\uC1E0\uB97C
+      \uCC3E\uC790"
+  - key: Salt_House_Key
+    detailText: "\uC18C\uAE08\uC774 \uC9D1\uC73C\uB85C \uAC00\uC790"
+  - key: Salt_First_Meet
+    detailText: 
+  - key: Boss_SaltAfter_Calling
+    detailText: "\uC9D1\uC5D0\uAC00\uC11C\n\uD479 \uC26C\uC790"
+  - key: Boss_First_Calling
+    detailText: "\uC740\uD558\uB9C8\uC744\uB85C \uAC00\uBCF4\uC790"
+  - key: Boss_Second_Calling
+    detailText: "\uC740\uD558\uB9C8\uC744 \n\uBC84\uC2A4\uC815\uB958\uC7A5\uC73C\uB85C
+      \uAC00\uBCF4\uC790"
+  useSlideInAnimation: 1
+  slideDuration: 0.4
+  slideOffsetX: 600
