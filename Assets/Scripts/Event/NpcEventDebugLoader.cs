@@ -68,6 +68,10 @@ public class NpcEventDebugLoader : MonoBehaviour
         // Player bool 제어용 (setPlayerBool)
         public string flag = "";
         public bool value = true;
+
+        // ⭐ BGM 제어용 (playBGM) - 추가
+        public string bgmKey = "";
+        public float fadeSeconds = 0.75f;
     }
 
     [Serializable]
@@ -908,9 +912,15 @@ public class NpcEventDebugLoader : MonoBehaviour
                     if (!targetNpc) { Debug.LogWarning($"[NpcEventDebugLoader] npcMove 대상 '{act.npcName}'을(를) 찾을 수 없습니다."); }
                     else
                     {
+                        // ★ 이 두 줄 추가
+                        if (playerMove != null) playerMove.SetControlEnabled(false);
+
                         _npcSpecByName.TryGetValue(act.npcName.Trim(), out var specForNpc);
                         float dur = DeriveNpcDurationBySpeed(new Vector2(act.dx, act.dy), act.duration);
                         yield return StartCoroutine(NpcMoveByWorld(targetNpc, new Vector2(act.dx, act.dy), dur, specForNpc));
+
+                        // ★ 이 두 줄 추가
+                        if (playerMove != null) playerMove.SetControlEnabled(true);
                     }
                 }
                 else if (actionType == "log")
@@ -988,6 +998,21 @@ public class NpcEventDebugLoader : MonoBehaviour
                         }
                     }
                 }
+                // ⭐ 새로 추가: BGM 재생
+                else if (actionType == "playbgm")
+                {
+                    if (SoundManager.Instance != null && !string.IsNullOrEmpty(act.bgmKey))
+                    {
+                        float fade = act.fadeSeconds > 0 ? act.fadeSeconds : 0.75f;
+                        SoundManager.Instance.PlayBGM(act.bgmKey, fade);
+                        if (verboseLog)
+                            Debug.Log($"[NpcEventDebugLoader] playBGM: key='{act.bgmKey}', fade={fade}s");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[NpcEventDebugLoader] playBGM 실패: SoundManager={SoundManager.Instance != null}, bgmKey='{act.bgmKey}'");
+                    }
+                }
                 else if (actionType == "eventend")
                 {
                     break;
@@ -1024,10 +1049,9 @@ public class NpcEventDebugLoader : MonoBehaviour
         {
             if (string.Equals(trigger.eventName, finishedEventName, StringComparison.OrdinalIgnoreCase))
             {
-                // 텍스트가 비어있으면 패널을 끔
                 if (string.IsNullOrEmpty(trigger.missionText))
                 {
-                    MissionPanel.Instance.gameObject.SetActive(false);
+                    MissionPanel.Instance.Hide(); // ★ 이 줄 추가!
                     if (verboseLog) Debug.Log($"[NpcEventDebugLoader] 미션 종료 (패널 OFF): Event={finishedEventName}");
                 }
                 else
@@ -1155,20 +1179,35 @@ public class NpcEventDebugLoader : MonoBehaviour
                 var pd = ResolvePlayerData();
                 if (pd == null)
                 {
-                    Debug.LogWarning("[NpcEventDebugLoader] (reaction) setPlayerBool: PlayerData 없음");
+                    Debug.LogWarning("[NpcEventDebugLoader] setPlayerBool: PlayerData 없음");
                 }
                 else
                 {
                     string flagName = string.IsNullOrEmpty(act.flag) ? _ctxEvent : act.flag;
                     if (!TryBindBool(pd, flagName, out var getter, out var setter))
                     {
-                        Debug.LogWarning($"[NpcEventDebugLoader] (reaction) setPlayerBool: '{flagName}' 바인딩 실패");
+                        Debug.LogWarning($"[NpcEventDebugLoader] setPlayerBool: '{flagName}' 바인딩 실패");
                     }
                     else
                     {
                         setter(act.value);
-                        if (verboseLog) Debug.Log($"[NpcEventDebugLoader] (reaction) setPlayerBool: {flagName} = {act.value}");
+                        if (verboseLog) Debug.Log($"[NpcEventDebugLoader] setPlayerBool: {flagName} = {act.value}");
                     }
+                }
+            }
+            // ⭐ 새로 추가
+            else if (actionType == "playbgm")
+            {
+                if (SoundManager.Instance != null && !string.IsNullOrEmpty(act.bgmKey))
+                {
+                    float fade = act.fadeSeconds > 0 ? act.fadeSeconds : 0.75f;
+                    SoundManager.Instance.PlayBGM(act.bgmKey, fade);
+                    if (verboseLog)
+                        Debug.Log($"[NpcEventDebugLoader] playBGM: key='{act.bgmKey}', fade={fade}s");
+                }
+                else
+                {
+                    Debug.LogWarning($"[NpcEventDebugLoader] playBGM 실패");
                 }
             }
             else if (actionType == "eventend")
@@ -2175,26 +2214,45 @@ public class NpcEventDebugLoader : MonoBehaviour
         foreach (var go in uiCanvasesToDisable)
         {
             if (!go) continue;
+
+            // ★ MissionPanel 스크립트가 있는 오브젝트는 절대 비활성화 금지
+            if (go.GetComponent<MissionPanel>() != null)
+            {
+                if (verboseLog)
+                    Debug.LogWarning($"[NpcEventDebugLoader] {go.name}은 MissionPanel 스크립트가 있어 비활성화할 수 없습니다. Inspector에서 제거하세요!");
+                continue;
+            }
+
+            // MissionPanel이 자식에 있는 오브젝트도 보호
+            if (go.GetComponentInChildren<MissionPanel>(true) != null)
+            {
+                if (verboseLog)
+                    Debug.LogWarning($"[NpcEventDebugLoader] {go.name}은 MissionPanel을 자식으로 가지고 있어 비활성화할 수 없습니다.");
+                continue;
+            }
+
             _uiBackup.Add(new UIBak { go = go, wasActive = go.activeSelf });
             go.SetActive(false);
         }
 
-        _inputBackup.Clear();
-        foreach (var comp in inputComponents)
+        // ★ PlayerMove 컨트롤 완전히 잠금
+        if (playerMove != null)
         {
-            if (!comp) continue;
-            _inputBackup.Add(new InputBackup { comp = comp, wasEnabled = comp.enabled });
-            comp.enabled = false;
+            playerMove.SetControlEnabled(false);
+            if (verboseLog)
+                Debug.Log("[NpcEventDebugLoader] PlayerMove 컨트롤 잠금 (이벤트 시작)");
         }
 
-        // IPlayerControlToggle 구현 컴포넌트 모두 입력 비활성화
+        // IPlayerControlToggle 구현체들도 모두 비활성화
         for (int i = 0; i < _controlToggles.Count; i++)
         {
-            var t = _controlToggles[i];
-            if (t == null) continue;
-            try { t.SetControlEnabled(false); }
+            var toggle = _controlToggles[i];
+            if (toggle == null) continue;
+            try { toggle.SetControlEnabled(false); }
             catch { }
         }
+
+        _savedPlayerPosition = playerTransform.position;
 
         // 입력만 막고 PlayerMove.Freeze는 사용하지 않음
 

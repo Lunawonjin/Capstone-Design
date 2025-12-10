@@ -58,6 +58,10 @@ public class MissionPanel : MonoBehaviour
     // 1회용 이벤트 체크 변수 ("은하마을로 가보자" 트리거용)
     private bool _hasTriggeredStarestMission = false;
 
+    // Day 2 미션 체크 변수
+    private bool _hasTriggeredDay2Mission = false;
+    private int _lastCheckedDay = -1;
+
     // 슬라이드 인 애니메이션용 변수
     private RectTransform _panelRect;
     private Vector2 _panelOriginalAnchoredPos;
@@ -97,6 +101,41 @@ public class MissionPanel : MonoBehaviour
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void Update()
+    {
+        // Day 값 체크하여 Day 2가 되면 미션 표시
+        CheckDayMission();
+    }
+
+    private void CheckDayMission()
+    {
+        if (DataManager.instance == null || DataManager.instance.nowPlayer == null)
+            return;
+
+        int currentDay = DataManager.instance.nowPlayer.Day;
+
+        // Day가 변경되었을 때만 체크
+        if (currentDay != _lastCheckedDay)
+        {
+            _lastCheckedDay = currentDay;
+
+            // Day 2가 되면 "출근을 하자" 미션 표시
+            if (currentDay == 2 && !_hasTriggeredDay2Mission)
+            {
+                _hasTriggeredDay2Mission = true;
+                _currentMissionText = "출근을 하자";
+
+                if (missionDetailText != null)
+                {
+                    missionDetailText.text = _currentMissionText;
+                }
+
+                SetMissionPanelActive(true, false);
+                Debug.Log("[MissionPanel] Day 2 미션 활성화: 출근을 하자");
+            }
+        }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -142,12 +181,50 @@ public class MissionPanel : MonoBehaviour
 
     private void TryAutoBindUI()
     {
-        if (missionPanelImage == null) missionPanelImage = FindUIComponent<Image>(targetPanelImageName);
-        if (missionDetailText == null) missionDetailText = FindUIComponent<TMP_Text>(targetDetailTextName);
+        // missions 리스트를 순회하면서 detailText가 비어있는지 확인
+        bool hasAnyValidMission = false;
 
-        if (missionRoot == null && missionPanelImage != null)
+        if (missions != null && missions.Count > 0)
         {
-            missionRoot = missionPanelImage.gameObject;
+            foreach (var mission in missions)
+            {
+                if (mission != null && !string.IsNullOrWhiteSpace(mission.detailText))
+                {
+                    hasAnyValidMission = true;
+                    break;
+                }
+            }
+        }
+
+        // 유효한 미션이 하나라도 있을 때만 UI를 찾아서 연결
+        if (hasAnyValidMission)
+        {
+            if (missionPanelImage == null)
+                missionPanelImage = FindUIComponent<Image>(targetPanelImageName);
+            if (missionDetailText == null)
+                missionDetailText = FindUIComponent<TMP_Text>(targetDetailTextName);
+
+            if (missionRoot == null && missionPanelImage != null)
+            {
+                missionRoot = missionPanelImage.gameObject;
+            }
+        }
+        else
+        {
+            // 유효한 미션이 없으면 UI를 찾아서 비활성화
+            if (missionPanelImage == null)
+                missionPanelImage = FindUIComponent<Image>(targetPanelImageName);
+            if (missionDetailText == null)
+                missionDetailText = FindUIComponent<TMP_Text>(targetDetailTextName);
+
+            if (missionPanelImage != null)
+            {
+                missionPanelImage.gameObject.SetActive(false);
+            }
+            if (missionDetailText != null)
+            {
+                missionDetailText.gameObject.SetActive(false);
+            }
         }
 
         InitRectTransform();
@@ -200,20 +277,12 @@ public class MissionPanel : MonoBehaviour
 
         if (missionMap.TryGetValue(key, out var entry) && entry != null)
         {
-            // ★ 미션 내용이 비어 있으면 패널을 아예 안 띄움
+            // ★ 미션 내용이 비어 있으면 패널을 무조건 숨김
             if (string.IsNullOrWhiteSpace(entry.detailText))
             {
                 _currentMissionText = string.Empty;
                 _isPanelActive = false;
-
-                // 패널이 활성화되어 있을 때만 Hide() 호출
-                GameObject root = missionRoot != null ? missionRoot :
-                                  missionPanelImage != null ? missionPanelImage.gameObject : null;
-
-                if (root != null && root.activeSelf)
-                {
-                    Hide();
-                }
+                Hide(); // 무조건 Hide() 호출
                 return;
             }
 
@@ -232,20 +301,12 @@ public class MissionPanel : MonoBehaviour
 
         if (missionMap.TryGetValue(key, out var entry) && entry != null)
         {
-            // ★ 미션 내용이 비어 있으면 패널을 아예 안 띄움
+            // ★ 미션 내용이 비어 있으면 패널을 무조건 숨김
             if (string.IsNullOrWhiteSpace(entry.detailText))
             {
                 _currentMissionText = string.Empty;
                 _isPanelActive = false;
-
-                // 패널이 활성화되어 있을 때만 Hide() 호출
-                GameObject root = missionRoot != null ? missionRoot :
-                                  missionPanelImage != null ? missionPanelImage.gameObject : null;
-
-                if (root != null && root.activeSelf)
-                {
-                    Hide();
-                }
+                Hide(); // 무조건 Hide() 호출
                 return false;
             }
 
@@ -258,20 +319,12 @@ public class MissionPanel : MonoBehaviour
 
     public void ShowText(string text)
     {
-        // ★ 직접 문자열로 호출할 때도 비어 있으면 안 띄움
+        // ★ 직접 문자열로 호출할 때도 비어 있으면 무조건 숨김
         if (string.IsNullOrWhiteSpace(text))
         {
             _currentMissionText = string.Empty;
             _isPanelActive = false;
-
-            // 패널이 활성화되어 있을 때만 Hide() 호출
-            GameObject root = missionRoot != null ? missionRoot :
-                              missionPanelImage != null ? missionPanelImage.gameObject : null;
-
-            if (root != null && root.activeSelf)
-            {
-                Hide();
-            }
+            Hide(); // 무조건 Hide() 호출
             return;
         }
 
@@ -336,6 +389,17 @@ public class MissionPanel : MonoBehaviour
 
         if (!useSlideInAnimation || instant || _panelRect == null)
         {
+            if (_panelRect != null && _anchoredPosInitialized)
+            {
+                _panelRect.anchoredPosition = _panelOriginalAnchoredPos;
+            }
+            return;
+        }
+
+        // 코루틴 시작 전에 MissionPanel 게임 오브젝트가 활성화되어 있는지 확인
+        if (!this.gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning("[MissionPanel] MissionPanel 게임 오브젝트가 비활성화되어 있어 코루틴을 시작할 수 없습니다.");
             if (_panelRect != null && _anchoredPosInitialized)
             {
                 _panelRect.anchoredPosition = _panelOriginalAnchoredPos;

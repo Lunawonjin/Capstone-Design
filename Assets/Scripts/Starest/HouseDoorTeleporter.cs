@@ -468,6 +468,7 @@ public class HouseDoorTeleporter : MonoBehaviour
 
     // ───────── [수정됨] 집 입장 시 미션 패널을 "찾아서" 강제로 끄는 로직 추가 ─────────
     // ───────── [수정됨] 집 입장 시 미션 패널을 "찾아서" 강제로 끄는 로직 추가 ─────────
+    // ───────── [수정됨] 집 입장 시 미션 패널을 제어하는 로직 수정 ─────────
     private void Sequence_HouseToDoor(int index)
     {
         // 1. 다른 캐릭터 집 비활성화
@@ -492,37 +493,21 @@ public class HouseDoorTeleporter : MonoBehaviour
         {
             StopStarestBgm();
         }
-        // ★ [핵심 수정] 미션 패널 강제 종료 (싱글톤 무시, 전체 검색)
-        // Sol 집(또는 지정된 집)에 들어갈 때 실행
+
+        // ★ [수정됨] MissionPanel 제어 방식 변경
+        // 오브젝트를 끄는 대신, MissionPanel 스크립트의 Hide() 메서드를 호출
         if (!string.IsNullOrEmpty(CurrentOwnerName) &&
             string.Equals(CurrentOwnerName, hideMissionOnOwnerName, StringComparison.OrdinalIgnoreCase))
         {
-            // Instance가 꼬였을 수 있으므로, 씬에 있는 '모든' MissionPanel 컴포넌트를 다 찾습니다.
-            MissionPanel[] allPanels = FindObjectsByType<MissionPanel>(FindObjectsSortMode.None);
-
-            bool turnedOffAny = false;
-            foreach (var panel in allPanels)
+            if (MissionPanel.Instance != null)
             {
-                // 켜져 있는 놈은 다 끕니다.
-                if (panel != null && panel.gameObject.activeSelf)
-                {
-                    panel.gameObject.SetActive(false);
-                    turnedOffAny = true;
-                }
+                //MissionPanel.Instance.Hide();
+                if (verboseLog)
+                    Debug.Log($"[Teleporter] {CurrentOwnerName} 집 입장: MissionPanel.Hide() 호출");
             }
-
-            // (비상용) 혹시 컴포넌트 없이 이름으로만 존재하는 경우를 대비해 GameObject 이름으로도 찾습니다.
-            GameObject objByName = GameObject.Find("MissionPanel"); // 이름이 정확해야 함
-            if (objByName != null && objByName.activeSelf)
+            else if (verboseLog)
             {
-                objByName.SetActive(false);
-                turnedOffAny = true;
-            }
-
-            if (verboseLog)
-            {
-                if (turnedOffAny) Debug.Log($"[Teleporter] {CurrentOwnerName} 집 입장: 미션 패널을 찾아 강제로 껐습니다.");
-                else Debug.Log($"[Teleporter] {CurrentOwnerName} 집 입장: 켜져 있는 미션 패널이 발견되지 않았습니다.");
+                Debug.LogWarning("[Teleporter] MissionPanel.Instance가 null입니다.");
             }
         }
 

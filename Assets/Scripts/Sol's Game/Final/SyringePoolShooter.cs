@@ -85,6 +85,9 @@ public class SyringePoolShooter : MonoBehaviour
     [Header("UI 잠금 연동")]
     [SerializeField] private UIExclusiveManager uiExclusiveManager;
 
+    [Header("효과음 설정")]
+    [SerializeField] private string throwSFXKey = "ThrowSy";
+
     // 내부 변수
     private readonly List<SyringeProjectile> pool = new List<SyringeProjectile>();
     private float fireTimer = 0f;
@@ -522,10 +525,16 @@ public class SyringePoolShooter : MonoBehaviour
         {
             Debug.Log("[SyringePoolShooter] 차지샷 발사!");
             proj.Launch(dir, chargedSpeed, chargedGravity, chargedDamage, true, chargedPierceCount);
+
+            // ⭐ 차징샷 효과음 재생
+            PlayThrowSFX(true);
         }
         else
         {
             proj.Launch(dir, normalSpeed, normalGravity, normalDamage, false, 0);
+
+            // ⭐ 일반샷 효과음 재생
+            PlayThrowSFX(false);
         }
     }
 
@@ -641,5 +650,32 @@ public class SyringePoolShooter : MonoBehaviour
     public void ReturnProjectile(SyringeProjectile proj)
     {
         if (proj) proj.gameObject.SetActive(false);
+    }
+
+    // ========================================
+    // 🔹 효과음 시스템
+    // ========================================
+
+    /// <summary>
+    /// 주사기 던지기 효과음 재생
+    /// </summary>
+    /// <param name="isCharged">차징샷 여부</param>
+    private void PlayThrowSFX(bool isCharged)
+    {
+        if (string.IsNullOrEmpty(throwSFXKey)) return;
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(throwSFXKey);
+
+            if (isCharged)
+            {
+                Debug.Log("[SyringePoolShooter] ✅ ThrowSy 효과음 재생 (차징샷)");
+            }
+            else
+            {
+                Debug.Log("[SyringePoolShooter] ✅ ThrowSy 효과음 재생 (일반샷)");
+            }
+        }
     }
 }
